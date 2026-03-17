@@ -28,10 +28,14 @@ public class Product extends BaseEntity {
 
     private String url; // 상품 사진
 
-    public Product(String name, int price, int stock, String url) {
+    @Enumerated(value = EnumType.STRING)
+    private ProductCategory productCategory;
+
+    public Product(String name, int price, int stock, String url, ProductCategory productCategory) {
         this.name = name;
         this.price = price;
         this.stock = stock;
         this.url = url;
+        this.productCategory = productCategory;
     }
 }
