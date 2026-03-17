@@ -1,0 +1,41 @@
+package com.bootcamp.paymentdemo.common.exception;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+
+@Getter
+@RequiredArgsConstructor
+public enum ErrorCode {
+    //temp error code
+    TEMP_ERROR(HttpStatus.BAD_REQUEST, "T001", "커스텀 에러가 발생했습니다."),
+    VALID_ERROR(HttpStatus.BAD_REQUEST, "T002", "validError")
+    //사용자
+
+
+
+    //상품
+    
+
+
+    //주문
+
+
+
+
+    //결제
+
+
+
+
+    //포인트
+
+
+
+
+    ;
+
+    private final HttpStatus status;
+    private final String code;
+    private final String message;
+}
