@@ -9,13 +9,13 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
     //temp error code
     TEMP_ERROR(HttpStatus.BAD_REQUEST, "T001", "커스텀 에러가 발생했습니다."),
-    VALID_ERROR(HttpStatus.BAD_REQUEST, "T002", "validError")
+    VALID_ERROR(HttpStatus.BAD_REQUEST, "T002", "validError"),
     //사용자
 
 
 
     //상품
-    
+    PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "P001", "상품을 찾을 수 없습니다."),
 
 
     //주문
