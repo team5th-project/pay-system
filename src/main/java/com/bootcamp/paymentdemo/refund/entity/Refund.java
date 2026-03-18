@@ -17,20 +17,24 @@ import java.time.LocalDateTime;
 @Getter
 public class Refund extends BaseEntity {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // 결제금액=환불금액(전액)
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "payment_id", nullable = false, unique = true)
     private Payment payment;
 
+    // 환불 사유
     @Column(nullable = false)
     private String reason;
 
+    // 환불 상태 (요청/완료/실패)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RefundStatus refundStatus;
 
+    // 환불 처리시각
     @Column(nullable = false)
     private LocalDateTime refundedAt;
 
