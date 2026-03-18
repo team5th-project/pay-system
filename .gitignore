@@ -36,7 +36,6 @@ bin/
 Thumbs.db
 
 # Application
-application-local.yml
 application-secret.yml
 
 # Logs

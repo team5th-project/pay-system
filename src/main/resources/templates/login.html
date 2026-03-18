@@ -4,24 +4,160 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}">
-    <title>로그인 - CommerceHub</title>
+    <title>로그인 - 오조의마법사</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <script th:src="@{/js/theme.js}"></script>
     <script th:src="@{/js/cookie-util.js}"></script>
     <script th:src="@{/js/app-config.js}"></script>
     <script th:src="@{/js/api-handler.js}"></script>
     <script th:src="@{/js/api-validator.js}"></script>
+    <style>
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1.5rem;
+            background:
+                radial-gradient(circle at top left, rgba(255, 255, 255, 0.95), transparent 32%),
+                radial-gradient(circle at top right, rgba(255, 214, 230, 0.9), transparent 28%),
+                linear-gradient(135deg, #fff7fb 0%, #ffeaf4 45%, #ffd6e7 100%);
+        }
+
+        [data-theme="dark"] .login-page {
+            background:
+                radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent 30%),
+                radial-gradient(circle at top right, rgba(244, 114, 182, 0.18), transparent 25%),
+                linear-gradient(135deg, #2b1320 0%, #3f1b30 45%, #5a2440 100%);
+        }
+
+        .login-shell {
+            width: 100%;
+            max-width: 430px;
+        }
+
+        .login-brand {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-brand h1 {
+            font-size: 2.75rem;
+            margin-bottom: 0.6rem;
+            color: #c2185b;
+            text-shadow: 0 10px 30px rgba(255, 105, 180, 0.18);
+        }
+
+        [data-theme="dark"] .login-brand h1 {
+            color: #ffd1e6;
+        }
+
+        .login-brand p {
+            color: #9d4b73;
+            font-weight: 500;
+        }
+
+        [data-theme="dark"] .login-brand p {
+            color: #f5bdd8;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid rgba(255, 182, 211, 0.7);
+            box-shadow: 0 24px 60px rgba(214, 51, 132, 0.18);
+            backdrop-filter: blur(14px);
+        }
+
+        [data-theme="dark"] .login-card {
+            background: rgba(36, 18, 28, 0.88);
+            border-color: rgba(255, 182, 211, 0.22);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.38);
+        }
+
+        .login-title {
+            text-align: center;
+            color: #ad1457;
+        }
+
+        [data-theme="dark"] .login-title {
+            color: #ffd1e6;
+        }
+
+        .login-page .form-input {
+            background: rgba(255, 255, 255, 0.82);
+            border-color: #f6b2cc;
+        }
+
+        .login-page .form-input:focus {
+            border-color: #ec4899;
+            box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.15);
+        }
+
+        [data-theme="dark"] .login-page .form-input {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 182, 211, 0.28);
+        }
+
+        .login-primary-btn {
+            background: linear-gradient(135deg, #ff6fae 0%, #ff4f9a 45%, #f72585 100%);
+            box-shadow: 0 14px 30px rgba(247, 37, 133, 0.28);
+        }
+
+        .login-primary-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #ff5ca3 0%, #ff3f8f 45%, #e91e63 100%);
+        }
+
+        .login-outline-btn {
+            border-color: #f06292;
+            color: #d81b60;
+            background: rgba(255, 255, 255, 0.55);
+        }
+
+        .login-outline-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #ff8fbd 0%, #f06292 100%);
+            border-color: #f06292;
+        }
+
+        [data-theme="dark"] .login-outline-btn {
+            color: #ffd1e6;
+            border-color: #ff8fbd;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .login-helper {
+            color: #8c4a68;
+        }
+
+        [data-theme="dark"] .login-helper {
+            color: #e7bdd0;
+        }
+
+        .login-divider {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(240, 120, 170, 0.28);
+        }
+
+        .login-theme-toggle {
+            background: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 10px 24px rgba(214, 51, 132, 0.16);
+        }
+
+        [data-theme="dark"] .login-theme-toggle {
+            background: rgba(255, 255, 255, 0.08);
+        }
+    </style>
 </head>
 <body>
-    <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary);">
-        <div style="width: 100%; max-width: 400px; padding: 2rem;">
-            <div style="text-align: center; margin-bottom: 2rem;">
-                <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">🏪 CommerceHub</h1>
-                <p style="color: var(--text-secondary);">통합 커머스 플랫폼</p>
+    <div class="login-page">
+        <div class="login-shell">
+            <div class="login-brand">
+                <h1>🏪 오조의마법사</h1>
+                <p>5조 커머스 플랫폼</p>
             </div>
 
-            <div class="card">
-                <div class="card-header" style="text-align: center;">로그인</div>
+            <div class="card login-card">
+                <div class="card-header login-title">로그인</div>
                 <div class="card-body">
                     <div id="error-message" class="alert alert-danger" style="margin-bottom: 1rem; display: none;">
                         <strong>⚠️ 로그인 실패</strong><br>
@@ -38,19 +174,19 @@
                             <input type="password" id="password" class="form-input" placeholder="••••••••" required>
                         </div>
 
-                        <button type="submit" class="btn btn-primary" style="width: 100%;">로그인</button>
+                        <button type="submit" class="btn btn-primary login-primary-btn" style="width: 100%;">로그인</button>
                     </form>
 
                     <div style="margin-top: 1.5rem; text-align: center;">
-                        <p style="color: var(--text-secondary); margin-bottom: 1rem;">계정이 없으신가요?</p>
-                        <a href="/pages/register" class="btn btn-outline" style="width: 100%;">회원가입</a>
+                        <p class="login-helper" style="margin-bottom: 1rem;">계정이 없으신가요?</p>
+                        <a href="/pages/register" class="btn btn-outline login-outline-btn" style="width: 100%;">회원가입</a>
                     </div>
 
-                    <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
-                        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem;">
+                    <div class="login-divider">
+                        <p class="login-helper" style="font-size: 0.875rem; margin-bottom: 0.5rem;">
                             <strong>테스트 계정:</strong>
                         </p>
-                        <ul style="color: var(--text-secondary); font-size: 0.875rem; list-style: none; padding: 0;">
+                        <ul class="login-helper" style="font-size: 0.875rem; list-style: none; padding: 0;">
                             <li>📧 admin@test.com / admin</li>
                         </ul>
                     </div>
@@ -58,7 +194,7 @@
             </div>
 
             <div style="text-align: center; margin-top: 2rem;">
-                <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()">🌙</button>
+                <button id="theme-toggle" class="theme-toggle login-theme-toggle" onclick="toggleTheme()">🌙</button>
             </div>
         </div>
     </div>

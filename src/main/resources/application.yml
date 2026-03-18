@@ -1,22 +1,12 @@
 spring:
   application:
     name: payment-demo
+  profiles:
+    active: local
 
   # 클라이언트 API 계약 설정 파일 import
   config:
     import: optional:classpath:client-api-config.yml
-
-  thymeleaf:
-    cache: false
-    prefix: classpath:/templates/
-    suffix: .html
-    mode: HTML
-    encoding: UTF-8
-
-  security:
-    user:
-      name: demo
-      password: demo123
 
 server:
   port: 8080
@@ -39,15 +29,3 @@ jwt:
   token-validity-in-seconds: ${JWT_VALIDITY:86400}  # 24 hours
 
 
-# UI Branding Configuration
-app:
-  ui:
-    branding:
-      app-name: CommerceHub
-      tagline: 통합 커머스 플랫폼
-      logo-text: 🏪 CommerceHub
-
-logging:
-  level:
-    com.bootcamp.paymentdemo: DEBUG
-    org.springframework.security: INFO

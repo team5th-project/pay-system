@@ -31,7 +31,11 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
     // h2 database
+    implementation 'org.springframework.boot:spring-boot-h2console'
     runtimeOnly 'com.h2database:h2'
+
+    // MySQL database
+    runtimeOnly 'com.mysql:mysql-connector-j'
 
     // Configuration Properties
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'

@@ -1,3 +1,5 @@
+-- 나중에 세팅 완료후 파일명 변경하세요. by tutor hong
+
 INSERT INTO products (id, name, price, stock) VALUES (1, '고양이모래1', 50000, 10);
 INSERT INTO products (id, name, price, stock) VALUES (2, '고양이모래2', 35000, 5);
 INSERT INTO products (id, name, price, stock) VALUES (3, '배변패드 10set', 40000, 20);
