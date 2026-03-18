@@ -4,6 +4,7 @@ import com.bootcamp.paymentdemo.order.entity.Order;
 import java.util.List;
 
 public record OrderDetailResponse(
+        String orderUid,
         String orderNumber,
         Long totalAmount,
         String status,
@@ -12,6 +13,7 @@ public record OrderDetailResponse(
 ) {
     public static OrderDetailResponse from(Order order) {
         return new OrderDetailResponse(
+                order.getOrderUid(),
                 order.getOrderNumber(),
                 order.getTotalAmount(),
                 order.getStatus().name(),

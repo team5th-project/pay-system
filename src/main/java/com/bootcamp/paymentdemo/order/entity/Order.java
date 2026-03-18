@@ -6,8 +6,6 @@ import com.bootcamp.paymentdemo.common.exception.ServiceException;
 import com.bootcamp.paymentdemo.order.enums.OrderStatus;
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -29,6 +27,9 @@ public class Order extends BaseEntity {
     private Long totalAmount;
 
     @Column(nullable = false, unique = true)
+    private String orderUid;
+
+    @Column(nullable = false, unique = true)
     private String orderNumber;
 
     @Enumerated(EnumType.STRING)
@@ -40,9 +41,10 @@ public class Order extends BaseEntity {
 
     @Builder
     private Order(Long userId, Long totalAmount,
-                  String orderNumber, OrderStatus status) {
+                  String orderUid, String orderNumber, OrderStatus status) {
         this.userId = userId;
         this.totalAmount = totalAmount;
+        this.orderUid = orderUid;
         this.orderNumber = orderNumber;
         this.status = status;
     }
@@ -52,20 +54,30 @@ public class Order extends BaseEntity {
         return Order.builder()
                 .userId(userId)
                 .totalAmount(totalAmount)
+                .orderUid(generateOrderUid())
                 .orderNumber(generateOrderNumber())
                 .status(OrderStatus.PENDING)
                 .build();
     }
 
-    private static String generateOrderNumber() {
-        String date = LocalDateTime.now()
-                .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+    private static String generateOrderUid() {
         String uuid = UUID.randomUUID()
                 .toString()
-                .replace("-", "");
-        return "ORD-" + date + "-" + uuid;
+                .replace("-", "");  // 32자리
+        return "ORD-" + uuid;
+        // 결과: "ORD-a1b2c3d4e5f122334243243324"
     }
-
+    // 6. TSID 생성 메서드 (임시)
+    private static String generateOrderNumber() {
+        // TODO: TSID 라이브러리 추가 후 변경 예정
+        String temp = UUID.randomUUID()
+                .toString()
+                .replace("-", "")
+                .substring(0, 10)
+                .toUpperCase();
+        return "ORD-" + temp;
+        // 결과: "ORD-A1B2C3D4E5"
+    }
     public void markAsPaid() {
         if (this.status != OrderStatus.PENDING) {
             throw new ServiceException(ErrorCode.INVALID_ORDER_STATUS);
