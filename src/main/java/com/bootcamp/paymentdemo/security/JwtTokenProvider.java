@@ -136,7 +136,8 @@ public class JwtTokenProvider {
      */
     public boolean validateToken(String token) {
         if (blacklistRepository.existsByToken(token)){
-            throw new ServiceException(ErrorCode.JWT_EXPIRED);
+            //token 이 블랙리스트에 들어가있을때
+            throw new ServiceException(ErrorCode.JWT_INVALID);
         }
 
         try {
