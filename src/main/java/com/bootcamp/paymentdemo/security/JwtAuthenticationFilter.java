@@ -5,6 +5,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,6 +26,7 @@ import java.util.Collections;
  * - 예외 처리 개선
  */
 @Component
+@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
@@ -42,18 +44,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         FilterChain filterChain
     ) throws ServletException, IOException {
 
+        log.info("1. 헤더에서 꺼내기 Jwt header: {}",request.getHeader("Authorization"));
         try {
             // 1. Request Header에서 JWT 토큰 추출
             String token = getJwtFromRequest(request);
+            log.info("2. Bearer 이 잘 떼졌나요? {}", token);
 
             if (token != null && jwtTokenProvider.validateToken(token)) {
 
+                log.info("3. 토큰이 잘 검증되어 넘어왔습니다!! ");
                 //인증 객체 생성
                 UsernamePasswordAuthenticationToken authentication =
                         jwtTokenProvider.getAuthentication(token);
 
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                log.info("4. 인증 정보 저장 완료! {}", authentication.getName());
             }
         } catch (ServiceException e) {
             logger.error("JWT 인증 실패", e);

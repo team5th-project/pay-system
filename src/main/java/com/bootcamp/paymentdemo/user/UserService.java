@@ -33,14 +33,14 @@ public class UserService {
     public InternalLoginResponse login(LoginRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail()).orElseThrow(
-                ()-> new ServiceException(ErrorCode.TEMP_ERROR)
+                ()-> new ServiceException(ErrorCode.USER_NOT_FOUND)
         );
-        if(!request.getPassword().equals(user.getPassword())){
-            throw new ServiceException(ErrorCode.WRONG_PASSWORD);
-        }
+//        if(!request.getPassword().equals(user.getPassword())){
+//            throw new ServiceException(ErrorCode.WRONG_PASSWORD);
+//        }
 
         if(!passwordEncoder.matches(request.getPassword(), user.getPassword())){
-            throw new ServiceException(ErrorCode.TEMP_ERROR);
+            throw new ServiceException(ErrorCode.WRONG_PASSWORD);
         }
 
         // access token 과 refresh 토큰을 각각 발급하고
@@ -112,7 +112,7 @@ public class UserService {
     @Transactional
     public String reissue(String refreshToken) {
         if (!jwtTokenProvider.validateToken(refreshToken)){
-            throw new ServiceException(ErrorCode.TEMP_ERROR);
+            throw new ServiceException(ErrorCode.JWT_INVALID);
         }
 
         Long userId = Long.valueOf(jwtTokenProvider.getId(refreshToken));
@@ -121,10 +121,10 @@ public class UserService {
         );
 
         RefreshToken savedToken = refreshTokenRepository.findById(userId).orElseThrow(
-                ()-> new ServiceException(ErrorCode.TEMP_ERROR));
+                ()-> new ServiceException(ErrorCode.JWT_NOT_FOUND));
 
         if(!savedToken.getToken().equals(refreshToken)){
-            throw new ServiceException(ErrorCode.TEMP_ERROR);
+            throw new ServiceException(ErrorCode.JWT_INVALID);
         }
 
         return jwtTokenProvider.createToken(user.getId(), user.getEmail(), user.getUserRole().toString());

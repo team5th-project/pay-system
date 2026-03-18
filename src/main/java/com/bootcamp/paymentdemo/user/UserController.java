@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
 @RestController
+@RequestMapping("/api/auth")
 public class UserController {
 
     private final AuthenticationManager authenticationManager;
@@ -119,9 +120,9 @@ public class UserController {
 
     @PostMapping("/logout")
     public ResponseEntity<CommonResponse<Void>> logout(
-            @RequestHeader String refreshToken){
+            @RequestHeader("Authorization") String accessToken){
 
-        userService.logout(refreshToken);
+        userService.logout(accessToken);
 
         return CommonResponseHandler.success(HttpStatus.OK);
     }

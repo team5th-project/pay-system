@@ -9,6 +9,7 @@ import io.jsonwebtoken.security.SecurityException;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -28,6 +29,7 @@ import java.util.List;
  */
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JwtTokenProvider {
 
     @Value("${jwt.secret:commercehub-secret-key-for-demo-please-change-this-in-production-environment}")
@@ -152,13 +154,17 @@ public class JwtTokenProvider {
             // - MalformedJwtException: 잘못된 형식
             // - SignatureException: 서명 오류
         } catch (ExpiredJwtException e) {
+            log.error("Expired Jwt Exception");
             throw new ServiceException(ErrorCode.JWT_EXPIRED);
         } catch (MalformedJwtException | IllegalArgumentException e) {
+            log.error("토큰 형식 오류 (Malformed Jwt Exception");
             throw new ServiceException(ErrorCode.JWT_INVALID);
             // 토큰이 애초에 형식이 이상하거나 비어있을때
         } catch (UnsupportedJwtException e) {
+            log.error("Unsupported Jwt Exception");
             throw new ServiceException(ErrorCode.JWT_INVALID);
         } catch (SignatureException e) {
+            log.error("위조된 토큰!!! 조 심 해 ");
             throw new ServiceException(ErrorCode.JWT_INVALID);
             // 토큰이 위조의 위험이 있습니다요 조심해!!!
         }

@@ -15,6 +15,7 @@ public enum ErrorCode {
     JWT_INVALID(HttpStatus.UNAUTHORIZED, "U002", "사용할 수 없는 토큰입니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U003", "사용자를 찾을 수 없습니다."),
     WRONG_PASSWORD(HttpStatus.BAD_REQUEST, "U004", "잘못된 비밀번호입니다."),
+    JWT_NOT_FOUND(HttpStatus.NOT_FOUND, "U005", "토큰을 찾을 수 없습니다."),
 
     //상품
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "P001", "상품을 찾을 수 없습니다."),

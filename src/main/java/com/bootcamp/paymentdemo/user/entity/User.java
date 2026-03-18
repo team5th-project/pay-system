@@ -1,6 +1,7 @@
 package com.bootcamp.paymentdemo.user.entity;
 
 import com.bootcamp.paymentdemo.common.BaseEntity;
+import com.bootcamp.paymentdemo.point.entity.MembershipGrade;
 import com.bootcamp.paymentdemo.user.dto.SignupRequest;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
