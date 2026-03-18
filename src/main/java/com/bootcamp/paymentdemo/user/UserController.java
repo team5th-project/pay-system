@@ -12,10 +12,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.HashMap;
@@ -101,22 +98,17 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<CommonResponse<GetMyInfoResponse>> getCurrentUser(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-//
-//        String email = principal.getName();
-//
-//        // TODO: 구현
-//        // 데이터베이스에서 사용자 정보 조회
-//        // customerUid 생성은 조회 한 사용자 정보로 조합하여 생성, 추천 조합 : CUST_{userId}_{rand6:난수}
-//        // 임시 구현
-//        Map<String, Object> response = new HashMap<>();
-//        response.put("success", true);
-//        response.put("email", email);
-//        response.put("customerUid", "CUST_" + Math.abs(email.hashCode()));  // PortOne 고객 UID
-//        response.put("name", email.split("@")[0]);  // 이메일에서 이름 추출
-//        response.put("phone", "010-0000-0000");  // Kg 이니시스 전화번호 필수
-//        response.put("pointBalance", 1000L);  // 포인트 잔액
 
         GetMyInfoResponse response= userService.getMyInfo(userDetails.getUserId());
         return CommonResponseHandler.success(HttpStatus.OK, response);
     }
+
+    @PostMapping("/reissue")
+    public ResponseEntity<CommonResponse<String>> reissue(
+            @RequestHeader String refreshToken){
+
+        String response = userService.reissue(refreshToken);
+        return CommonResponseHandler.success(HttpStatus.OK, response);
+    }
+
 }

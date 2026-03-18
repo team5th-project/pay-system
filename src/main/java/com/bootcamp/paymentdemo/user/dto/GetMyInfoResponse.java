@@ -1,6 +1,6 @@
 package com.bootcamp.paymentdemo.user.dto;
 
-import com.bootcamp.paymentdemo.user.User;
+import com.bootcamp.paymentdemo.user.entity.User;
 
 public record GetMyInfoResponse(
         String email,

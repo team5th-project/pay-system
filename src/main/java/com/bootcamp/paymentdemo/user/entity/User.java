@@ -1,8 +1,10 @@
-package com.bootcamp.paymentdemo.user;
+package com.bootcamp.paymentdemo.user.entity;
 
 import com.bootcamp.paymentdemo.common.BaseEntity;
+import com.bootcamp.paymentdemo.user.dto.SignupRequest;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -33,15 +35,25 @@ public class User extends BaseEntity {
     private UserRole userRole;
 
     @Min(0)
-    private int pointBalance;
+    private Long pointBalance;
 
-    public User(String name, String customerUid, String email, String password, String phone) {
+    @Column(nullable = false)
+    private Long totalOrderAmount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private MembershipGrade membershipGrade;
+
+    @Builder
+    public User(String name, String email, String password, String phone) {
         this.name = name;
-        this.customerUid = customerUid;
+        this.customerUid = null;
         this.email = email;
         this.password = password;
         this.phone = phone;
         this.userRole = UserRole.USER;
-        this.pointBalance = 0;
+        this.pointBalance = 0L;
+        this.totalOrderAmount = 0L;
+        this.membershipGrade = MembershipGrade.NORMAL;
     }
 }

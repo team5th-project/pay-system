@@ -1,6 +1,5 @@
 package com.bootcamp.paymentdemo.security;
 
-import com.bootcamp.paymentdemo.user.User;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;

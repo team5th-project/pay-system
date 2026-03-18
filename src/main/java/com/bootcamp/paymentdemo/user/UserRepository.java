@@ -1,5 +1,6 @@
 package com.bootcamp.paymentdemo.user;
 
+import com.bootcamp.paymentdemo.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
