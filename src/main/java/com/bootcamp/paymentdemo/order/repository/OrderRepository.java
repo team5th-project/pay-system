@@ -5,6 +5,7 @@ import com.bootcamp.paymentdemo.order.enums.OrderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
@@ -20,4 +21,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             OrderStatus status,
             LocalDateTime dateTime
     );
+    // 소영 추가.
+    Optional<Order> findByOrderUid(String orderUid);
 }
