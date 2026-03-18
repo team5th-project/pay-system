@@ -26,8 +26,11 @@ public enum ErrorCode {
 
 
     //결제
+    INVALID_PAYMENT_AMOUNT(HttpStatus.BAD_REQUEST, "PAY001", "유효하지 않은 결제 금액입니다."),
 
 
+    //환불
+    INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, "R001", "환불은 요청 상태에서만 상태 변경이 가능합니다.")
 
 
     //포인트
