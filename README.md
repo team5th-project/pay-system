@@ -52,7 +52,40 @@
 
 ## 🚀 빠른 시작
 
-### 1. 프로젝트 실행
+### 1. 환경변수 파일 준비
+
+이 프로젝트는 루트 경로의 `.env` 파일을 시작 시 자동으로 로드합니다.
+
+```bash
+# 예시 파일 복사
+cp .env.example .env
+```
+
+`.env`에는 `application.yml`에서 사용하는 외부 설정 값을 넣습니다.
+
+```env
+PORTONE_API_SECRET=
+PORTONE_STORE_ID=
+PORTONE_CHANNEL_KG=
+PORTONE_CHANNEL_TOSS=
+JWT_SECRET=
+JWT_VALIDITY=86400
+```
+
+**설명:**
+- `PORTONE_API_SECRET`: PortOne REST API Secret
+- `PORTONE_STORE_ID`: PortOne Store ID
+- `PORTONE_CHANNEL_KG`: 일반 결제용 KG Inicis 채널 키
+- `PORTONE_CHANNEL_TOSS`: 구독/빌링키용 Toss 채널 키
+- `JWT_SECRET`: JWT 서명용 시크릿 키
+- `JWT_VALIDITY`: JWT 만료 시간(초), 기본값 `86400`
+
+**주의사항:**
+- `.env.example`은 예시 템플릿이며, 실제 비밀값은 `.env`에만 입력하세요.
+- `.env`는 `.gitignore`에 포함되어 있어 Git에 커밋되지 않습니다.
+- `.env` 파일이 없어도 애플리케이션은 실행되지만, `application.yml`의 기본값이 사용됩니다.
+
+### 2. 프로젝트 실행
 
 ```bash
 # Gradle로 실행
@@ -62,13 +95,13 @@
 # PaymentDemoApplication.java 메인 클래스 실행
 ```
 
-### 2. 브라우저 접속
+### 3. 브라우저 접속
 
 ```
 http://localhost:8080
 ```
 
-### 3. 기본 계정 (Spring Security)
+### 4. 기본 계정 (Spring Security)
 
 현재 데모 버전에서는 별도 로그인 없이 사용 가능합니다.
 
@@ -123,7 +156,30 @@ src/
 
 ## ⚙️ 설정 가이드
 
-### 1. PortOne 설정
+### 1. 환경변수 기반 설정
+
+`src/main/resources/application.yml`은 다음 값을 환경변수에서 읽습니다:
+
+```yaml
+portone:
+  api:
+    secret: ${PORTONE_API_SECRET:your-api-secret}
+  store:
+    id: ${PORTONE_STORE_ID:your-store-id}
+  channel:
+    kg-inicis: ${PORTONE_CHANNEL_KG:your-kg-inicis-channel-key}
+    toss: ${PORTONE_CHANNEL_TOSS:your-toss-channel-key}
+
+jwt:
+  secret: ${JWT_SECRET:commercehub-secret-key-for-demo-please-change-this-in-production-environment}
+  token-validity-in-seconds: ${JWT_VALIDITY:86400}
+```
+
+로컬 개발 시에는 프로젝트 루트의 `.env` 파일을 사용하면 됩니다.
+
+---
+
+### 2. PortOne 설정
 
 `src/main/resources/application.yml` 파일에서 PortOne 정보를 설정합니다:
 
@@ -146,7 +202,7 @@ portone:
 
 ---
 
-### 2. API 계약 설정 (가장 중요!)
+### 3. API 계약 설정 (가장 중요!)
 
 `src/main/resources/client-api-config.yml` 파일에서 API 계약을 정의합니다.
 
@@ -221,7 +277,7 @@ const url = await buildApiUrl('confirm-payment', { paymentId: 'pay_123' });
 
 ---
 
-### 3. 동적 API 목록 표시
+### 4. 동적 API 목록 표시
 
 각 페이지는 필요한 API 목록을 `client-api-config.yml`에서 동적으로 읽어와 화면에 표시합니다.
 
