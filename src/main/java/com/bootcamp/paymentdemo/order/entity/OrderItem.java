@@ -5,9 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Getter
-@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "order_items")
 public class OrderItem extends BaseEntity {
@@ -27,15 +25,24 @@ public class OrderItem extends BaseEntity {
     private String productName;
 
     @Column(nullable = false)
-    private int price;
+    private Long price;
 
     @Column(nullable = false)
     private int quantity;
 
-    //정적 팩토리 메서드
 
+    @Builder
+    private OrderItem(Order order, String productId,
+                      String productName, Long price, int quantity) {
+        this.order = order;
+        this.productId = productId;
+        this.productName = productName;
+        this.price = price;
+        this.quantity = quantity;
+    }
+    //정적 팩토리 메서드
     public static OrderItem create(Order order, String productId,
-                                   String productName, int price, int quantity) {
+                                   String productName, Long price, int quantity) {
         return OrderItem.builder()
                 .order(order)
                 .productId(productId)

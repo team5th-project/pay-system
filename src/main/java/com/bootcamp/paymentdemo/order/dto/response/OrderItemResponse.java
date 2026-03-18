@@ -12,7 +12,7 @@ public record OrderItemResponse(
         return new OrderItemResponse(
                 item.getProductId(),
                 item.getProductName(),
-                (long) item.getPrice(),
+                item.getPrice(),
                 item.getQuantity()
         );
     }

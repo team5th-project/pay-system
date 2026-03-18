@@ -4,7 +4,6 @@ import com.bootcamp.paymentdemo.order.entity.Order;
 import java.util.List;
 
 public record OrderDetailResponse(
-        String orderId,
         String orderNumber,
         Long totalAmount,
         String status,
@@ -13,9 +12,8 @@ public record OrderDetailResponse(
 ) {
     public static OrderDetailResponse from(Order order) {
         return new OrderDetailResponse(
-                String.valueOf(order.getId()),
                 order.getOrderNumber(),
-                (long) order.getTotalAmount(),
+                order.getTotalAmount(),
                 order.getStatus().name(),
                 order.getOrderItems().stream()
                         .map(OrderItemResponse::from)
