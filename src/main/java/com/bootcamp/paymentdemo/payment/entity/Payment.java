@@ -4,6 +4,7 @@ import com.bootcamp.paymentdemo.common.BaseEntity;
 import com.bootcamp.paymentdemo.payment.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -41,4 +42,13 @@ public class Payment extends BaseEntity {
 
     // 결제 시도 시각과 상태 변경 시각은 BaseEntity 필드값으로 관리
 
+
+    @Builder
+    public Payment(String paymentUid, String transactionId, Order order, int amount, PaymentStatus paymentStatus) {
+        this.paymentUid = paymentUid;
+        this.transactionId = transactionId;
+        this.order = order;
+        this.amount = amount;
+        this.paymentStatus = paymentStatus;
+    }
 }
