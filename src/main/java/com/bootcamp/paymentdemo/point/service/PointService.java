@@ -1,6 +1,7 @@
 package com.bootcamp.paymentdemo.point.service;
 
 import com.bootcamp.paymentdemo.point.repository.MembershipPolicyRepository;
+import com.bootcamp.paymentdemo.point.repository.MembershipRepository;
 import com.bootcamp.paymentdemo.point.repository.PointTransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,7 @@ public class PointService {
 
     private final PointTransactionRepository pointTransactionRepository;
     private final MembershipPolicyRepository membershipPolicyRepository;
+    private final MembershipRepository membershipRepository;
 
     // 포인트 적립
     @Transactional

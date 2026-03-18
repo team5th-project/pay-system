@@ -1,4 +1,4 @@
-package com.bootcamp.paymentdemo.point;
+package com.bootcamp.paymentdemo.point.event;
 
 import com.bootcamp.paymentdemo.point.service.PointService;
 import lombok.RequiredArgsConstructor;

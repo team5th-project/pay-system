@@ -21,9 +21,11 @@ public class MembershipPolicy extends BaseEntity {
     @Column(nullable = false, unique = true)
     private MembershipGrade grade;
 
+    // 해당 등급급의 최소 결제 금액 기준
     @Column(nullable = false)
     private int minAmount;
 
+    // 해당 등급의 최대 결제 금액 기준(VVIP는 상한선 없어서 NULL)
     @Column
     private Integer maxAmount;
 
