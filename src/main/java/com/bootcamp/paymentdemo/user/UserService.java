@@ -3,8 +3,10 @@ package com.bootcamp.paymentdemo.user;
 import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
 import com.bootcamp.paymentdemo.security.JwtTokenProvider;
-import com.bootcamp.paymentdemo.security.refreshtoken.RefreshToken;
-import com.bootcamp.paymentdemo.security.refreshtoken.RefreshTokenRepository;
+import com.bootcamp.paymentdemo.security.token.BlacklistRepository;
+import com.bootcamp.paymentdemo.security.token.BlacklistToken;
+import com.bootcamp.paymentdemo.security.token.RefreshToken;
+import com.bootcamp.paymentdemo.security.token.RefreshTokenRepository;
 import com.bootcamp.paymentdemo.user.dto.*;
 import com.bootcamp.paymentdemo.user.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -23,11 +25,12 @@ public class UserService {
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
+    private final BlacklistRepository blacklistRepository;
 //    private final MembershipService membershipService;
 
     // 1. login
     @Transactional
-    public LoginResponse login(LoginRequest request) {
+    public InternalLoginResponse login(LoginRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail()).orElseThrow(
                 ()-> new ServiceException(ErrorCode.TEMP_ERROR)
@@ -52,7 +55,7 @@ public class UserService {
         refreshTokenRepository.save(tokenEntity);
         // 토큰 파싱 로직
 
-        return LoginResponse.of(request);
+        return InternalLoginResponse.of(user, accessToken);
     }
 
     // 회원가입
@@ -73,6 +76,26 @@ public class UserService {
 //        membershipService.createMembership(user.getId());
 
         return SignupResponse.of(user);
+    }
+
+    //logout
+    @Transactional
+    public void logout(String accessToken) {
+        // 1 access 토큰 가져오기
+        String token = accessToken.substring(7);
+        Long userId = Long.valueOf(jwtTokenProvider.getId(token));
+
+        // 2. 토큰에서 원래의 만료 시간 추출
+        LocalDateTime expirationTime = jwtTokenProvider.getExpirationDateTime(token);
+
+        // 블랙리스트 등록
+        BlacklistToken blacklistToken = BlacklistToken.builder()
+                .token(token)
+                .expirationTime(expirationTime)
+                .build();
+
+        blacklistRepository.save(blacklistToken);
+        refreshTokenRepository.deleteById(userId);
     }
 
     // 현재 로그인 한 사용자의 정보 출력
@@ -106,6 +129,7 @@ public class UserService {
 
         return jwtTokenProvider.createToken(user.getId(), user.getEmail(), user.getUserRole().toString());
     }
+
 
 
 }

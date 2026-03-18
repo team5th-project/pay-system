@@ -2,10 +2,13 @@ package com.bootcamp.paymentdemo.security;
 
 import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
+import com.bootcamp.paymentdemo.security.token.BlacklistRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SecurityException;
 import io.jsonwebtoken.security.SignatureException;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -14,6 +17,8 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 
@@ -22,15 +27,21 @@ import java.util.List;
  * 개선할 부분: Refresh Token, Token Expiry 관리, Claims 커스터마이징 등
  */
 @Component
+@RequiredArgsConstructor
 public class JwtTokenProvider {
 
-    private final SecretKey secretKey;
-    private final long tokenValidityInMilliseconds;
+    @Value("${jwt.secret:commercehub-secret-key-for-demo-please-change-this-in-production-environment}")
+    private String secret;
 
-    public JwtTokenProvider(
-        @Value("${jwt.secret:commercehub-secret-key-for-demo-please-change-this-in-production-environment}") String secret,
-        @Value("${jwt.token-validity-in-seconds:86400}") long tokenValidityInSeconds
-    ) {
+    @Value("${jwt.token-validity-in-seconds:86400}")
+    private long tokenValidityInSeconds;
+
+    private SecretKey secretKey;
+    private long tokenValidityInMilliseconds;
+    private final BlacklistRepository blacklistRepository;
+
+    @PostConstruct // 의존성 주입이 완료된 후 실행됨
+    public void init() {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.tokenValidityInMilliseconds = tokenValidityInSeconds * 1000;
     }
@@ -124,6 +135,10 @@ public class JwtTokenProvider {
      * - 상세한 예외 처리
      */
     public boolean validateToken(String token) {
+        if (blacklistRepository.existsByToken(token)){
+            throw new ServiceException(ErrorCode.JWT_EXPIRED);
+        }
+
         try {
             Jwts.parser()
                 .verifyWith(secretKey)
@@ -146,5 +161,18 @@ public class JwtTokenProvider {
             throw new ServiceException(ErrorCode.JWT_INVALID);
             // 토큰이 위조의 위험이 있습니다요 조심해!!!
         }
+    }
+
+    public LocalDateTime getExpirationDateTime(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        Date expiration = claims.getExpiration();
+        return expiration.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
     }
 }

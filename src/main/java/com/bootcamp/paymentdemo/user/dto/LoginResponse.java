@@ -1,12 +1,13 @@
 package com.bootcamp.paymentdemo.user.dto;
 
-public record LoginResponse(
+public record LoginResponse (
+        String id,
         String email
-//        String accessToken
-) {
-    public static LoginResponse of(LoginRequest request){
+){
+    public static LoginResponse of (InternalLoginResponse response){
         return new LoginResponse(
-                request.getEmail()
+                response.id().toString(),
+                response.email()
         );
     }
 }

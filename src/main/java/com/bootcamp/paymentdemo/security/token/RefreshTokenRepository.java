@@ -1,4 +1,4 @@
-package com.bootcamp.paymentdemo.security.refreshtoken;
+package com.bootcamp.paymentdemo.security.token;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

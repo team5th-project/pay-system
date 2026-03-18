@@ -1,4 +1,4 @@
-package com.bootcamp.paymentdemo.security.refreshtoken;
+package com.bootcamp.paymentdemo.security.token;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;

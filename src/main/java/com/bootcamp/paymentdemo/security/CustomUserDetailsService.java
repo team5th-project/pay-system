@@ -1,6 +1,6 @@
-package com.bootcamp.paymentdemo.user;
+package com.bootcamp.paymentdemo.security;
 
-import com.bootcamp.paymentdemo.security.CustomUserDetails;
+import com.bootcamp.paymentdemo.user.UserRepository;
 import com.bootcamp.paymentdemo.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;

@@ -5,18 +5,13 @@ import com.bootcamp.paymentdemo.common.global.CommonResponseHandler;
 import com.bootcamp.paymentdemo.security.CustomUserDetails;
 import com.bootcamp.paymentdemo.security.JwtTokenProvider;
 import com.bootcamp.paymentdemo.user.dto.*;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.security.Principal;
-import java.util.HashMap;
-import java.util.Map;
 
 @RequiredArgsConstructor
 @RestController
@@ -46,9 +41,18 @@ public class UserController {
      * }
      */
     @PostMapping("/login")
-    public ResponseEntity<CommonResponse<LoginResponse>> login(@RequestBody LoginRequest request) {
-        LoginResponse response = userService.login(request);
-        return CommonResponseHandler.success(HttpStatus.OK, response);
+    public ResponseEntity<CommonResponse<LoginResponse>> login(
+            @RequestBody LoginRequest request,
+            HttpServletResponse response) {
+
+        InternalLoginResponse internalResponse = userService.login(request);
+        // access 토큰은 헤더에 넣어서 주고
+        response.addHeader("Authorization", "Bearer "+internalResponse.accessToken());
+
+        // access 토큰을 뺀 정보만 새로 response 로 만들어서 던지기
+        LoginResponse responseDto = LoginResponse.of(internalResponse);
+
+        return CommonResponseHandler.success(HttpStatus.OK, responseDto);
     }
 
     /**
@@ -104,11 +108,23 @@ public class UserController {
     }
 
     @PostMapping("/reissue")
-    public ResponseEntity<CommonResponse<String>> reissue(
+    public ResponseEntity<CommonResponse<Void>> reissue(
+            @RequestHeader String refreshToken,
+            HttpServletResponse response){
+
+        String token = userService.reissue(refreshToken);
+        response.addHeader("Authorization", "Bearer "+token);
+        return CommonResponseHandler.success(HttpStatus.OK);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<CommonResponse<Void>> logout(
             @RequestHeader String refreshToken){
 
-        String response = userService.reissue(refreshToken);
-        return CommonResponseHandler.success(HttpStatus.OK, response);
+        userService.logout(refreshToken);
+
+        return CommonResponseHandler.success(HttpStatus.OK);
     }
+
 
 }
