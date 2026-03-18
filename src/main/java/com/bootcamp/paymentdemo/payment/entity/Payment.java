@@ -3,13 +3,14 @@ package com.bootcamp.paymentdemo.payment.entity;
 import com.bootcamp.paymentdemo.common.BaseEntity;
 import com.bootcamp.paymentdemo.payment.enums.PaymentStatus;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Entity
-@NoArgsConstructor
+@@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @Table(name="payments")
 public class Payment extends BaseEntity {
@@ -23,8 +24,9 @@ public class Payment extends BaseEntity {
     // TODO : imp_uid, pgTxId
 
     @Column()
-    private String transactionId
-    @ManyToOne(fetch = FetchType.LAZY)
+    private String transactionId;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name="order_id", nullable = false)
     private Order order;     // 주문 ID
 
