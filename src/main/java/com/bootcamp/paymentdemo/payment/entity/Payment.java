@@ -32,7 +32,7 @@ public class Payment extends BaseEntity {
     private Order order;     // 주문 ID
 
     @Column(nullable = false)
-    private int amount;     // 결제 금액
+    private Long amount;     // 결제 금액
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
@@ -44,7 +44,7 @@ public class Payment extends BaseEntity {
 
 
     @Builder
-    public Payment(String paymentUid, String transactionId, Order order, int amount, PaymentStatus paymentStatus) {
+    public Payment(String paymentUid, String transactionId, Order order, Long amount, PaymentStatus paymentStatus) {
         this.paymentUid = paymentUid;
         this.transactionId = transactionId;
         this.order = order;
