@@ -1,5 +1,6 @@
 package com.bootcamp.paymentdemo.security;
 
+import com.bootcamp.paymentdemo.common.exception.ServiceException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -7,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -26,9 +28,11 @@ import java.util.Collections;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final AuthenticationEntryPoint authenticationEntryPoint;
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, AuthenticationEntryPoint authenticationEntryPoint) {
         this.jwtTokenProvider = jwtTokenProvider;
+        this.authenticationEntryPoint = authenticationEntryPoint;
     }
 
     @Override
@@ -42,27 +46,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // 1. Request Header에서 JWT 토큰 추출
             String token = getJwtFromRequest(request);
 
-            // 2. 토큰 유효성 검증
             if (token != null && jwtTokenProvider.validateToken(token)) {
-                // 3. 토큰에서 사용자 정보 추출
-                String email = jwtTokenProvider.getEmail(token);
 
-                // 4. 인증 객체 생성
+                //인증 객체 생성
                 UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            email,
-                        null,
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
-                    );
+                        jwtTokenProvider.getAuthentication(token);
 
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // 5. SecurityContext에 인증 정보 설정
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
-        } catch (Exception e) {
+        } catch (ServiceException e) {
             logger.error("JWT 인증 실패", e);
-            // TODO: 구현 - 적절한 에러 응답
+
+            request.setAttribute("exception", e.getErrorCode());
+            authenticationEntryPoint.commence(request, response, null);
+
+            return;
         }
 
         filterChain.doFilter(request, response);

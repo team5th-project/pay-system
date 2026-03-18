@@ -1,0 +1,17 @@
+package com.bootcamp.paymentdemo.user.dto;
+
+import com.bootcamp.paymentdemo.user.User;
+
+public record GetMyInfoResponse(
+        String email,
+        String customerUid,
+        String name
+) {
+    public static GetMyInfoResponse of(User user){
+        return new GetMyInfoResponse(
+                user.getEmail(),
+                user.getCustomerUid(),
+                user.getName()
+        );
+    }
+}

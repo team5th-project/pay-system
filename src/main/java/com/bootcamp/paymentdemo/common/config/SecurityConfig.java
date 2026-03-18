@@ -1,5 +1,11 @@
 package com.bootcamp.paymentdemo.common.config;
 
+<<<<<<< Updated upstream
+=======
+import com.bootcamp.paymentdemo.security.CustomAuthenticationEntryPoint;
+import com.bootcamp.paymentdemo.security.JwtAuthenticationFilter;
+import lombok.RequiredArgsConstructor;
+>>>>>>> Stashed changes
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -24,8 +30,18 @@ import static org.springframework.boot.security.autoconfigure.web.servlet.PathRe
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
+<<<<<<< Updated upstream
+=======
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+
+//    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+//        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+//    }
+>>>>>>> Stashed changes
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -59,6 +75,23 @@ public class SecurityConfig {
                 )
         ;
 
+<<<<<<< Updated upstream
+=======
+                    // 4) 인증 API
+                    .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
+
+                    // 5) 그 외 API는 인증 필요
+                    .requestMatchers("/api/**").authenticated()
+
+                    // 6) 나머지 전부 인증 필요
+                    .anyRequest().authenticated()
+            )
+
+            // JWT 필터 추가
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .exceptionHandling(ex
+                    ->ex.authenticationEntryPoint(customAuthenticationEntryPoint));
+>>>>>>> Stashed changes
 
         return http.build();
     }
