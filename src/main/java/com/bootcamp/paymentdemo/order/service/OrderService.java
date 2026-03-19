@@ -34,8 +34,12 @@ public class OrderService {
                 .mapToLong(item -> item.getQuantity())
                 .sum();   // product팀 api 연동 후 실제 가격으로 변경
 
+        Long usedPoint = request.getUsedPoint() != null
+                ? request.getUsedPoint() : 0L;
+
+
         // 2. 주문 생성
-        Order order = Order.create(userId, totalAmount);
+        Order order = Order.create(userId, totalAmount, usedPoint);
         orderRepository.save(order);
 
         // 3. 주문 상품 생성
@@ -43,6 +47,7 @@ public class OrderService {
 
             // TODO: 상품팀 API 연동 후 아래처럼 사용 예정
 //            Long productIdLong = Long.parseLong(orderItemRequest.getProductId());
+
             OrderItem orderItem = OrderItem.create(
                     order,
                     orderItemRequest.getProductId(),

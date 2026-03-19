@@ -10,6 +10,8 @@ public class OrderCreateRequest {
 
     private List<OrderItemRequest> items;  // 주문할 상품 목록
 
+    private Long usedPoint;
+
     @Getter
     @NoArgsConstructor
     public static class OrderItemRequest {
