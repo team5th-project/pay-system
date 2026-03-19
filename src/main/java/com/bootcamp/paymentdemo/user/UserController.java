@@ -7,6 +7,7 @@ import com.bootcamp.paymentdemo.security.JwtTokenProvider;
 import com.bootcamp.paymentdemo.user.dto.*;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,8 +19,6 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/auth")
 public class UserController {
 
-    private final AuthenticationManager authenticationManager;
-    private final JwtTokenProvider jwtTokenProvider;
     private final UserService userService;
 
     /**
@@ -48,12 +47,13 @@ public class UserController {
 
         InternalLoginResponse internalResponse = userService.login(request);
         // access 토큰은 헤더에 넣어서 주고
-        response.addHeader("Authorization", "Bearer "+internalResponse.accessToken());
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer "+internalResponse.accessToken());
 
         // access 토큰을 뺀 정보만 새로 response 로 만들어서 던지기
         LoginResponse responseDto = LoginResponse.of(internalResponse);
 
-        return CommonResponseHandler.success(HttpStatus.OK, responseDto);
+        return CommonResponseHandler.success(HttpStatus.OK, responseDto, headers);
     }
 
     /**
@@ -114,8 +114,10 @@ public class UserController {
             HttpServletResponse response){
 
         String token = userService.reissue(refreshToken);
-        response.addHeader("Authorization", "Bearer "+token);
-        return CommonResponseHandler.success(HttpStatus.OK);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer "+token);
+        return CommonResponseHandler.success(HttpStatus.OK, null, headers);
     }
 
     @PostMapping("/logout")
