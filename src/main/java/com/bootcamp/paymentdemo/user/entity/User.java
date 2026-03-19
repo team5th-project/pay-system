@@ -1,6 +1,7 @@
 package com.bootcamp.paymentdemo.user.entity;
 
 import com.bootcamp.paymentdemo.common.BaseEntity;
+import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
 import com.bootcamp.paymentdemo.point.entity.MembershipGrade;
 import com.bootcamp.paymentdemo.user.dto.SignupRequest;
