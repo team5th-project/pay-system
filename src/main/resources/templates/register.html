@@ -4,136 +4,567 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}">
-    <title>회원가입 - CommerceHub</title>
+    <title>인증 - 오조의마법사</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <script th:src="@{/js/theme.js}"></script>
     <script th:src="@{/js/cookie-util.js}"></script>
     <script th:src="@{/js/app-config.js}"></script>
     <script th:src="@{/js/api-handler.js}"></script>
     <script th:src="@{/js/api-validator.js}"></script>
+    <style>
+        /* Background Slider */
+        .bg-slider {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+            background: #000;
+        }
+        .bg-slider img {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 2s ease-in-out, transform 10s linear;
+            transform: scale(1.05);
+        }
+        .bg-slider img.active {
+            opacity: 0.8;
+            transform: scale(1);
+        }
+
+        /* Page structural styles */
+        .auth-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1.5rem;
+            position: relative;
+        }
+
+        /* Logo — 밝은 배경과 겹칠 때 대비(반투명 패널 + 그림자) */
+        .auth-brand-logo {
+            position: absolute;
+            top: 2rem;
+            left: 2.5rem;
+            color: #fff;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            z-index: 10;
+            padding: 0.65rem 1rem 0.75rem;
+            border-radius: 14px;
+            
+        }
+        .auth-brand-logo img {
+            display: block;
+            max-height: 250px;
+            width: auto;
+            max-width: min(900px, 90vw);
+            object-fit: contain;
+            filter:
+                drop-shadow(0 0 1px rgba(255, 255, 255, 1))
+                drop-shadow(0 2px 6px rgba(0, 0, 0, 0.28))
+                drop-shadow(0 8px 24px rgba(0, 0, 0, 0.22));
+        }
+        .auth-brand-logo h1 {
+            font-size: 1.25rem;
+            margin: 0;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            line-height: 0;
+        }
+        .auth-brand-logo p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-top: 0.3rem;
+            font-weight: 500;
+        }
+
+        /* 3D Scene */
+        .scene {
+            width: 100%;
+            max-width: 440px;
+            perspective: 1200px;
+            position: relative;
+            z-index: 1;
+            transition: height 0.5s ease-out;
+            min-height: 500px;
+        }
+
+        .auth-card-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0; left: 0;
+            transform-style: preserve-3d;
+            transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .auth-card-container.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            width: 100%;
+            position: absolute;
+            top: 0; left: 0;
+            backface-visibility: hidden;
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255,182,211,0.5);
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 65px rgba(0, 0, 0, 0.25);
+            padding: 3rem 2.5rem;
+            box-sizing: border-box;
+        }
+
+        [data-theme="dark"] .card-face {
+            background: rgba(36, 18, 28, 0.85);
+            border-color: rgba(255, 182, 211, 0.22);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+        }
+
+        .form-title {
+            text-align: center;
+            color: #ad1457;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+        }
+
+        [data-theme="dark"] .form-title {
+            color: #ffd1e6;
+        }
+
+        .form-input {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: #f6b2cc;
+            border-radius: 0.75rem;
+            padding: 0.8rem 1rem;
+            width: 100%;
+        }
+
+        .form-input:focus {
+            border-color: #ec4899;
+            box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.15);
+            outline: none;
+        }
+
+        [data-theme="dark"] .form-input {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 182, 211, 0.28);
+            color: #fff;
+        }
+
+        .login-primary-btn {
+            background: linear-gradient(135deg, #ff6fae 0%, #ff4f9a 45%, #f72585 100%);
+            box-shadow: 0 10px 25px rgba(247, 37, 133, 0.35);
+            border-radius: 0.75rem;
+            padding: 0.85rem;
+            font-size: 1.05rem;
+            font-weight: 600;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            transition: opacity 0.3s, transform 0.2s;
+        }
+
+        .login-primary-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #ff5ca3 0%, #ff3f8f 45%, #e91e63 100%);
+            transform: translateY(-2px);
+        }
+
+        .login-outline-btn {
+            border: 2px solid #f06292;
+            color: #d81b60;
+            background: transparent;
+            border-radius: 0.75rem;
+            padding: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .login-outline-btn:hover:not(:disabled) {
+            background: #f06292;
+            color: #fff;
+        }
+
+        [data-theme="dark"] .login-outline-btn {
+            color: #ffd1e6;
+            border-color: #ff8fbd;
+        }
+
+        [data-theme="dark"] .login-outline-btn:hover:not(:disabled) {
+            background: #ff8fbd;
+            color: #1a0a14;
+        }
+
+        .helper-text {
+            color: #8c4a68;
+            text-align: center;
+            margin-top: 1.5rem;
+            margin-bottom: 0.8rem;
+            font-size: 0.95rem;
+        }
+
+        [data-theme="dark"] .helper-text {
+            color: #e7bdd0;
+        }
+
+        .login-divider {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(240, 120, 170, 0.28);
+        }
+
+        .auth-theme-toggle {
+            position: absolute;
+            bottom: 2rem;
+            right: 2rem;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+            transition: background 0.3s;
+            z-index: 10;
+        }
+
+        [data-theme="dark"] .auth-theme-toggle {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+        [data-theme="dark"] .form-label {
+            color: #e2e8f0;
+        }
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        /* 랜딩 버튼 & 애니메이션 */
+        .landing-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            transition: all 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .landing-container.hidden {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.7);
+            pointer-events: none;
+        }
+
+        .landing-btn {
+            padding: 1.2rem 3.5rem;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #ffb6d3;
+            background: transparent;
+            border: 2px solid #ffb6d3;
+            border-radius: 3rem;
+            backdrop-filter: blur(12px);
+            cursor: pointer;
+            transition: all 0.4s ease;
+            box-shadow: 0 0 20px rgba(255, 182, 211, 0.2);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .landing-btn:hover {
+            background: rgba(255, 182, 211, 0.15);
+            box-shadow: 0 0 30px rgba(255, 182, 211, 0.5);
+            transform: translateY(-4px);
+            color: #fff;
+            border-color: #fff;
+        }
+
+        .hidden-scene {
+            display: none !important;
+        }
+
+        .scene.blooming {
+            animation: bloom 1s cubic-bezier(0.175, 0.885, 0.32, 1.2) forwards;
+        }
+
+        @keyframes bloom {
+            0% {
+                transform: scale(0.2) rotate(-15deg);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary);">
-        <div style="width: 100%; max-width: 400px; padding: 2rem;">
-            <div style="text-align: center; margin-bottom: 2rem;">
-                <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">🏪 CommerceHub</h1>
-                <p style="color: var(--text-secondary);">통합 커머스 플랫폼</p>
-            </div>
+    <div class="bg-slider" id="bgSlider">
+        <img src="/images/landing-bg/bg-image-1.png" class="active" alt="bg1">
+        <img src="/images/landing-bg/bg-image-2.png" alt="bg2">
+        <img src="/images/landing-bg/bg-image-3.png" alt="bg3">
+    </div>
 
-            <div class="card">
-                <div class="card-header" style="text-align: center;">회원가입</div>
-                <div class="card-body">
-                    <div id="error-message" class="alert alert-danger" style="margin-bottom: 1rem; display: none;">
-                        <strong>⚠️ 회원가입 실패</strong><br>
-                        <span id="error-text">오류가 발생했습니다.</span>
+    <div class="auth-brand-logo">
+        <h1>
+            <img src="/images/logos/main-logo.png" alt="Pay System">
+        </h1>
+    </div>
+
+    <button id="theme-toggle" class="auth-theme-toggle" onclick="toggleTheme()">🌙</button>
+
+    <div class="auth-page">
+
+        <!-- 초기 랜딩 버튼 -->
+        <div class="landing-container" id="landingContainer">
+            <button class="landing-btn" onclick="showAuth()">입장하기</button>
+        </div>
+
+        <div class="scene hidden-scene" id="scene">
+            <div class="auth-card-container flipped" id="cardContainer">
+                
+                <!-- FRONT: 로그인 폼 -->
+                <div class="card-face card-front" id="loginCard">
+                    <div class="form-title">로그인</div>
+                    
+                    <div id="login-error" class="alert alert-danger" style="margin-bottom: 1rem; display: none;">
+                        <strong>⚠️ 로그인 실패</strong><br>
+                        <span id="login-error-text">이메일 또는 비밀번호가 올바르지 않습니다.</span>
                     </div>
 
-                    <div class="alert alert-info" style="margin-bottom: 1.5rem;">
-                        <strong>학습용 템플릿</strong><br>
-                        회원가입 API를 구현하면 실제로 동작합니다.
+                    <form id="login-form" onsubmit="handleLogin(event)">
+                        <div class="form-group">
+                            <label class="form-label">이메일</label>
+                            <input type="email" id="login-email" class="form-input" placeholder="admin@test.com" required autofocus>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">비밀번호</label>
+                            <input type="password" id="login-password" class="form-input" placeholder="••••••••" required>
+                        </div>
+
+                        <button type="submit" class="login-primary-btn" style="width: 100%; margin-top: 1rem;">로그인</button>
+                    </form>
+
+                    <div>
+                        <p class="helper-text">계정이 없으신가요?</p>
+                        <button type="button" class="login-outline-btn" style="width: 100%;" onclick="flipCard('register')">회원가입 하기</button>
+                    </div>
+
+                    <div class="login-divider">
+                        <p class="helper-text" style="font-size: 0.85rem; margin-bottom: 0.3rem;">
+                            <strong>테스트 계정:</strong>
+                        </p>
+                        <p class="helper-text" style="font-size: 0.85rem; margin-top: 0;">📧 admin@test.com / admin</p>
+                    </div>
+                </div>
+
+                <!-- BACK: 회원가입 폼 -->
+                <div class="card-face card-back" id="registerCard">
+                    <div class="form-title">회원가입</div>
+                    
+                    <div id="register-error" class="alert alert-danger" style="margin-bottom: 1rem; display: none;">
+                        <strong>⚠️ 회원가입 실패</strong><br>
+                        <span id="register-error-text">오류가 발생했습니다.</span>
                     </div>
 
                     <form id="register-form" onsubmit="handleRegister(event)">
                         <div class="form-group">
                             <label class="form-label">이름</label>
-                            <input type="text" id="name" class="form-input" placeholder="홍길동" required>
+                            <input type="text" id="reg-name" class="form-input" placeholder="홍길동" required>
                         </div>
                         <div class="form-group">
                             <label class="form-label">이메일</label>
-                            <input type="email" id="email" class="form-input" placeholder="example@test.com" required>
+                            <input type="email" id="reg-email" class="form-input" placeholder="example@test.com" required>
                         </div>
                         <div class="form-group">
                             <label class="form-label">비밀번호</label>
-                            <input type="password" id="password" class="form-input" placeholder="••••••••" required>
+                            <input type="password" id="reg-password" class="form-input" placeholder="••••••••" required>
                         </div>
                         <div class="form-group">
                             <label class="form-label">비밀번호 확인</label>
-                            <input type="password" id="password-confirm" class="form-input" placeholder="••••••••" required>
+                            <input type="password" id="reg-password-confirm" class="form-input" placeholder="••••••••" required>
                         </div>
                         <div class="form-group">
                             <label class="form-label">전화번호</label>
-                            <input type="tel" id="phone" class="form-input" placeholder="010-1234-5678">
+                            <input type="tel" id="reg-phone" class="form-input" placeholder="010-1234-5678">
                         </div>
 
-                        <button type="submit" class="btn btn-primary" style="width: 100%;">
-                            회원가입
-                        </button>
+                        <button type="submit" class="login-primary-btn" style="width: 100%; margin-top: 1rem;">회원가입</button>
                     </form>
 
-                    <div style="margin-top: 1.5rem; text-align: center;">
-                        <p style="color: var(--text-secondary); margin-bottom: 1rem;">이미 계정이 있으신가요?</p>
-                        <a href="/pages/login" class="btn btn-outline" style="width: 100%;">로그인하기</a>
-                    </div>
-
-                    <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
-                        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem;">
-                            <strong>테스트 계정:</strong>
-                        </p>
-                        <ul style="color: var(--text-secondary); font-size: 0.875rem; list-style: none; padding: 0;">
-                            <li>📧 admin@test.com / admin</li>
-                        </ul>
+                    <div>
+                        <p class="helper-text">이미 계정이 있으신가요?</p>
+                        <button type="button" class="login-outline-btn" style="width: 100%;" onclick="flipCard('login')">로그인 화면으로 돌아가기</button>
                     </div>
                 </div>
-            </div>
 
-            <div style="text-align: center; margin-top: 2rem;">
-                <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()">🌙</button>
             </div>
         </div>
     </div>
 
     <script>
-        async function handleRegister(event) {
+        // --- UI Interactions ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const images = document.querySelectorAll('.bg-slider img');
+            let activeIndex = 0;
+            setInterval(() => {
+                images[activeIndex].classList.remove('active');
+                activeIndex = (activeIndex + 1) % images.length;
+                images[activeIndex].classList.add('active');
+            }, 6000);
+            
+            // Allow forms to render completely before measuring 
+            setTimeout(updateSceneHeight, 50);
+        });
+
+        const cardContainer = document.getElementById('cardContainer');
+        const scene = document.getElementById('scene');
+        const loginCard = document.getElementById('loginCard');
+        const registerCard = document.getElementById('registerCard');
+
+        function updateSceneHeight() {
+            if (scene.classList.contains('hidden-scene')) return;
+            const isFlipped = cardContainer.classList.contains('flipped');
+            const targetCard = isFlipped ? registerCard : loginCard;
+            if (targetCard && targetCard.offsetHeight > 0) {
+                 scene.style.height = targetCard.offsetHeight + 'px';
+            }
+        }
+
+        function showAuth() {
+            const landingContainer = document.getElementById('landingContainer');
+            landingContainer.classList.add('hidden');
+            
+            scene.classList.remove('hidden-scene');
+            scene.classList.add('blooming');
+            
+            // Allow display block to render then calculate height
+            setTimeout(updateSceneHeight, 50);
+        }
+
+        function flipCard(target) {
+            if (target === 'register') {
+                cardContainer.classList.add('flipped');
+                window.history.pushState({}, '', '/pages/register');
+            } else {
+                cardContainer.classList.remove('flipped');
+                window.history.pushState({}, '', '/pages/login');
+            }
+            setTimeout(updateSceneHeight, 150);
+        }
+
+        window.addEventListener('resize', updateSceneHeight);
+
+
+        // --- Authentication Logic ---
+
+        async function handleLogin(event) {
             event.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const errorMessage = document.getElementById('login-error');
+            const errorText = document.getElementById('login-error-text');
 
-            const name = document.getElementById('name').value;
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const passwordConfirm = document.getElementById('password-confirm').value;
-            const phone = document.getElementById('phone').value;
-            const errorMessage = document.getElementById('error-message');
-            const errorText = document.getElementById('error-text');
-
-            // 에러 메시지 숨기기
             errorMessage.style.display = 'none';
 
-            // 비밀번호 확인
+            try {
+                const result = await makeApiRequest('login', {
+                    body: { email: email, password: password },
+                    returnHeaders: true
+                });
+
+                if (!validateApiResponse('login', result.data, result.headers)) {
+                    errorText.textContent = 'API 응답 형식이 올바르지 않습니다.';
+                    errorMessage.style.display = 'block';
+                    updateSceneHeight();
+                    return;
+                }
+
+                if (result.data.success) {
+                    const authHeader = result.headers['authorization'];
+                    if (authHeader && authHeader.startsWith('Bearer ')) {
+                        const token = authHeader.substring(7);
+                        saveToken(token);
+                        window.location.href = '/';
+                    } else {
+                        errorText.textContent = '토큰을 받을 수 없습니다.';
+                        errorMessage.style.display = 'block';
+                    }
+                } else {
+                    errorText.textContent = result.data.message || '이메일 또는 비밀번호가 올바르지 않습니다.';
+                    errorMessage.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('로그인 오류:', error);
+                errorText.textContent = '로그인 중 오류가 발생했습니다.';
+                errorMessage.style.display = 'block';
+            }
+            setTimeout(updateSceneHeight, 50);
+        }
+
+        async function handleRegister(event) {
+            event.preventDefault();
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+            const passwordConfirm = document.getElementById('reg-password-confirm').value;
+            const phone = document.getElementById('reg-phone').value;
+            const errorMessage = document.getElementById('register-error');
+            const errorText = document.getElementById('register-error-text');
+
+            errorMessage.style.display = 'none';
+
             if (password !== passwordConfirm) {
                 errorText.textContent = '비밀번호가 일치하지 않습니다.';
                 errorMessage.style.display = 'block';
+                updateSceneHeight();
                 return;
             }
 
             try {
                 const result = await makeApiRequest('register', {
-                    body: {
-                        name: name,
-                        email: email,
-                        password: password,
-                        phone: phone
-                    }
+                    body: { name: name, email: email, password: password, phone: phone }
                 });
 
-                // YML 스키마 기반 자동 검증
                 if (!validateApiResponse('register', result)) {
                     errorText.textContent = 'API 응답 형식이 올바르지 않습니다.';
                     errorMessage.style.display = 'block';
+                    updateSceneHeight();
                     return;
                 }
 
                 if (result.success) {
-                    // 회원가입 성공 - 로그인 페이지로 이동
-                    alert('회원가입 성공! 로그인 페이지로 이동합니다.');
-                    window.location.href = '/pages/login';
+                    alert('회원가입 성공! 로그인하여 주세요.');
+                    flipCard('login');
+                    document.getElementById('register-form').reset();
                 } else {
-                    // 회원가입 실패
                     errorText.textContent = result.message || '회원가입에 실패했습니다.';
                     errorMessage.style.display = 'block';
                 }
             } catch (error) {
                 console.error('회원가입 오류:', error);
-
-                // API 미구현 (501) 에러 처리
                 if (error.message && error.message.includes('501')) {
                     errorText.textContent = '⚠️ 회원가입 API가 아직 구현되지 않았습니다. 백엔드 구현 후 다시 시도해주세요.';
                 } else {
@@ -141,9 +572,9 @@
                 }
                 errorMessage.style.display = 'block';
             }
+            setTimeout(updateSceneHeight, 50);
         }
 
-        // 이미 로그인되어 있으면 홈으로 이동
         if (getToken()) {
             window.location.href = '/';
         }
