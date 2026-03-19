@@ -1,0 +1,13 @@
+package com.bootcamp.paymentdemo.refund.service;
+
+import com.bootcamp.paymentdemo.refund.repository.RefundRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Transactional(readOnly = true)
+@Service
+@RequiredArgsConstructor
+public class RefundService {
+    private final RefundRepository refundRepository;
+}
