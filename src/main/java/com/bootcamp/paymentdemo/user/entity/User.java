@@ -6,13 +6,14 @@ import com.bootcamp.paymentdemo.point.entity.MembershipGrade;
 import com.bootcamp.paymentdemo.user.dto.SignupRequest;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Table(name = "users")
 @Entity
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class User extends BaseEntity {
     @Id

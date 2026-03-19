@@ -2,6 +2,7 @@ package com.bootcamp.paymentdemo.security.token;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -21,8 +22,13 @@ public class RefreshToken {
     @Column(nullable = false, length = 500)
     private String token; // 리프레시 토큰 값
 
+    @Builder
     public RefreshToken(Long userId, String token) {
         this.userId = userId;
         this.token = token;
+    }
+
+    public void updateToken(String refreshToken){
+        this.token = refreshToken;
     }
 }

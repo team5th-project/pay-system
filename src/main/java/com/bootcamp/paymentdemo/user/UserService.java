@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class UserService {
 
     private final UserRepository userRepository;
@@ -48,12 +48,23 @@ public class UserService {
         String accessToken = jwtTokenProvider.createToken(user.getId(), user.getEmail(), user.getUserRole().toString());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
 
-//        refresh token 저장 ... 로직
-        RefreshToken tokenEntity = refreshTokenRepository.findById(user.getId())
-                .orElse(new RefreshToken(user.getId(), refreshToken));
+        // refresh token 은 로그인 할 때 마다 새로 생성됩니다
+        // 만약에 repository 에 이미 사용자의 refresh token 이 존재한다면 갱신하고
+        // repository 에 refresh token 이 없으면 새로 생성합니다.
 
-        refreshTokenRepository.save(tokenEntity);
-        // 토큰 파싱 로직
+        // repository 에 있는지 확인
+        RefreshToken token = refreshTokenRepository.findByUserId(user.getId()).orElse(null);
+
+        if (token != null){
+            token.updateToken(refreshToken); // 있으면 update (dirty checking)
+        } else{
+            refreshTokenRepository.save(
+                    RefreshToken.builder()
+                        .userId(user.getId())
+                        .token(refreshToken)
+                        .build()
+                    ); // 없으면 새로 생성
+        }
 
         return InternalLoginResponse.of(user, accessToken);
     }
