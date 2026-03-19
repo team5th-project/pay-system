@@ -40,6 +40,9 @@ public class OrderService {
 
         // 3. 주문 상품 생성
         request.getItems().forEach(orderItemRequest -> {
+
+            // TODO: 상품팀 API 연동 후 아래처럼 사용 예정
+//            Long productIdLong = Long.parseLong(orderItemRequest.getProductId());
             OrderItem orderItem = OrderItem.create(
                     order,
                     orderItemRequest.getProductId(),
