@@ -23,26 +23,26 @@ public class MembershipPolicy extends BaseEntity {
 
     // 해당 등급급의 최소 결제 금액 기준
     @Column(nullable = false)
-    private int minAmount;
+    private long minAmount;
 
     // 해당 등급의 최대 결제 금액 기준(VVIP는 상한선 없어서 NULL)
     @Column
-    private Integer maxAmount;
+    private Long maxAmount;
 
     @Column(nullable = false)
     private int pointRate;
 
     @Builder
-    private MembershipPolicy(MembershipGrade grade, int minAmount,
-                             Integer maxAmount, int pointRate) {
+    private MembershipPolicy(MembershipGrade grade, long minAmount,
+                             Long maxAmount, int pointRate) {
         this.grade = grade;
         this.minAmount = minAmount;
         this.maxAmount = maxAmount;
         this.pointRate = pointRate;
     }
 
-    public static MembershipPolicy create(MembershipGrade grade, int minAmount,
-                                          Integer maxAmount, int pointRate) {
+    public static MembershipPolicy create(MembershipGrade grade, long minAmount,
+                                          Long maxAmount, int pointRate) {
         return MembershipPolicy.builder()
                 .grade(grade)
                 .minAmount(minAmount)

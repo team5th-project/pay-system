@@ -1,5 +1,8 @@
 package com.bootcamp.paymentdemo.point.service;
 
+import com.bootcamp.paymentdemo.point.dto.MembershipPolicyResponse;
+import com.bootcamp.paymentdemo.point.dto.PointHistoryResponse;
+import com.bootcamp.paymentdemo.point.dto.PointMeResponse;
 import com.bootcamp.paymentdemo.point.entity.MembershipGrade;
 import com.bootcamp.paymentdemo.point.entity.MembershipPolicy;
 import com.bootcamp.paymentdemo.point.entity.PointTransaction;
@@ -13,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -66,10 +70,6 @@ public class PointService {
 
     }
 
-
-    // 포인트 조회 - readOnly 그대로
-    public void getPointHistory() {}
-
     // 등급 갱신
     /**
      * 멤버십 등급 갱신
@@ -84,7 +84,7 @@ public class PointService {
         // 전체 등급 정책 조회 후 누적금액에 맞는 등급 계산
         MembershipGrade newGrade = membershipPolicyRepository.findAll()
                 .stream()
-                .sorted(Comparator.comparingInt(MembershipPolicy::getMinAmount))
+                .sorted(Comparator.comparingLong(MembershipPolicy::getMinAmount))
                 .filter(policy -> policy.getMaxAmount() == null ||
                         user.getTotalOrderAmount() <= policy.getMaxAmount())
                 .findFirst()
@@ -94,6 +94,23 @@ public class PointService {
         user.updateGrade(newGrade);
     }
 
-    // 등급 조회 - readOnly 그대로
-    public void getMembershipGrade() {}
+    // 현재 포인트+등급 조회 (GET /api/points/me)
+    public PointMeResponse getMyPoints(Long userId) {
+        User user = userService.getUser(userId);
+        return PointMeResponse.from(user);
+    }
+
+    // 포인트 거래 내역 조회 (GET /api/points)
+    public PointHistoryResponse getPointHistory(Long userId) {
+        List<PointTransaction> transactions = pointTransactionRepository.findByUserId(userId);
+        return PointHistoryResponse.from(transactions);
+    }
+
+    // 등급 정책 조회 (GET /api/points/grades)
+    public List<MembershipPolicyResponse> getMembershipPolicies() {
+        return membershipPolicyRepository.findAll()
+                .stream()
+                .map(MembershipPolicyResponse::from)
+                .toList();
+    }
 }
