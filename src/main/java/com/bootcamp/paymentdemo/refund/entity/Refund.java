@@ -3,6 +3,7 @@ package com.bootcamp.paymentdemo.refund.entity;
 import com.bootcamp.paymentdemo.common.BaseEntity;
 import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
+import com.bootcamp.paymentdemo.payment.entity.Payment;
 import jakarta.persistence.*;
 import lombok.*;
 

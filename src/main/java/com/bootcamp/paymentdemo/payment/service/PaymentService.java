@@ -88,7 +88,7 @@ public class PaymentService {
         // Payment 객체 상태값 갱신
 
         // Payment 객체 전달 ?
-
+        return null;
     }
 
     private static String createPaymentId() {

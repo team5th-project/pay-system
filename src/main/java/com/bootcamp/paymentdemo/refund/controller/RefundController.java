@@ -11,6 +11,4 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class RefundController {
     private final RefundService refundService;
-
-    @PostMapping
 }
