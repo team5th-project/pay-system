@@ -1,6 +1,8 @@
 package com.bootcamp.paymentdemo.point.entity;
 
 import com.bootcamp.paymentdemo.common.BaseEntity;
+import com.bootcamp.paymentdemo.common.exception.ErrorCode;
+import com.bootcamp.paymentdemo.common.exception.ServiceException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -47,6 +49,9 @@ public class PointTransaction extends BaseEntity {
     // 포인트 적립
     public static PointTransaction earn(Long userId, Long orderId,
                                         int points, LocalDateTime expiredAt) {
+        if (points <= 0) {
+            throw new ServiceException(ErrorCode.INVALID_POINT_AMOUNT);
+        }
         return PointTransaction.builder()
                 .userId(userId)
                 .orderId(orderId)
@@ -58,6 +63,9 @@ public class PointTransaction extends BaseEntity {
 
     // 포인트 사용
     public static PointTransaction use(Long userId, Long orderId, int points) {
+        if (points <= 0) {
+            throw new ServiceException(ErrorCode.INVALID_POINT_AMOUNT);
+        }
         return PointTransaction.builder()
                 .userId(userId)
                 .orderId(orderId)
@@ -68,6 +76,9 @@ public class PointTransaction extends BaseEntity {
 
     // 포인트 소멸
     public static PointTransaction expire(Long userId, int points) {
+        if (points <= 0) {
+            throw new ServiceException(ErrorCode.INVALID_POINT_AMOUNT);
+        }
         return PointTransaction.builder()
                 .userId(userId)
                 .points(-points)
