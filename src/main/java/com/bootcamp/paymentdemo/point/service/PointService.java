@@ -26,7 +26,7 @@ public class PointService {
     private final MembershipPolicyRepository membershipPolicyRepository;
     private final UserService userService;
 
-    // 포인트 차감
+
     /**
      * 포인트 차감
      * 결제 생성 시 PaymentService 에서 호출
@@ -42,7 +42,6 @@ public class PointService {
         pointTransactionRepository.save(PointTransaction.use(userId, orderId, points));
     }
 
-    // 포인트 적립
     /**
      * 포인트 적립
      * 주문 확정 이벤트(OrderConfirmedEvent) 수신 시 PointEventHandler 에서 호출
@@ -69,7 +68,6 @@ public class PointService {
 
     }
 
-    // 등급 갱신
     /**
      * 멤버십 등급 갱신
      * 결제 완료 이벤트(PaymentCompletedEvent) 수신 시 호출 → 등급 업 가능
