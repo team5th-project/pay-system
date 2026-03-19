@@ -48,7 +48,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // 1. Request Header에서 JWT 토큰 추출
             String token = getJwtFromRequest(request);
 
-            if (token != null && jwtTokenProvider.validateToken(token)) {
+            boolean isJwtValid = false;
+            try{
+                isJwtValid = jwtTokenProvider.validateToken(token);
+            }catch (ServiceException e){
+                request.setAttribute("exception", e.getErrorCode());
+            }
+            if (token != null && isJwtValid) {
 
                 //인증 객체 생성
                 UsernamePasswordAuthenticationToken authentication =
@@ -57,13 +63,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
-        } catch (ServiceException e) {
+        } catch (Exception e) {
             logger.error("JWT 인증 실패", e);
-
-            request.setAttribute("exception", e.getErrorCode());
-            authenticationEntryPoint.commence(request, response, null);
-
-            return;
+            throw e;
         }
 
         filterChain.doFilter(request, response);
