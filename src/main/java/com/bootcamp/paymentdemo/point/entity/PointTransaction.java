@@ -85,4 +85,17 @@ public class PointTransaction extends BaseEntity {
                 .type(PointType.EXPIRE)
                 .build();
     }
+
+    // 포인트 환불 (사용한 포인트 복구)
+    public static PointTransaction refund(Long userId, Long orderId, int points) {
+        if (points <= 0) {
+            throw new ServiceException(ErrorCode.INVALID_POINT_AMOUNT);
+        }
+        return PointTransaction.builder()
+                .userId(userId)
+                .orderId(orderId)
+                .points(points) // 복구라서 양수
+                .type(PointType.REFUND)
+                .build();
+    }
 }
