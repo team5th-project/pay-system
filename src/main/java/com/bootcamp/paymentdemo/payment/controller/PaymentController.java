@@ -29,4 +29,12 @@ public class PaymentController {
         return CommonResponseHandler.success(HttpStatus.CREATED,response);
     }
 
+    @GetMapping("/{paymentId}/complete")
+    public ResponseEntity<CommonResponse<CompletePaymentResponse>> completePayment(
+            @PathVariable String paymentId){
+
+        CompletePaymentResponse response = paymentService.completePayment(paymentId);
+        return CommonResponseHandler.success(HttpStatus.OK,response);
+    }
+
 }
