@@ -3,8 +3,8 @@ package com.bootcamp.paymentdemo.point.controller;
 import com.bootcamp.paymentdemo.common.global.CommonResponse;
 import com.bootcamp.paymentdemo.common.global.CommonResponseHandler;
 import com.bootcamp.paymentdemo.point.dto.MembershipPolicyResponse;
+import com.bootcamp.paymentdemo.point.dto.MyPointResponse;
 import com.bootcamp.paymentdemo.point.dto.PointHistoryResponse;
-import com.bootcamp.paymentdemo.point.dto.PointMeResponse;
 import com.bootcamp.paymentdemo.point.service.PointService;
 import com.bootcamp.paymentdemo.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -26,10 +26,10 @@ public class PointController {
 
     // 현재 포인트 + 등급 조회
     @GetMapping("/me")
-    public ResponseEntity<CommonResponse<PointMeResponse>> getMyPoint(
+    public ResponseEntity<CommonResponse<MyPointResponse>> getMyPoint(
             @AuthenticationPrincipal CustomUserDetails userDetails
             ) {
-        PointMeResponse response = pointService.getMyPoints(userDetails.getUserId());
+        MyPointResponse response = pointService.getMyPoints(userDetails.getUserId());
         return CommonResponseHandler.success(HttpStatus.OK, response);
     }
 

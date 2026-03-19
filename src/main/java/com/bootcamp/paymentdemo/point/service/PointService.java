@@ -1,8 +1,8 @@
 package com.bootcamp.paymentdemo.point.service;
 
 import com.bootcamp.paymentdemo.point.dto.MembershipPolicyResponse;
+import com.bootcamp.paymentdemo.point.dto.MyPointResponse;
 import com.bootcamp.paymentdemo.point.dto.PointHistoryResponse;
-import com.bootcamp.paymentdemo.point.dto.PointMeResponse;
 import com.bootcamp.paymentdemo.point.entity.MembershipGrade;
 import com.bootcamp.paymentdemo.point.entity.MembershipPolicy;
 import com.bootcamp.paymentdemo.point.entity.PointTransaction;
@@ -91,9 +91,9 @@ public class PointService {
     }
 
     // 현재 포인트+등급 조회 (GET /api/points/me)
-    public PointMeResponse getMyPoints(Long userId) {
+    public MyPointResponse getMyPoints(Long userId) {
         User user = userService.getUser(userId);
-        return PointMeResponse.from(user);
+        return MyPointResponse.from(user);
     }
 
     // 포인트 거래 내역 조회 (GET /api/points)
