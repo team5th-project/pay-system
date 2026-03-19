@@ -1,14 +1,12 @@
--- 나중에 세팅 완료후 파일명 변경하세요. by tutor hong
-
-INSERT INTO products (id, name, price, stock, url, productCategory) VALUES (1, '고양이모래1', 50000, 10, null, "TOILET");
-INSERT INTO products (id, name, price, stock, url, productCategory) VALUES (2, '고양이모래2', 35000, 5, null, "TOILET");
-INSERT INTO products (id, name, price, stock, url, productCategory) VALUES (3, '배변패드 10set', 40000, 20, null, "TOILET");
-INSERT INTO products (id, name, price, stock, url, productCategory) VALUES (4, '배변패드', 5000, 20, null, "TOILET");
-INSERT INTO products (id, name, price, stock, url, productCategory) VALUES (5, '장난감1', 10000, 20, null, "TOY");
-INSERT INTO products (id, name, price, stock, url, productCategory) VALUES (6, '장난감2', 7000, 10, null, "TOY");
-INSERT INTO products (id, name, price, stock, url, productCategory) VALUES (7, '장난감3', 8500, 10, null, "TOY");
-INSERT INTO products (id, name, price, stock, url, productCategory) VALUES (8, '장난감 리필', 2000, 10, null, "TOY");
-INSERT INTO products (id, name, price, stock, url, productCategory) VALUES (9, '가나디간식 10개', 8500, 30, null, "GROCERY");
-INSERT INTO products (id, name, price, stock, url, productCategory) VALUES (10, '가나디간식 20개', 16000, 2, null, "GROCERY");
-INSERT INTO products (id, name, price, stock, url, productCategory) VALUES (11, '츄르', 5000, 10, null, "GROCERY");
-INSERT INTO products (id, name, price, stock, url, productCategory) VALUES (12, '츄르 세트', 50000, 10, null, "GROCERY");
+INSERT INTO products (id, name, price, stock, url, product_category) VALUES (1, '고양이모래1', 50000, 10, null, 'TOILET');
+INSERT INTO products (id, name, price, stock, url, product_category) VALUES (2, '고양이모래2', 35000, 5, null, 'TOILET');
+INSERT INTO products (id, name, price, stock, url, product_category) VALUES (3, '배변패드 10set', 40000, 20, null, 'TOILET');
+INSERT INTO products (id, name, price, stock, url, product_category) VALUES (4, '배변패드', 5000, 20, null, 'TOILET');
+INSERT INTO products (id, name, price, stock, url, product_category) VALUES (5, '장난감1', 10000, 20, null, 'TOY');
+INSERT INTO products (id, name, price, stock, url, product_category) VALUES (6, '장난감2', 7000, 10, null, 'TOY');
+INSERT INTO products (id, name, price, stock, url, product_category) VALUES (7, '장난감3', 8500, 10, null, 'TOY');
+INSERT INTO products (id, name, price, stock, url, product_category) VALUES (8, '장난감 리필', 2000, 10, null, 'TOY');
+INSERT INTO products (id, name, price, stock, url, product_category) VALUES (9, '가나디간식 10개', 8500, 30, null, 'GROCERY');
+INSERT INTO products (id, name, price, stock, url, product_category) VALUES (10, '가나디간식 20개', 16000, 2, null, 'GROCERY');
+INSERT INTO products (id, name, price, stock, url, product_category) VALUES (11, '츄르', 5000, 10, null, 'GROCERY');
+INSERT INTO products (id, name, price, stock, url, product_category) VALUES (12, '츄르 세트', 50000, 10, null, 'GROCERY');
