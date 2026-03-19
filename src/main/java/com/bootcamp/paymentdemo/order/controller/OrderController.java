@@ -8,11 +8,11 @@ import com.bootcamp.paymentdemo.order.dto.response.OrderCreateResponse;
 import com.bootcamp.paymentdemo.order.dto.response.OrderDetailResponse;
 import com.bootcamp.paymentdemo.order.dto.response.OrderListResponse;
 import com.bootcamp.paymentdemo.order.service.OrderService;
+import com.bootcamp.paymentdemo.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,10 +27,10 @@ public class OrderController {
     //  주문 생성
     @PostMapping
     public ResponseEntity<CommonResponse<OrderCreateResponse>> createOrder(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody OrderCreateRequest request
     ) {
-        Long userId = Long.parseLong(userDetails.getUsername());
+        Long userId = userDetails.getUserId();
         OrderCreateResponse response = orderService.createOrder(userId, request);
         return CommonResponseHandler.success(HttpStatus.CREATED, response);
     }
@@ -38,20 +38,19 @@ public class OrderController {
     //  내 주문 목록 조회
     @GetMapping
     public ResponseEntity<CommonResponse<List<OrderListResponse>>> getMyOrders(
-            @AuthenticationPrincipal UserDetails userDetails
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        Long userId = Long.parseLong(userDetails.getUsername());
+        Long userId = userDetails.getUserId();
         List<OrderListResponse> response = orderService.getMyOrders(userId);
         return CommonResponseHandler.success(HttpStatus.OK, response);
     }
-
     //  주문 단건 조회
     @GetMapping("/{orderUid}")
     public ResponseEntity<CommonResponse<OrderDetailResponse>> getOrderDetail(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable String orderUid
     ) {
-        Long userId = Long.parseLong(userDetails.getUsername());
+        Long userId = userDetails.getUserId();
         OrderDetailResponse response = orderService.getOrderDetail(userId, orderUid);
         return CommonResponseHandler.success(HttpStatus.OK, response);
     }
@@ -59,10 +58,10 @@ public class OrderController {
     //  주문 확정
     @PatchMapping("/{orderUid}/confirm")
     public ResponseEntity<CommonResponse<OrderConfirmResponse>> confirmOrder(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable String orderUid
     ) {
-        Long userId = Long.parseLong(userDetails.getUsername());
+        Long userId = userDetails.getUserId();
         OrderConfirmResponse response = orderService.confirmOrder(userId, orderUid);
         return CommonResponseHandler.success(HttpStatus.OK, response);
     }
