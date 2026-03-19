@@ -15,7 +15,7 @@ public record GetRefundListResponse(
         String paymentUid,
         Long refundAmount,
         String refundStatus,
-        LocalDateTime refundAt
+        LocalDateTime refundedAt
 ) {
     public static GetRefundListResponse from(Refund refund) {
         return new GetRefundListResponse(

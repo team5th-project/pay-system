@@ -7,11 +7,13 @@ import com.bootcamp.paymentdemo.order.enums.OrderStatus;
 import com.bootcamp.paymentdemo.payment.entity.Payment;
 import com.bootcamp.paymentdemo.payment.enums.PaymentStatus;
 import com.bootcamp.paymentdemo.payment.respository.PaymentRepository;
+import com.bootcamp.paymentdemo.payment.service.PaymentService;
 import com.bootcamp.paymentdemo.refund.dto.request.CreateRefundRequest;
 import com.bootcamp.paymentdemo.refund.dto.response.CreateRefundResponse;
 import com.bootcamp.paymentdemo.refund.dto.response.GetRefundDetailResponse;
 import com.bootcamp.paymentdemo.refund.dto.response.GetRefundListResponse;
 import com.bootcamp.paymentdemo.refund.entity.Refund;
+import com.bootcamp.paymentdemo.refund.enums.RefundStatus;
 import com.bootcamp.paymentdemo.refund.repository.RefundRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -23,48 +25,63 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class RefundService {
     private final RefundRepository refundRepository;
-    private final PaymentRepository paymentRepository;
+    private final PaymentService paymentService;
     private final ApplicationEventPublisher eventPublisher;
 
-    @Transactional
-    public CreateRefundResponse requestRefund(Long paymentId, CreateRefundRequest request, Long userId) {
-
-        // 결제 조회
-        Payment payment = paymentRepository.findById(paymentId).orElseThrow(
-                () -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND)
-        );
-
-        // 멱등성 체크
-        // 환불 DB에서 찾은 결제환불내역과 환불내역과 같는지 체크
-        Refund existingRefund = refundRepository.findByPaymentId(payment.getId()).orElse(null);
-        if (existingRefund != null) { // null값이 아니라면 기존에 있는 환불 응답
-            return CreateRefundResponse.from(existingRefund);
-        }
-
+    private void validateRefundable(Payment payment, Order order) {
         // 결제 상태 검증
         if (payment.getPaymentStatus() != PaymentStatus.SUCCESS) {
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
         }
 
         // 주문 상태 검증
-        Order order = payment.getOrder();
         if (order.getStatus() != OrderStatus.CONFIRMED) {
             throw new ServiceException(ErrorCode.INVALID_ORDER_STATUS);
         }
+    }
 
-        // refund 생성
-        Refund refund = Refund.create(payment, request.getReason());
+    // service를 거쳐서 repository를 사용하는 방식으로 해주세요
+    @Transactional
+    public CreateRefundResponse requestRefund(Long paymentId, CreateRefundRequest request, Long userId) {
+        // 결제 조회(paymentService를 통해 호출)
+        Payment payment = paymentService.getPaymentById(paymentId);
 
-        // 저장
-        refundRepository.save(refund);
+        Order order = payment.getOrder();
+
+        // userid랑 주문한 userId랑 같은지 검증
+        if (!order.getUserId().equals(userId)) {
+            throw new ServiceException(ErrorCode.ORDER_NOT_OWNED);
+        }
+
+        // 멱등성 체크
+        Refund refund = refundRepository.findByPaymentId(payment.getId()).orElse(null);
+        if (refund != null) {
+            RefundStatus status = refund.getRefundStatus();
+
+            // 환불완료 및 환불요청 상태일 시 재시도 불가
+            if (status == RefundStatus.COMPLETED || status == RefundStatus.REQUESTED) {
+                return CreateRefundResponse.from(refund);
+            }
+        }
+        // 주문, 결제 상태 검증 메서드
+        validateRefundable(payment, order);
+        // 환불이 빈값이면 새로 생성 환불실패일 경우 재시도 허용
+        if (refund != null && refund.getRefundStatus() == RefundStatus.FAILED) {
+            refund.retry(request.getReason());
+        } else {
+            // 환불 생성
+            refund = Refund.create(payment, request.getReason());
+            // 저장
+            refundRepository.save(refund);
+        }
 
         // TODO portone 호출
         try {
 //            cancelPaymentToPortOne(payment); // mock 성공 처리
             // 성공 처리 상태 변경
-            refund.complete(); // 환불 완료시 상태전이
-            payment.refund(); // 결제상태 전이
-            order.refund(); // 주문상태 전이ㅁ
+            refund.complete(); // 환불 완료시 상태 전이
+            payment.refund(); // 결제상태
+            order.refund(); // 주문상태
 
             // TODO 이벤트 발행
 //            eventPublisher.publishEvent(
@@ -73,7 +90,7 @@ public class RefundService {
 //                            payment.getId(),
 //                            order.getId(),
 //                            order.getCustomer().getId(),
-//                            payment.getAmount() // 이벤트 퍼블리셔가 이벤트를 퍼블리시를 하면 이벤트리스너가 캐치해서 사전에 정의된 작업들을 진행하게된다.
+//                            payment.getAmount()
 //                    )
 //            );
         }
@@ -82,7 +99,6 @@ public class RefundService {
             refund.fail();
             throw new ServiceException(ErrorCode.REFUND_FAILED);
         }
-
         return CreateRefundResponse.from(refund);
     }
     // TODO: PortOne API 호출
@@ -92,7 +108,6 @@ public class RefundService {
 
     // 환불내역 목록 조회
     public GetRefundListResponse getRefunds(Long userId) {
-
         // 환불목록이 존재하는가?
 
 

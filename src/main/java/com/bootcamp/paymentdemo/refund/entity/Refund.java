@@ -20,8 +20,8 @@ public class Refund extends BaseEntity {
     private Long id;
 
     // 결제금액=환불금액(전액)
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "payment_id", nullable = false, unique = true)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payment_id", unique = true)
     private Payment payment;
 
     // 환불 사유
@@ -37,9 +37,9 @@ public class Refund extends BaseEntity {
     private LocalDateTime refundedAt;
 
     @Builder
-    public Refund(Payment payment,
-                  String reason,
-                  RefundStatus refundStatus) {
+    private Refund(Payment payment,
+                   String reason,
+                   RefundStatus refundStatus) {
         this.payment = payment;
         this.reason = reason;
         this.refundStatus = refundStatus;
@@ -64,7 +64,7 @@ public class Refund extends BaseEntity {
     // 환불 완료시 상태전이
     public void complete() {
         // 환불 상태가 요청이 아닌 다른 상태일 시 예외처리
-        if(this.refundStatus != RefundStatus.REQUESTED) {
+        if (this.refundStatus != RefundStatus.REQUESTED) {
             throw new ServiceException(ErrorCode.INVALID_REFUND_STATUS);
         }
         this.refundStatus = RefundStatus.COMPLETED;
@@ -72,11 +72,21 @@ public class Refund extends BaseEntity {
         this.refundedAt = LocalDateTime.now();
     }
 
-    // 환불 실패시 상태전이 (현민 추가)
+    // 환불 실패시 상태전이
     public void fail() {
-        if(this.refundStatus != RefundStatus.REQUESTED) {
+        if (this.refundStatus != RefundStatus.REQUESTED) {
             throw new ServiceException(ErrorCode.INVALID_REFUND_STATUS);
         }
         this.refundStatus = RefundStatus.FAILED;
+    }
+
+    // 환불 실패시 재시도 상태변경 메서드
+    public void retry(String reason) {
+        if (this.refundStatus != RefundStatus.FAILED) {
+            throw new ServiceException(ErrorCode.INVALID_REFUND_STATUS);
+        }
+        this.reason = reason;
+        this.refundStatus = RefundStatus.REQUESTED; // 요청 상태로 다시 변환
+        this.refundedAt = null;
     }
 }
