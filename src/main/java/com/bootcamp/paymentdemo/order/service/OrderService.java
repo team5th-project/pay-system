@@ -3,6 +3,7 @@ package com.bootcamp.paymentdemo.order.service;
 import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
 import com.bootcamp.paymentdemo.order.dto.request.OrderCreateRequest;
+import com.bootcamp.paymentdemo.order.dto.response.OrderConfirmResponse;
 import com.bootcamp.paymentdemo.order.dto.response.OrderCreateResponse;
 import com.bootcamp.paymentdemo.order.dto.response.OrderDetailResponse;
 import com.bootcamp.paymentdemo.order.dto.response.OrderListResponse;
@@ -70,8 +71,8 @@ public class OrderService {
     }
 
     // 주문 단건 조회
-    public OrderDetailResponse getOrderDetail(Long userId, Long orderId) {
-        Order order = orderRepository.findById(orderId)
+    public OrderDetailResponse getOrderDetail(Long userId, String orderUid) {
+        Order order = orderRepository.findByOrderUid(orderUid)
                 .orElseThrow(() ->
                         new ServiceException(ErrorCode.ORDER_NOT_FOUND));
 
@@ -84,9 +85,9 @@ public class OrderService {
 
     // 주문 확정
     @Transactional
-    public void confirmOrder(Long userId, Long orderId) {
+    public OrderConfirmResponse confirmOrder(Long userId, String orderUid) {
 
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository.findByOrderUid(orderUid)
                 .orElseThrow(() ->
                         new ServiceException(ErrorCode.ORDER_NOT_FOUND));
 
@@ -99,5 +100,6 @@ public class OrderService {
         order.confirm(); //상태 전이 (PAID에서 CONFIRMED)
 
         // 추후 포인트팀 적립 트리거 (EDD 이벤트 발행하면 상호작 용 예정)
+        return OrderConfirmResponse.from(order);
     }
 }
