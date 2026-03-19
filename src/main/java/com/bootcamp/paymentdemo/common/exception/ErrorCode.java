@@ -32,10 +32,11 @@ public enum ErrorCode {
     ALREADY_PENDING_PAYMENT(HttpStatus.BAD_REQUEST,"PAY004","이미 결제 생성되어 결제 대기중인 주문입니다."),
 
     //환불
-    INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, "R001", "환불은 요청 상태에서만 상태 변경이 가능합니다.")
+    INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, "R001", "환불은 요청 상태에서만 상태 변경이 가능합니다."),
 
 
     //포인트
+    INSUFFICIENT_POINT(HttpStatus.BAD_REQUEST, "PT001", "포인트 잔액이 부족합니다.")
 
 
 
