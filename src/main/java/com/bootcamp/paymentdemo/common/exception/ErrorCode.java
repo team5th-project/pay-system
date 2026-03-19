@@ -67,14 +67,3 @@ public enum ErrorCode {
     private final String code;
     private final String message;
 }
-
-// enum ErrorCode {
-//
-//    INVALID_REQUEST,                // 일반 요청 오류
-//    INVALID_PAYMENT_ID,             // paymentId 문제
-//
-//    PAYMENT_FAILED,                 // 결제 자체 실패
-//    PAYMENT_VERIFICATION_FAILED,    // 🔥 검증 중 오류
-//
-//    INTERNAL_ERROR                  // 서버 오류
-//}
