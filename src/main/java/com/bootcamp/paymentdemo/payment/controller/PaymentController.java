@@ -3,6 +3,7 @@ package com.bootcamp.paymentdemo.payment.controller;
 import com.bootcamp.paymentdemo.common.global.CommonResponse;
 import com.bootcamp.paymentdemo.common.global.CommonResponseHandler;
 import com.bootcamp.paymentdemo.payment.dto.request.CreatePaymentRequest;
+import com.bootcamp.paymentdemo.payment.dto.response.CompletePaymentResponse;
 import com.bootcamp.paymentdemo.payment.dto.response.CreatePaymentResponse;
 import com.bootcamp.paymentdemo.payment.service.PaymentService;
 import jakarta.validation.Valid;
@@ -27,6 +28,14 @@ public class PaymentController {
         CreatePaymentResponse response = paymentService.createPayment(orderId, request);
 
         return CommonResponseHandler.success(HttpStatus.CREATED,response);
+    }
+
+    @PostMapping("/{paymentId}/complete")
+    public ResponseEntity<CommonResponse<CompletePaymentResponse>> completePayment(
+            @PathVariable String paymentId){
+
+        CompletePaymentResponse response = paymentService.completePayment(paymentId);
+        return CommonResponseHandler.success(HttpStatus.OK,response);
     }
 
 }
