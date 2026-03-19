@@ -30,7 +30,7 @@ public class PaymentController {
         return CommonResponseHandler.success(HttpStatus.CREATED,response);
     }
 
-    @GetMapping("/{paymentId}/complete")
+    @PostMapping("/{paymentId}/complete")
     public ResponseEntity<CommonResponse<CompletePaymentResponse>> completePayment(
             @PathVariable String paymentId){
 
