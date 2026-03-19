@@ -3,6 +3,7 @@ package com.bootcamp.paymentdemo.payment.controller;
 import com.bootcamp.paymentdemo.common.global.CommonResponse;
 import com.bootcamp.paymentdemo.common.global.CommonResponseHandler;
 import com.bootcamp.paymentdemo.payment.dto.request.CreatePaymentRequest;
+import com.bootcamp.paymentdemo.payment.dto.response.CompletePaymentResponse;
 import com.bootcamp.paymentdemo.payment.dto.response.CreatePaymentResponse;
 import com.bootcamp.paymentdemo.payment.service.PaymentService;
 import jakarta.validation.Valid;
