@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class RefundController {
     private final RefundService refundService;
-    // 서버 분리 가능성을 염두하고 다른 도메인에서 다른 레포지토리에 직접 접근하지 않는 것이 좋다라고 함
     // 환불 요청
     @PostMapping("/{paymentId}")
     public ResponseEntity<CommonResponse<CreateRefundResponse>> requestRefund(

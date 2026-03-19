@@ -6,7 +6,6 @@ import com.bootcamp.paymentdemo.order.entity.Order;
 import com.bootcamp.paymentdemo.order.enums.OrderStatus;
 import com.bootcamp.paymentdemo.payment.entity.Payment;
 import com.bootcamp.paymentdemo.payment.enums.PaymentStatus;
-import com.bootcamp.paymentdemo.payment.respository.PaymentRepository;
 import com.bootcamp.paymentdemo.payment.service.PaymentService;
 import com.bootcamp.paymentdemo.refund.dto.request.CreateRefundRequest;
 import com.bootcamp.paymentdemo.refund.dto.response.CreateRefundResponse;
@@ -40,7 +39,6 @@ public class RefundService {
         }
     }
 
-    // service를 거쳐서 repository를 사용하는 방식으로 해주세요
     @Transactional
     public CreateRefundResponse requestRefund(Long paymentId, CreateRefundRequest request, Long userId) {
         // 결제 조회(paymentService를 통해 호출)
@@ -108,7 +106,6 @@ public class RefundService {
 
     // 환불내역 목록 조회
     public GetRefundListResponse getRefunds(Long userId) {
-        // 환불목록이 존재하는가?
 
 
         // TODO 환불목록 로직 추가
