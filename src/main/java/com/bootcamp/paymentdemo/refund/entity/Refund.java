@@ -4,6 +4,7 @@ import com.bootcamp.paymentdemo.common.BaseEntity;
 import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
 import com.bootcamp.paymentdemo.payment.entity.Payment;
+import com.bootcamp.paymentdemo.refund.enums.RefundStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -71,7 +72,7 @@ public class Refund extends BaseEntity {
         this.refundedAt = LocalDateTime.now();
     }
 
-    // 환불 실패시 상태전이
+    // 환불 실패시 상태전이 (현민 추가)
     public void fail() {
         if(this.refundStatus != RefundStatus.REQUESTED) {
             throw new ServiceException(ErrorCode.INVALID_REFUND_STATUS);

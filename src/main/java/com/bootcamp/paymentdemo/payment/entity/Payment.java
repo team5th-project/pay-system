@@ -1,6 +1,8 @@
 package com.bootcamp.paymentdemo.payment.entity;
 
 import com.bootcamp.paymentdemo.common.BaseEntity;
+import com.bootcamp.paymentdemo.common.exception.ErrorCode;
+import com.bootcamp.paymentdemo.common.exception.ServiceException;
 import com.bootcamp.paymentdemo.order.entity.Order;
 import com.bootcamp.paymentdemo.payment.enums.PaymentStatus;
 import jakarta.persistence.*;
@@ -50,5 +52,13 @@ public class Payment extends BaseEntity {
         this.order = order;
         this.amount = amount;
         this.paymentStatus = paymentStatus;
+    }
+
+    // 결제상태 환불완료로 전환메서드
+    public void refund() {
+        if (this.paymentStatus != PaymentStatus.SUCCESS) {
+            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
+        }
+        this.paymentStatus = PaymentStatus.REFUNDED;
     }
 }

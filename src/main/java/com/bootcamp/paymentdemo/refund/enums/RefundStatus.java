@@ -1,4 +1,4 @@
-package com.bootcamp.paymentdemo.refund.entity;
+package com.bootcamp.paymentdemo.refund.enums;
 
 public enum RefundStatus {
     REQUESTED,
