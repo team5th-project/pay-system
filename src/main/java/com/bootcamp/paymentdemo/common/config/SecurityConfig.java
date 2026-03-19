@@ -1,5 +1,8 @@
 package com.bootcamp.paymentdemo.common.config;
 
+import com.bootcamp.paymentdemo.security.CustomAuthenticationEntryPoint;
+import com.bootcamp.paymentdemo.security.JwtAuthenticationFilter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -17,6 +20,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import static org.springframework.boot.security.autoconfigure.web.servlet.PathRequest.toH2Console;
 import static org.springframework.boot.security.autoconfigure.web.servlet.PathRequest.toStaticResources;
@@ -24,7 +28,11 @@ import static org.springframework.boot.security.autoconfigure.web.servlet.PathRe
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
 
     @Bean
@@ -42,24 +50,27 @@ public class SecurityConfig {
 
                 // 요청 권한 설정
                 .authorizeHttpRequests(authorize -> authorize
-                                // 정적 리소스 (css, js, images 등) 허용
-                                .requestMatchers(toStaticResources().atCommonLocations()).permitAll()
-                                // H2 Console 허용
-                                .requestMatchers(toH2Console()).permitAll()
+                        // 정적 리소스 (css, js, images 등) 허용
+                        .requestMatchers(toStaticResources().atCommonLocations()).permitAll()
+                        // H2 Console 허용
+                        .requestMatchers(toH2Console()).permitAll()
 
-                                // 템플릿 페이지 렌더링 허용 (html 파일)
-                                .requestMatchers(HttpMethod.GET, "/").permitAll()
+                        // 템플릿 페이지 렌더링 허용 (html 파일)
+                        .requestMatchers(HttpMethod.GET, "/").permitAll()
                         .requestMatchers(HttpMethod.GET, "/pages/**").permitAll()
-                                
-                                // Public API 엔드포인트 허용
-                                .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/signup").permitAll()
+
+
+                        // Public API 엔드포인트 허용
+                        .requestMatchers("/api/public/**").permitAll()
 
                         // 나머지 전부 인증 필요
+                        .requestMatchers("/api/**").authenticated()
+                        .anyRequest().authenticated()
                         // .anyRequest().authenticated()
-                )
-        ;
-
-
+                ).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(ex
+                    ->ex.authenticationEntryPoint(customAuthenticationEntryPoint));
         return http.build();
     }
 
@@ -67,23 +78,23 @@ public class SecurityConfig {
      * PasswordEncoder Bean
      */
     @Bean
-    public static PasswordEncoder passwordEncoder() {
+    public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    /**
-     * Admin 계정 (InMemory - 데모용)
-     */
-    @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
-        UserDetails admin = User.builder()
-                .username("admin@test.com")
-                .password(passwordEncoder.encode("admin"))
-                .roles("USER", "ADMIN")
-                .build();
-
-        return new InMemoryUserDetailsManager(admin);
-    }
+//    /**
+//     * Admin 계정 (InMemory - 데모용)
+//     */
+//    @Bean
+//    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
+//        UserDetails admin = User.builder()
+//                .username("admin@test.com")
+//                .password(passwordEncoder.encode("admin"))
+//                .roles("USER", "ADMIN")
+//                .build();
+//
+//        return new InMemoryUserDetailsManager(admin);
+//    }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) {
