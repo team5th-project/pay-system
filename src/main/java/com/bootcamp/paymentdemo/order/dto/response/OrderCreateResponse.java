@@ -6,6 +6,8 @@ public record OrderCreateResponse(
         String orderUid,     // UUID 32자리
         String orderNumber,
         Long totalAmount,
+        Long usedPoint,
+        Long finalAmount,
         String status
 ) {
     public static OrderCreateResponse from(Order order) {
@@ -13,6 +15,8 @@ public record OrderCreateResponse(
                 order.getOrderUid(),
                 order.getOrderNumber(),
                 order.getTotalAmount(),
+                order.getUsedPoint(),
+                order.getFinalAmount(),
                 order.getStatus().name()
         );
     }

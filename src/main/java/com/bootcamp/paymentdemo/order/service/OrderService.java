@@ -3,6 +3,7 @@ package com.bootcamp.paymentdemo.order.service;
 import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
 import com.bootcamp.paymentdemo.order.dto.request.OrderCreateRequest;
+import com.bootcamp.paymentdemo.order.dto.response.OrderConfirmResponse;
 import com.bootcamp.paymentdemo.order.dto.response.OrderCreateResponse;
 import com.bootcamp.paymentdemo.order.dto.response.OrderDetailResponse;
 import com.bootcamp.paymentdemo.order.dto.response.OrderListResponse;
@@ -34,12 +35,20 @@ public class OrderService {
                 .mapToLong(item -> item.getQuantity())
                 .sum();   // product팀 api 연동 후 실제 가격으로 변경
 
+        Long usedPoint = request.getUsedPoint() != null
+                ? request.getUsedPoint() : 0L;
+
+
         // 2. 주문 생성
-        Order order = Order.create(userId, totalAmount);
+        Order order = Order.create(userId, totalAmount, usedPoint);
         orderRepository.save(order);
 
         // 3. 주문 상품 생성
         request.getItems().forEach(orderItemRequest -> {
+
+            // TODO: 상품팀 API 연동 후 아래처럼 사용 예정
+//            Long productIdLong = Long.parseLong(orderItemRequest.getProductId());
+
             OrderItem orderItem = OrderItem.create(
                     order,
                     orderItemRequest.getProductId(),
@@ -62,8 +71,8 @@ public class OrderService {
     }
 
     // 주문 단건 조회
-    public OrderDetailResponse getOrderDetail(Long userId, Long orderId) {
-        Order order = orderRepository.findById(orderId)
+    public OrderDetailResponse getOrderDetail(Long userId, String orderUid) {
+        Order order = orderRepository.findByOrderUid(orderUid)
                 .orElseThrow(() ->
                         new ServiceException(ErrorCode.ORDER_NOT_FOUND));
 
@@ -76,9 +85,9 @@ public class OrderService {
 
     // 주문 확정
     @Transactional
-    public void confirmOrder(Long userId, Long orderId) {
+    public OrderConfirmResponse confirmOrder(Long userId, String orderUid) {
 
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository.findByOrderUid(orderUid)
                 .orElseThrow(() ->
                         new ServiceException(ErrorCode.ORDER_NOT_FOUND));
 
@@ -91,6 +100,7 @@ public class OrderService {
         order.confirm(); //상태 전이 (PAID에서 CONFIRMED)
 
         // 추후 포인트팀 적립 트리거 (EDD 이벤트 발행하면 상호작 용 예정)
+        return OrderConfirmResponse.from(order);
     }
 
     // 소영 추가. Payment에서 사용하는 orderUid로 order 객체 검색하는 메서드

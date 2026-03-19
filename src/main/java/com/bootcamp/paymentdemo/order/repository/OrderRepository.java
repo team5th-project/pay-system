@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
-
+    Optional<Order> findByOrderUid(String orderUid);
     // 내 주문 목록 조회
     List<Order> findByUserId(Long userId);
 

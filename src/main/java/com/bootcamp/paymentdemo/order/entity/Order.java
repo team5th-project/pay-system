@@ -24,7 +24,13 @@ public class Order extends BaseEntity {
     private Long userId;
 
     @Column(nullable = false)
-    private Long totalAmount;
+    private Long totalAmount;  // 원래 주문 총액 (포인트 차감 전)
+
+    @Column(nullable = false)
+    private Long usedPoint;    // 사용한 포인트
+
+    @Column(nullable = false)
+    private Long finalAmount;  // 실제 결제 금액 (totalAmount - usedPoint)
 
     @Column(nullable = false, unique = true)
     private String orderUid;
@@ -50,7 +56,8 @@ public class Order extends BaseEntity {
     }
 
 
-    public static Order create(Long userId, Long totalAmount) {
+    public static Order create(Long userId, Long totalAmount, Long usedPoint) {
+        Long finalAmount = totalAmount - usedPoint; // 최종금액 계싼
         return Order.builder()
                 .userId(userId)
                 .totalAmount(totalAmount)
