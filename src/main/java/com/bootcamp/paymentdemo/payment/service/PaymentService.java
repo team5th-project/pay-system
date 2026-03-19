@@ -7,6 +7,7 @@ import com.bootcamp.paymentdemo.order.enums.OrderStatus;
 import com.bootcamp.paymentdemo.order.repository.OrderRepository;
 import com.bootcamp.paymentdemo.order.service.OrderService;
 import com.bootcamp.paymentdemo.payment.dto.request.CreatePaymentRequest;
+import com.bootcamp.paymentdemo.payment.dto.response.CompletePaymentResponse;
 import com.bootcamp.paymentdemo.payment.dto.response.CreatePaymentResponse;
 import com.bootcamp.paymentdemo.payment.entity.Payment;
 import com.bootcamp.paymentdemo.payment.enums.PaymentStatus;
@@ -23,6 +24,7 @@ import java.util.UUID;
 public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final OrderService orderService;
+    private final PortOneService portOneService;
 
     @Transactional
     public CreatePaymentResponse createPayment(String orderId, CreatePaymentRequest request) {
@@ -67,6 +69,26 @@ public class PaymentService {
         paymentRepository.save(payment);
 
         return CreatePaymentResponse.from(payment);
+    }
+
+    public CompletePaymentResponse completePayment(String paymentId) {
+
+        // paymentId 검증
+
+        // DB에서 Payment 객체 조회
+
+        // Payment 객체 상태 검증
+
+        // 포트원 조회
+
+        // 포트원 데이터 결제 상태 검증
+
+        // 포트원 데이터 결제금액과 Payment 객체 결제 금액 동일한지 검증
+
+        // Payment 객체 상태값 갱신
+
+        // Payment 객체 전달 ?
+        return null;
     }
 
     private static String createPaymentId() {
