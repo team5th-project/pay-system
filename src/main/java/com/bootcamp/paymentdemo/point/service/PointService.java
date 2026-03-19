@@ -1,5 +1,8 @@
 package com.bootcamp.paymentdemo.point.service;
 
+import com.bootcamp.paymentdemo.point.dto.MembershipPolicyResponse;
+import com.bootcamp.paymentdemo.point.dto.MyPointResponse;
+import com.bootcamp.paymentdemo.point.dto.PointHistoryResponse;
 import com.bootcamp.paymentdemo.point.entity.MembershipGrade;
 import com.bootcamp.paymentdemo.point.entity.MembershipPolicy;
 import com.bootcamp.paymentdemo.point.entity.PointTransaction;
@@ -12,7 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -23,7 +26,7 @@ public class PointService {
     private final MembershipPolicyRepository membershipPolicyRepository;
     private final UserService userService;
 
-    // 포인트 차감
+
     /**
      * 포인트 차감
      * 결제 생성 시 PaymentService 에서 호출
@@ -39,7 +42,6 @@ public class PointService {
         pointTransactionRepository.save(PointTransaction.use(userId, orderId, points));
     }
 
-    // 포인트 적립
     /**
      * 포인트 적립
      * 주문 확정 이벤트(OrderConfirmedEvent) 수신 시 PointEventHandler 에서 호출
@@ -54,7 +56,7 @@ public class PointService {
         // 멤버십 등급 조회
         MembershipPolicy policy = membershipPolicyRepository.findByGrade(user.getMembershipGrade());
         // 적립 포인트 게산
-        int earnedPoints = (int) (paymentAmount * policy.getPointRate() / 100.0);
+        int earnedPoints = PointCalculator.calculate(paymentAmount,policy.getPointRate());
         // 전액 포인트 결제 시 적립 없음
         if (earnedPoints == 0 ) return;
         //포인트 적립
@@ -66,25 +68,19 @@ public class PointService {
 
     }
 
-
-    // 포인트 조회 - readOnly 그대로
-    public void getPointHistory() {}
-
-    // 등급 갱신
     /**
      * 멤버십 등급 갱신
      * 결제 완료 이벤트(PaymentCompletedEvent) 수신 시 호출 → 등급 업 가능
      * 환불 완료 이벤트(RefundCompletedEvent) 수신 시 호출 → 등급 다운 가능
      * 기준: User.totalOrderAmount (누적 주문금액)
-     * NORMAL(5만원 이하), VIP(10만원 이하), VVIP(15만원 이상)
+     * NORMAL(5만원 이하), VIP(10만원 이하), VVIP(10만원 초과)
      */
     @Transactional
     public void updateMembershipGrade(Long userId) {
         User user = userService.getUser(userId);
         // 전체 등급 정책 조회 후 누적금액에 맞는 등급 계산
-        MembershipGrade newGrade = membershipPolicyRepository.findAll()
+        MembershipGrade newGrade = membershipPolicyRepository.findAllByOrderByMinAmountAsc()
                 .stream()
-                .sorted(Comparator.comparingInt(MembershipPolicy::getMinAmount))
                 .filter(policy -> policy.getMaxAmount() == null ||
                         user.getTotalOrderAmount() <= policy.getMaxAmount())
                 .findFirst()
@@ -94,6 +90,23 @@ public class PointService {
         user.updateGrade(newGrade);
     }
 
-    // 등급 조회 - readOnly 그대로
-    public void getMembershipGrade() {}
+    // 현재 포인트+등급 조회 (GET /api/points/me)
+    public MyPointResponse getMyPoints(Long userId) {
+        User user = userService.getUser(userId);
+        return MyPointResponse.from(user);
+    }
+
+    // 포인트 거래 내역 조회 (GET /api/points)
+    public PointHistoryResponse getPointHistory(Long userId) {
+        List<PointTransaction> transactions = pointTransactionRepository.findByUserId(userId);
+        return PointHistoryResponse.from(transactions);
+    }
+
+    // 등급 정책 조회 (GET /api/points/grades)
+    public List<MembershipPolicyResponse> getMembershipPolicies() {
+        return membershipPolicyRepository.findAllByOrderByMinAmountAsc()
+                .stream()
+                .map(MembershipPolicyResponse::from)
+                .toList();
+    }
 }

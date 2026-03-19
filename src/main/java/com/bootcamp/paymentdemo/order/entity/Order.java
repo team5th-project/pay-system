@@ -46,21 +46,25 @@ public class Order extends BaseEntity {
     private List<OrderItem> orderItems = new ArrayList<>();
 
     @Builder
-    private Order(Long userId, Long totalAmount,
+    private Order(Long userId, Long totalAmount, Long usedPoint, Long finalAmount,
                   String orderUid, String orderNumber, OrderStatus status) {
         this.userId = userId;
         this.totalAmount = totalAmount;
+        this.usedPoint = usedPoint;
+        this.finalAmount = finalAmount;
         this.orderUid = orderUid;
         this.orderNumber = orderNumber;
         this.status = status;
     }
 
-
+     // 최종금액 계산
     public static Order create(Long userId, Long totalAmount, Long usedPoint) {
-        Long finalAmount = totalAmount - usedPoint; // 최종금액 계싼
+        Long finalAmount = totalAmount - usedPoint;
         return Order.builder()
                 .userId(userId)
                 .totalAmount(totalAmount)
+                .usedPoint(usedPoint)
+                .finalAmount(finalAmount)
                 .orderUid(generateOrderUid())
                 .orderNumber(generateOrderNumber())
                 .status(OrderStatus.PENDING)
