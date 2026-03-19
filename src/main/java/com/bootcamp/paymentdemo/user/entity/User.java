@@ -1,6 +1,7 @@
 package com.bootcamp.paymentdemo.user.entity;
 
 import com.bootcamp.paymentdemo.common.BaseEntity;
+import com.bootcamp.paymentdemo.common.exception.ServiceException;
 import com.bootcamp.paymentdemo.point.entity.MembershipGrade;
 import com.bootcamp.paymentdemo.user.dto.SignupRequest;
 import jakarta.persistence.*;
@@ -36,7 +37,7 @@ public class User extends BaseEntity {
     private UserRole userRole;
 
     @Min(0)
-    private Long pointBalance;
+    private int pointBalance;
 
     @Column(nullable = false)
     private Long totalOrderAmount;
@@ -53,8 +54,26 @@ public class User extends BaseEntity {
         this.password = password;
         this.phone = phone;
         this.userRole = UserRole.USER;
-        this.pointBalance = 0L;
+        this.pointBalance = 0;
         this.totalOrderAmount = 0L;
         this.membershipGrade = MembershipGrade.NORMAL;
     }
+
+    // User 엔티티에 추가
+    public void deductPoint(int points) {
+        if (this.pointBalance < points) {
+            throw new ServiceException(ErrorCode.INSUFFICIENT_POINT);
+        }
+        this.pointBalance -= points;
+    }
+
+    public void addPoint(int points) {
+        this.pointBalance += points;
+    }
+
+    public void updateGrade(MembershipGrade grade) {
+        this.membershipGrade = grade;
+    }
+
+
 }

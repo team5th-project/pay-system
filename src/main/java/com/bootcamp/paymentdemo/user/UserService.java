@@ -100,9 +100,7 @@ public class UserService {
 
     // 현재 로그인 한 사용자의 정보 출력
     public GetMyInfoResponse getMyInfo(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(
-                ()-> new ServiceException(ErrorCode.USER_NOT_FOUND)
-        );
+        User user = getUser(userId);
 
         return GetMyInfoResponse.of(user);
 
@@ -116,9 +114,7 @@ public class UserService {
         }
 
         Long userId = Long.valueOf(jwtTokenProvider.getId(refreshToken));
-        User user = userRepository.findById(userId).orElseThrow(
-                ()->new ServiceException(ErrorCode.USER_NOT_FOUND)
-        );
+        User user = getUser(userId);
 
         RefreshToken savedToken = refreshTokenRepository.findById(userId).orElseThrow(
                 ()-> new ServiceException(ErrorCode.JWT_NOT_FOUND));
@@ -130,6 +126,9 @@ public class UserService {
         return jwtTokenProvider.createToken(user.getId(), user.getEmail(), user.getUserRole().toString());
     }
 
-
-
+    // 내부 서비스용 User 엔티티 조회
+    public User getUser(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
+    }
 }
