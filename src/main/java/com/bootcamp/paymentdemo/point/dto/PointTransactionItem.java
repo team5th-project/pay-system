@@ -9,6 +9,7 @@ public record PointTransactionItem(
         Long id,
         Long orderId,
         PointType type,
+        int points,
         LocalDateTime createdAt,
         LocalDateTime expiredAt
         ) {
@@ -17,6 +18,7 @@ public record PointTransactionItem(
                 tx.getId(),
                 tx.getOrderId(),
                 tx.getType(),
+                tx.getPoints(),
                 tx.getCreatedAt(),
                 tx.getExpiredAt()
         );
