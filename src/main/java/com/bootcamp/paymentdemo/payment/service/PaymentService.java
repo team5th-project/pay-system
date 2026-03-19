@@ -4,17 +4,19 @@ import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
 import com.bootcamp.paymentdemo.order.entity.Order;
 import com.bootcamp.paymentdemo.order.enums.OrderStatus;
-import com.bootcamp.paymentdemo.order.repository.OrderRepository;
 import com.bootcamp.paymentdemo.order.service.OrderService;
 import com.bootcamp.paymentdemo.payment.dto.request.CreatePaymentRequest;
-import com.bootcamp.paymentdemo.payment.dto.response.CompletePaymentResponse;
+import com.bootcamp.paymentdemo.payment.dto.response.ConfirmPaymentResponse;
 import com.bootcamp.paymentdemo.payment.dto.response.CreatePaymentResponse;
+import com.bootcamp.paymentdemo.payment.dto.response.PortOnePaymentDto;
 import com.bootcamp.paymentdemo.payment.entity.Payment;
 import com.bootcamp.paymentdemo.payment.enums.PaymentStatus;
+import com.bootcamp.paymentdemo.payment.enums.PortOnePaymentStatus;
 import com.bootcamp.paymentdemo.payment.respository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.UUID;
 
@@ -49,12 +51,14 @@ public class PaymentService {
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_AMOUNT);
         }
 
-//         클라이언트 측에서 보낸 결제 금액과, order 테이블의 결제 금액이 같은지 검증
-//         TODO : Order에 point 관련 코드 추가 후
-//         방법 1. Order 엔티티에 finalAmount를 추가해서
-//         getTotalAmount 대신 실재 결제금액 반환 메서드로 변경하기.
-//         방법 2. Order에 getTotalAmount와 getUsedPoint 추가해서
-//         결제 쪽 테이블에 finalAmount 계산 후 저장
+        /*
+         클라이언트 측에서 보낸 결제 금액과, order 테이블의 결제 금액이 같은지 검증
+         TODO : Order에 point 관련 코드 추가 후
+         방법 1. Order 엔티티에 finalAmount를 추가해서
+         getTotalAmount 대신 실재 결제금액 반환 메서드로 변경하기.
+         방법 2. Order에 getTotalAmount와 getUsedPoint 추가해서
+         결제 쪽 테이블에 finalAmount 계산 후 저장
+         */
         if (!totalAmount.equals(order.getTotalAmount())) {
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_AMOUNT);
         }
@@ -71,24 +75,58 @@ public class PaymentService {
         return CreatePaymentResponse.from(payment);
     }
 
-    public CompletePaymentResponse completePayment(String paymentId) {
+    /*
+    catch (PAYMENT_NOT_FOUND) → PENDING
+    catch (PORTONE_SERVER_ERROR) → PENDING
+    catch (PORTONE_COMMUNICATION_ERROR) → PENDING
+     */
+    public ConfirmPaymentResponse completePayment(String paymentUid) {
 
         // paymentId 검증
+        if(!StringUtils.hasLength(paymentUid)){
+            throw new ServiceException(ErrorCode.INVALID_PAYMENT_UID);
+        }
+        // DB에서 Payment 객체 조회. 없으면 생성되지 않은 결제 요청
+        Payment payment = paymentRepository.findByPaymentUid(paymentUid).orElseThrow(
+                () -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND)
+        );
 
-        // DB에서 Payment 객체 조회
-
-        // Payment 객체 상태 검증
+        // Payment 객체 상태 검증. 결제 대기 상태가 아니면 이미 결제 완료 처리된 결제 요청
+        if(!payment.getPaymentStatus().equals(PaymentStatus.PENDING)){
+            throw new ServiceException(ErrorCode.ALREADY_PROCESSED_PAYMENT);
+        }
 
         // 포트원 조회
+        PortOnePaymentDto portOnePaymentDto;
+        try {
+            portOnePaymentDto = portOneService.getPayment(paymentUid);
+        } catch (ServiceException e) {
+            // TODO : 결제 에러 별 에러 처리 로직 필요
+            throw new ServiceException(ErrorCode.PORTONE_PAYMENT_VALIDATION_FAILED);
+        }
 
-        // 포트원 데이터 결제 상태 검증
+        // // TODO : 포트원 데이터 결제 상태 검증, FAILED 일 때와 CANCELLED일 때도 생각해서 구현해야함
+        if(PortOnePaymentStatus.READY.equals(portOnePaymentDto.status())){
+            throw new ServiceException(ErrorCode.NOT_PAID_YET);
+        }
+
 
         // 포트원 데이터 결제금액과 Payment 객체 결제 금액 동일한지 검증
+        if(!payment.getAmount().equals((long) portOnePaymentDto.paid())){
+            // TODO : 포트원에서 결제는 되었는데 결제 금액이 동일하지 않으면 결제 취소 요청을 보내기..
+            portOneService.cancelPayment(paymentUid);
+            throw new ServiceException(ErrorCode.PAYMENT_AMOUNT_NOT_EQUALS);
+        }
+
+        // TODO : Webhook 확인.. 현민님께서 담당하기로 했는데.. 일단 저도 공부해서 구현해보는 쪽으로 할까요?
 
         // Payment 객체 상태값 갱신
+        payment.paid();
 
-        // Payment 객체 전달 ?
-        return null;
+        // TODO 결제 완료 시 주문, 유저, 포인트 쪽에 전달해줘야 함.
+
+
+        return ConfirmPaymentResponse.of(payment.getOrder().getOrderUid(), portOnePaymentDto);
     }
 
     private static String createPaymentId() {
