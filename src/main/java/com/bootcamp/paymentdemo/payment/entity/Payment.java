@@ -1,6 +1,7 @@
 package com.bootcamp.paymentdemo.payment.entity;
 
 import com.bootcamp.paymentdemo.common.BaseEntity;
+import com.bootcamp.paymentdemo.order.entity.Order;
 import com.bootcamp.paymentdemo.payment.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -24,7 +25,7 @@ public class Payment extends BaseEntity {
 
     // TODO : imp_uid, pgTxId
 
-    @Column()
+    @Column(name = "transaction_id", unique = true)
     private String transactionId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -44,9 +45,8 @@ public class Payment extends BaseEntity {
 
 
     @Builder
-    public Payment(String paymentUid, String transactionId, Order order, Long amount, PaymentStatus paymentStatus) {
+    public Payment(String paymentUid, Order order, Long amount, PaymentStatus paymentStatus) {
         this.paymentUid = paymentUid;
-        this.transactionId = transactionId;
         this.order = order;
         this.amount = amount;
         this.paymentStatus = paymentStatus;

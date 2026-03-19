@@ -92,4 +92,14 @@ public class OrderService {
 
         // 추후 포인트팀 적립 트리거 (EDD 이벤트 발행하면 상호작 용 예정)
     }
+
+    // 소영 추가. Payment에서 사용하는 orderUid로 order 객체 검색하는 메서드
+    public Order getOrderByOrderUid(String orderUid) {
+        if (orderUid == null || orderUid.isBlank()) {
+            throw new ServiceException(ErrorCode.INVALID_ORDER_UID);
+        }
+
+        return orderRepository.findByOrderUid(orderUid)
+                .orElseThrow(() -> new ServiceException(ErrorCode.ORDER_NOT_FOUND));
+    }
 }

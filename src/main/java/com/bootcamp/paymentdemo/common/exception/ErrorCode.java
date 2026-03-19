@@ -27,7 +27,9 @@ public enum ErrorCode {
 
     //결제
     INVALID_PAYMENT_AMOUNT(HttpStatus.BAD_REQUEST, "PAY001", "유효하지 않은 결제 금액입니다."),
-
+    INVALID_ORDER_UID(HttpStatus.BAD_REQUEST,"PAY002","유효하지 않은 주문 아이디입니다."),
+    ORDER_STATUS_NOT_PENDING(HttpStatus.BAD_REQUEST, "PAY003", "주문 상태가 결제 대기 상태가 아닙니다."),
+    ALREADY_PENDING_PAYMENT(HttpStatus.BAD_REQUEST,"PAY004","이미 결제 생성되어 결제 대기중인 주문입니다."),
 
     //환불
     INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, "R001", "환불은 요청 상태에서만 상태 변경이 가능합니다.")
