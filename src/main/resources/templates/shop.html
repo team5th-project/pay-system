@@ -319,20 +319,24 @@
             };
 
             try {
-                const result = await makeApiRequest('create-order', {
+                const raw = await makeApiRequest('create-order', {
                     body: orderData
                 });
 
                 // YML 스키마 기반 자동 검증
-                if (!validateApiResponse('create-order', result)) {
+                if (!validateApiResponse('create-order', raw)) {
                     throw new Error('API 응답 형식이 올바르지 않습니다.');
                 }
 
-                if (result.orderId) {
+                const result = unwrapCommonResponse(raw);
+
+                if (result && result.orderUid) {
                     showNotification('주문 생성 완료!', 'success');
                     setTimeout(() => {
-                        window.location.href = `/pages/orders?orderId=${result.orderId}`;
+                        window.location.href = `/pages/orders`;
                     }, 1000);
+                } else {
+                    showNotification('주문 생성은 되었지만 orderUid를 확인할 수 없습니다.', 'warning');
                 }
             } catch (error) {
                 console.error('Failed to create order:', error);

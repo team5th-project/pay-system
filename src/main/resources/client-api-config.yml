@@ -158,8 +158,8 @@ api:
     # product 단건조회 부분이 없음
 
     create-order:
-      url:
-      method:
+      url: /api/orders
+      method: POST
       description: 주문 생성 (총 금액은 서버에서 계산)
       request:
         fields:
@@ -170,23 +170,34 @@ api:
       response:
         body:
           fields:
-            - name: orderId
+            - name: orderUid
               type: string
               required: true
-              description: 생성된 주문 ID
-              usage: 주문 페이지 리다이렉트에 사용
-            - name: totalAmount
-              type: number
-              required: false
-              description: 서버에서 계산된 총 금액
+              description: 생성된 주문 UID
             - name: orderNumber
               type: string
+              required: true
+              description: 주문 번호
+            - name: totalAmount
+              type: number
+              required: true
+              description: 주문 금액
+            - name: usedPoint
+              type: number
               required: false
-              description: 생성된 주문 번호
+              description: 사용한 포인트
+            - name: finalAmount
+              type: number
+              required: false
+              description: 최종 결제 금액
+            - name: status
+              type: string
+              required: true
+              description: 주문 상태
 
     list-orders:
-      url:
-      method:
+      url: /api/orders
+      method: GET
       description: 주문 목록 조회 (현재 로그인한 사용자의 주문)
       response:
         body:
