@@ -60,6 +60,7 @@ public class Payment extends BaseEntity {
             throw new ServiceException(ErrorCode.PAYMENT_STATUS_NOT_PENDING);
         }
         this.paymentStatus = PaymentStatus.SUCCESS;
+    }
     // 결제상태 환불완료로 전환메서드
     public void refund() {
         if (this.paymentStatus != PaymentStatus.SUCCESS) {
