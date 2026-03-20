@@ -8,7 +8,13 @@ public record PortOneResponse(
         List<PaymentTransaction> items
 ){
     public record PaymentTransaction(
-        PortOnePaymentStatus status,
+            /*
+            READY       // 결제 준비
+            PAID        // 결제 성공
+            FAILED      // 결제 실패
+            CANCELED    // 결제 취소
+             */
+        String status,
         String id,  // transactionId
         String paymentId,
         List<PaymentAmount> amount

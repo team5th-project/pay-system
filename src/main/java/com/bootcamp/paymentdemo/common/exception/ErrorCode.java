@@ -31,16 +31,35 @@ public enum ErrorCode {
 
 
 
-    //결제
+    // 결제
     INVALID_PAYMENT_AMOUNT(HttpStatus.BAD_REQUEST, "PAY001", "유효하지 않은 결제 금액입니다."),
     INVALID_ORDER_UID(HttpStatus.BAD_REQUEST,"PAY002","유효하지 않은 주문 아이디입니다."),
     ORDER_STATUS_NOT_PENDING(HttpStatus.BAD_REQUEST, "PAY003", "주문 상태가 결제 대기 상태가 아닙니다."),
     ALREADY_PENDING_PAYMENT(HttpStatus.BAD_REQUEST,"PAY004","이미 결제 생성되어 결제 대기중인 주문입니다."),
+    PAYMENT_UID_NOT_FOUND(HttpStatus.NOT_FOUND, "PAY005", "유효하지 않은 결제 아이디입니다."),
+    PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "PAY006", "결제 정보를 찾을 수 없습니다."),
+    ALREADY_PROCESSED_PAYMENT(HttpStatus.BAD_REQUEST, "PAY007", "이미 처리된 결제 요청입니다."),
+    INVALID_PAYMENT_UID(HttpStatus.BAD_REQUEST,"PAY008","유효하지 않은 결제 아이디입니다."),
+    NOT_PAID_YET(HttpStatus.BAD_REQUEST, "PAY009", "아직 결제되지 않은 결제 요청입니다."),
+    PAYMENT_AMOUNT_NOT_EQUALS(HttpStatus.BAD_REQUEST,"PAY010","결제 금액이 일치하지 않습니다."),
+    PAYMENT_STATUS_NOT_PENDING(HttpStatus.BAD_REQUEST,"PAY011","결제 상태가 결제 대기 상태가 아닙니다."),
+    UNKNOWN_PORTONE_STATUS(HttpStatus.NOT_FOUND, "PAY012", "존재하지 않는 포트원 상태입니다."),
+
+    // 포트원 에러
+    INVALID_PAYMENT_VALIDATION_REQUEST(HttpStatus.BAD_REQUEST,"PAY005","잘못된 결제 검증 요청입니다."),
+    UNAUTHORIZED_PAYMENT_VALIDATION_REQUEST(HttpStatus.UNAUTHORIZED,"PAY006","포트원 인증에 실패했습니다."),
+    PORTONE_PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND,"PAY007","결제 내역을 찾을 수 없습니다."),
+    PORTONE_PAYMENT_VALIDATION_FAILED(HttpStatus.BAD_REQUEST,"PAY008","결제 검증에 실패했습니다."),
+    PORTONE_SERVER_ERROR(HttpStatus.BAD_GATEWAY,"PAY009","포트원 서버 오류가 발생했습니다."),
+    PORTONE_UNKNOWN_ERROR(HttpStatus.INTERNAL_SERVER_ERROR,"PAY010","알 수 없는 오류가 발생했습니다."),
+    PORTONE_COMMUNICATION_ERROR(HttpStatus.SERVICE_UNAVAILABLE,"PAY011","네트워크 통신에 실패했습니다."),
+    PORTONE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE,"PAY012","포트원 API를 호출에 실패했습니다."),
+
 
     //환불
     INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, "R001", "현재 환불 상태에서는 요청한 작업을 수행할 수 없습니다."),
     INVALID_PAYMENT_STATUS(HttpStatus.BAD_REQUEST, "ROO2", "환불은 결제 완료 상태에서만 가능합니다."),
-    PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "R003", "존재하지 않는 결제내역입니다."),
+//    PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "R003", "존재하지 않는 결제내역입니다."),
     REFUND_FAILED(HttpStatus.BAD_REQUEST,"R004", "환불 처리 중 오류가 발생했습니다."),
 
 
