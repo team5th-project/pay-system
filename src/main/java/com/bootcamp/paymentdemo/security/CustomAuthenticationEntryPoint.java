@@ -1,6 +1,7 @@
 package com.bootcamp.paymentdemo.security;
 
 
+import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.ErrorResponse;
 import com.bootcamp.paymentdemo.common.global.CommonResponse;
 import jakarta.servlet.ServletException;
@@ -23,24 +24,28 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
-        HttpStatus status = HttpStatus.UNAUTHORIZED;
+        ErrorCode errorCode = (ErrorCode) request.getAttribute("exception");
+
+        if (errorCode == null) {
+            errorCode = ErrorCode.LOGIN_REQUIRED;
+        }
 
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .status(status.value())
-                .errorName("LOGIN_ERROR")
-                .message("로그인이 필요합니다.")
+                .status(errorCode.getStatus().value()) // ErrorCode에 HttpStatus가 있다고 가정
+                .errorName(errorCode.name())
+                .message(errorCode.getMessage())
                 .path(request.getRequestURI())
                 .method(request.getMethod())
                 .build();
 
         CommonResponse<Object> commonResponse = CommonResponse.builder()
                 .timestamp(LocalDateTime.now())
-                .status(status.value())
+                .status(errorCode.getStatus().value())
                 .data(null)
                 .error(errorResponse)
                 .build();
 
-        response.setStatus(status.value());
+        response.setStatus(errorCode.getStatus().value());
         response.setContentType("application/json;charset=UTF-8");
 
         objectMapper.writeValue(response.getWriter(), commonResponse);
