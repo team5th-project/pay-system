@@ -141,11 +141,11 @@ public class PointService {
         for (PointTransaction tx : expiredTransactions) {
             User user = userService.getUser(tx.getUserId());
 
-            // 해당 EARN 적립-만료일 사이 use포인트 합산
+            // 해당 EARN 적립-만료일 사이 USE포인트 합산
             List<PointTransaction> usedTransactions = pointTransactionRepository.findByUserIdAndTypeAndCreatedAtBetween(
                     tx.getUserId(),
                     PointType.USE,
-                    tx.getCreatedAt(),  // earn 적립일
+                    tx.getCreatedAt(),  //적립일
                     tx.getExpiredAt() // 만료일
             );
 
