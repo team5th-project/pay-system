@@ -132,4 +132,9 @@ public class PaymentService {
     private static String createPaymentId() {
         return "PAY-" + UUID.randomUUID();
     }
-}
+
+    public Payment getPaymentById(Long paymentId) {
+        return paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND));
+        }
+    }

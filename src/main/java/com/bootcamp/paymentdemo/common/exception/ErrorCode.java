@@ -10,12 +10,15 @@ public enum ErrorCode {
     //temp error code
     TEMP_ERROR(HttpStatus.BAD_REQUEST, "T001", "커스텀 에러가 발생했습니다."),
     VALID_ERROR(HttpStatus.BAD_REQUEST, "T002", "validError"),
+    DB_ERROR(HttpStatus.BAD_REQUEST, "T003", "DB 저장 에러"),
+    REQUEST_ERROR(HttpStatus.BAD_REQUEST, "T004", "json 요청 형식 오류"),
     //사용자
     JWT_EXPIRED(HttpStatus.UNAUTHORIZED, "U001", "만료된 토큰입니다."),
     JWT_INVALID(HttpStatus.UNAUTHORIZED, "U002", "사용할 수 없는 토큰입니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U003", "사용자를 찾을 수 없습니다."),
     WRONG_PASSWORD(HttpStatus.BAD_REQUEST, "U004", "잘못된 비밀번호입니다."),
     JWT_NOT_FOUND(HttpStatus.NOT_FOUND, "U005", "토큰을 찾을 수 없습니다."),
+    LOGIN_REQUIRED(HttpStatus.UNAUTHORIZED, "U006", "로그인이 필요합니다."),
 
     //상품
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "P001", "상품을 찾을 수 없습니다."),
@@ -54,7 +57,10 @@ public enum ErrorCode {
 
 
     //환불
-    INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, "R001", "환불은 요청 상태에서만 상태 변경이 가능합니다."),
+    INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, "R001", "현재 환불 상태에서는 요청한 작업을 수행할 수 없습니다."),
+    INVALID_PAYMENT_STATUS(HttpStatus.BAD_REQUEST, "ROO2", "환불은 결제 완료 상태에서만 가능합니다."),
+    PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "R003", "존재하지 않는 결제내역입니다."),
+    REFUND_FAILED(HttpStatus.BAD_REQUEST,"R004", "환불 처리 중 오류가 발생했습니다."),
 
 
     //포인트

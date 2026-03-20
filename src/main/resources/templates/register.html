@@ -11,313 +11,7 @@
     <script th:src="@{/js/app-config.js}"></script>
     <script th:src="@{/js/api-handler.js}"></script>
     <script th:src="@{/js/api-validator.js}"></script>
-    <style>
-        /* Background Slider */
-        .bg-slider {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100vh;
-            z-index: -1;
-            overflow: hidden;
-            background: #000;
-        }
-        .bg-slider img {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            object-fit: cover;
-            opacity: 0;
-            transition: opacity 2s ease-in-out, transform 10s linear;
-            transform: scale(1.05);
-        }
-        .bg-slider img.active {
-            opacity: 0.8;
-            transform: scale(1);
-        }
-
-        /* Page structural styles */
-        .auth-page {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem 1.5rem;
-            position: relative;
-        }
-
-        /* Logo — 밝은 배경과 겹칠 때 대비(반투명 패널 + 그림자) */
-        .auth-brand-logo {
-            position: absolute;
-            top: 2rem;
-            left: 2.5rem;
-            color: #fff;
-            text-shadow: 0 4px 15px rgba(0,0,0,0.4);
-            z-index: 10;
-            padding: 0.65rem 1rem 0.75rem;
-            border-radius: 14px;
-            
-        }
-        .auth-brand-logo img {
-            display: block;
-            max-height: 250px;
-            width: auto;
-            max-width: min(900px, 90vw);
-            object-fit: contain;
-            filter:
-                drop-shadow(0 0 1px rgba(255, 255, 255, 1))
-                drop-shadow(0 2px 6px rgba(0, 0, 0, 0.28))
-                drop-shadow(0 8px 24px rgba(0, 0, 0, 0.22));
-        }
-        .auth-brand-logo h1 {
-            font-size: 1.25rem;
-            margin: 0;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            line-height: 0;
-        }
-        .auth-brand-logo p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-            margin-top: 0.3rem;
-            font-weight: 500;
-        }
-
-        /* 3D Scene */
-        .scene {
-            width: 100%;
-            max-width: 440px;
-            perspective: 1200px;
-            position: relative;
-            z-index: 1;
-            transition: height 0.5s ease-out;
-            min-height: 500px;
-        }
-
-        .auth-card-container {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0; left: 0;
-            transform-style: preserve-3d;
-            transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-
-        .auth-card-container.flipped {
-            transform: rotateY(180deg);
-        }
-
-        .card-face {
-            width: 100%;
-            position: absolute;
-            top: 0; left: 0;
-            backface-visibility: hidden;
-            background: rgba(255, 255, 255, 0.82);
-            backdrop-filter: blur(24px);
-            border: 1px solid rgba(255,182,211,0.5);
-            border-radius: 1.5rem;
-            box-shadow: 0 25px 65px rgba(0, 0, 0, 0.25);
-            padding: 3rem 2.5rem;
-            box-sizing: border-box;
-        }
-
-        [data-theme="dark"] .card-face {
-            background: rgba(36, 18, 28, 0.85);
-            border-color: rgba(255, 182, 211, 0.22);
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
-        }
-
-        .card-back {
-            transform: rotateY(180deg);
-        }
-
-        .form-title {
-            text-align: center;
-            color: #ad1457;
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 2rem;
-        }
-
-        [data-theme="dark"] .form-title {
-            color: #ffd1e6;
-        }
-
-        .form-input {
-            background: rgba(255, 255, 255, 0.9);
-            border-color: #f6b2cc;
-            border-radius: 0.75rem;
-            padding: 0.8rem 1rem;
-            width: 100%;
-        }
-
-        .form-input:focus {
-            border-color: #ec4899;
-            box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.15);
-            outline: none;
-        }
-
-        [data-theme="dark"] .form-input {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 182, 211, 0.28);
-            color: #fff;
-        }
-
-        .login-primary-btn {
-            background: linear-gradient(135deg, #ff6fae 0%, #ff4f9a 45%, #f72585 100%);
-            box-shadow: 0 10px 25px rgba(247, 37, 133, 0.35);
-            border-radius: 0.75rem;
-            padding: 0.85rem;
-            font-size: 1.05rem;
-            font-weight: 600;
-            border: none;
-            color: #fff;
-            cursor: pointer;
-            transition: opacity 0.3s, transform 0.2s;
-        }
-
-        .login-primary-btn:hover:not(:disabled) {
-            background: linear-gradient(135deg, #ff5ca3 0%, #ff3f8f 45%, #e91e63 100%);
-            transform: translateY(-2px);
-        }
-
-        .login-outline-btn {
-            border: 2px solid #f06292;
-            color: #d81b60;
-            background: transparent;
-            border-radius: 0.75rem;
-            padding: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .login-outline-btn:hover:not(:disabled) {
-            background: #f06292;
-            color: #fff;
-        }
-
-        [data-theme="dark"] .login-outline-btn {
-            color: #ffd1e6;
-            border-color: #ff8fbd;
-        }
-
-        [data-theme="dark"] .login-outline-btn:hover:not(:disabled) {
-            background: #ff8fbd;
-            color: #1a0a14;
-        }
-
-        .helper-text {
-            color: #8c4a68;
-            text-align: center;
-            margin-top: 1.5rem;
-            margin-bottom: 0.8rem;
-            font-size: 0.95rem;
-        }
-
-        [data-theme="dark"] .helper-text {
-            color: #e7bdd0;
-        }
-
-        .login-divider {
-            margin-top: 2rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid rgba(240, 120, 170, 0.28);
-        }
-
-        .auth-theme-toggle {
-            position: absolute;
-            bottom: 2rem;
-            right: 2rem;
-            background: rgba(255, 255, 255, 0.6);
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
-            transition: background 0.3s;
-            z-index: 10;
-        }
-
-        [data-theme="dark"] .auth-theme-toggle {
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        
-        .form-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: #333;
-        }
-        [data-theme="dark"] .form-label {
-            color: #e2e8f0;
-        }
-        .form-group {
-            margin-bottom: 1.25rem;
-        }
-
-        /* 랜딩 버튼 & 애니메이션 */
-        .landing-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 5;
-            transition: all 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
-        }
-
-        .landing-container.hidden {
-            opacity: 0;
-            transform: translate(-50%, -50%) scale(0.7);
-            pointer-events: none;
-        }
-
-        .landing-btn {
-            padding: 1.2rem 3.5rem;
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: #ffb6d3;
-            background: transparent;
-            border: 2px solid #ffb6d3;
-            border-radius: 3rem;
-            backdrop-filter: blur(12px);
-            cursor: pointer;
-            transition: all 0.4s ease;
-            box-shadow: 0 0 20px rgba(255, 182, 211, 0.2);
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-
-        .landing-btn:hover {
-            background: rgba(255, 182, 211, 0.15);
-            box-shadow: 0 0 30px rgba(255, 182, 211, 0.5);
-            transform: translateY(-4px);
-            color: #fff;
-            border-color: #fff;
-        }
-
-        .hidden-scene {
-            display: none !important;
-        }
-
-        .scene.blooming {
-            animation: bloom 1s cubic-bezier(0.175, 0.885, 0.32, 1.2) forwards;
-        }
-
-        @keyframes bloom {
-            0% {
-                transform: scale(0.2) rotate(-15deg);
-                opacity: 0;
-            }
-            100% {
-                transform: scale(1) rotate(0deg);
-                opacity: 1;
-            }
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/auth.css}">
 </head>
 <body>
     <div class="bg-slider" id="bgSlider">
@@ -326,20 +20,21 @@
         <img src="/images/landing-bg/bg-image-3.png" alt="bg3">
     </div>
 
-    <div class="auth-brand-logo">
-        <h1>
-            <img src="/images/logos/main-logo.png" alt="Pay System">
-        </h1>
+    <div class="bg-overlay"></div>
+
+    <div class="login-hero-group" id="mainBrandLogo">
+        <div class="auth-brand-logo">
+            <h1>
+                <img src="/images/logos/main-logo.png" alt="Pay System">
+            </h1>
+        </div>
+        <p class="hover-hint">✨ 로고에 마우스를 올려 마법을 시작하세요! ✨</p>
+        <p class="creators">Team 오조의 마법사 : 권지원, 김예은, 박소영, 정민교, 신현민</p>
     </div>
 
     <button id="theme-toggle" class="auth-theme-toggle" onclick="toggleTheme()">🌙</button>
 
     <div class="auth-page">
-
-        <!-- 초기 랜딩 버튼 -->
-        <div class="landing-container" id="landingContainer">
-            <button class="landing-btn" onclick="showAuth()">입장하기</button>
-        </div>
 
         <div class="scene hidden-scene" id="scene">
             <div class="auth-card-container flipped" id="cardContainer">
@@ -423,6 +118,13 @@
         </div>
     </div>
 
+    <!-- 로딩 오버레이 -->
+    <div class="magical-loading-overlay" id="loadingOverlay">
+        <div class="magic-circle"></div>
+        <div class="magic-cat">🐱</div>
+        <p>오조의 마법 세계로 이동하는 중...</p>
+    </div>
+
     <script>
         // --- UI Interactions ---
 
@@ -437,6 +139,12 @@
             
             // Allow forms to render completely before measuring 
             setTimeout(updateSceneHeight, 50);
+
+            // 로고 호버 애니메이션
+            const authBrandLogo = document.getElementById('mainBrandLogo');
+            if(authBrandLogo) {
+                authBrandLogo.addEventListener('mouseenter', showAuth);
+            }
         });
 
         const cardContainer = document.getElementById('cardContainer');
@@ -454,14 +162,13 @@
         }
 
         function showAuth() {
-            const landingContainer = document.getElementById('landingContainer');
-            landingContainer.classList.add('hidden');
-            
-            scene.classList.remove('hidden-scene');
-            scene.classList.add('blooming');
-            
-            // Allow display block to render then calculate height
-            setTimeout(updateSceneHeight, 50);
+            if(!document.body.classList.contains('is-auth-active')) {
+                document.body.classList.add('is-auth-active');
+                scene.classList.remove('hidden-scene');
+                scene.classList.add('blooming');
+                
+                setTimeout(updateSceneHeight, 50);
+            }
         }
 
         function flipCard(target) {
@@ -507,7 +214,13 @@
                     if (authHeader && authHeader.startsWith('Bearer ')) {
                         const token = authHeader.substring(7);
                         saveToken(token);
-                        window.location.href = '/';
+                        
+                        // 마법 폴백 로딩
+                        const loadingOverlay = document.getElementById('loadingOverlay');
+                        loadingOverlay.classList.add('active');
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 2500); // 2.5초 대기 후 이동
                     } else {
                         errorText.textContent = '토큰을 받을 수 없습니다.';
                         errorMessage.style.display = 'block';

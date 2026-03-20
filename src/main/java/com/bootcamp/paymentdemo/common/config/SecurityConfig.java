@@ -60,6 +60,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/pages/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/signup").permitAll()
 
+                        // 예상치 못한 오류 등이 발생했는데 LOGIN_ERROR 가 뜨지 않도록 함
+                        .requestMatchers(HttpMethod.GET, "/error").permitAll()
 
                         // Public API 엔드포인트 허용
                         .requestMatchers("/api/public/**").permitAll()
