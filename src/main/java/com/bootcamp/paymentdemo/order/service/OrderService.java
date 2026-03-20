@@ -2,6 +2,7 @@ package com.bootcamp.paymentdemo.order.service;
 
 import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
+import com.bootcamp.paymentdemo.common.global.PageResponse;
 import com.bootcamp.paymentdemo.order.dto.request.OrderCreateRequest;
 import com.bootcamp.paymentdemo.order.dto.response.OrderConfirmResponse;
 import com.bootcamp.paymentdemo.order.dto.response.OrderCreateResponse;
@@ -12,6 +13,8 @@ import com.bootcamp.paymentdemo.order.entity.OrderItem;
 import com.bootcamp.paymentdemo.order.repository.OrderItemRepository;
 import com.bootcamp.paymentdemo.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,12 +65,27 @@ public class OrderService {
     }
 
 
-    // 내 주문 목록 조회
-    public List<OrderListResponse> getMyOrders(Long userId) {
-        return orderRepository.findByUserId(userId)
-                .stream()
-                .map(OrderListResponse::from)
-                .toList();
+//    //
+//      내 주문 목록 페이징 조회
+//
+//      - 기존 List 반환 → Page 기반 PageResponse 반환으로 변경
+//      - Pageable을 파라미터로 받아 Controller에서 지정한 정렬·페이지 정보를 그대로 Repository에 전달
+//      - Page<Order> → Page<OrderListResponse> 변환 후 PageResponse로 래핑
+//        (PageResponse.from()은 content, page, size, totalElements, totalPages를 담아 반환)
+//
+//      @param userId   조회할 유저 ID
+//      @param pageable 페이지 번호·사이즈·정렬 정보
+//      @return 페이징 정보 + 주문 목록
+//
+    public PageResponse<OrderListResponse> getMyOrders(Long userId, Pageable pageable) {
+        // 1. userId 조건 + 동적 정렬·페이징으로 Order 목록 조회
+        Page<OrderListResponse> page = orderRepository
+                .findByUserIdWithPaging(userId, pageable)
+                // 2. Page<Order> → Page<OrderListResponse> 변환 (Spring Data map() 활용)
+                .map(OrderListResponse::from);
+
+        // 3. PageResponse로 래핑하여 반환 (content + 페이징 메타)
+        return PageResponse.from(page);
     }
 
     // 주문 단건 조회
