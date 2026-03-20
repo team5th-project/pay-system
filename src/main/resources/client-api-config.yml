@@ -306,6 +306,79 @@ api:
               description: 변경된 주문 상태
 
     # ========================================
+    # 포인트 & 멤버십 (Point & Membership)
+    # ========================================
+    get-my-point:
+      url: /api/points/me
+      method: GET
+      description: 로그인한 사용자의 현재 포인트 및 멤버십 등급 조회
+      response:
+        headers:
+          - name: Authorization
+            required: true
+            description: Bearer JWT 토큰
+        body:
+          type: object
+          fields:
+            - name: currentPoint
+              type: number
+              required: true
+              description: 현재 포인트 잔액
+              example: "5000"
+            - name: grade
+              type: string
+              required: true
+              description: 현재 멤버십 등급 (NORMAL/VIP/VVIP)
+              example: "VIP"
+
+    get-point-history:
+      url: /api/points
+      method: GET
+      description: 로그인한 사용자의 포인트 거래내역 목록 조회
+      response:
+        headers:
+          - name: Authorization
+            required: true
+            description: Bearer JWT 토큰
+        body:
+          type: object
+          fields:
+            - name: pointHistories
+              type: array
+              required: true
+              description: "포인트 거래내역 목록 (id:number, orderId:number, type:EARN/USE/REFUND/EXPIRE, points:number, createdAt:string, expiredAt:string(EARN 타입만 존재))"
+              example: "[{id, orderId, type, points, createdAt, expiredAt}]"
+
+    get-membership-policies:
+      url: /api/points/grades
+      method: GET
+      description: 멤버십 등급 정책 목록 조회 (등급별 적립률, 인증 불필요)
+      response:
+        body:
+          type: array
+          items:
+            - name: grade
+              type: string
+              required: true
+              description: 멤버십 등급 (NORMAL/VIP/VVIP)
+              example: "NORMAL"
+            - name: minAmount
+              type: number
+              required: true
+              description: 등급 최소 결제 금액 기준
+              example: "0"
+            - name: maxAmount
+              type: number
+              required: false
+              description: 등급 최대 결제 금액 기준 (VVIP는 null)
+              example: "50000"
+            - name: pointRate
+              type: number
+              required: true
+              description: 포인트 적립률 (%)
+              example: "1"
+
+    # ========================================
     # 구독 & 빌링키 (Subscription & Billing Key)
     # ========================================
     list-plans:
