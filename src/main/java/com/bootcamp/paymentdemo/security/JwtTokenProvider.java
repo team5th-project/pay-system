@@ -137,22 +137,18 @@ public class JwtTokenProvider {
      * - 상세한 예외 처리
      */
     public boolean validateToken(String token) {
-        if (blacklistRepository.existsByToken(token)){
+        if (blacklistRepository.existsByToken(token)) {
             //token 이 블랙리스트에 들어가있을때
             throw new ServiceException(ErrorCode.JWT_INVALID);
         }
 
         try {
             Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token);
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token);
             return true;
 
-            // TODO: 구체적인 예외 처리 구현
-            // - ExpiredJwtException: 만료된 토큰
-            // - MalformedJwtException: 잘못된 형식
-            // - SignatureException: 서명 오류
         } catch (ExpiredJwtException e) {
             log.error("Expired Jwt Exception");
             throw new ServiceException(ErrorCode.JWT_EXPIRED);

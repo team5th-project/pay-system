@@ -7,6 +7,7 @@ import com.bootcamp.paymentdemo.security.JwtTokenProvider;
 import com.bootcamp.paymentdemo.user.dto.*;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/auth")
@@ -80,6 +82,7 @@ public class UserController {
      */
     @PostMapping("/signup")
     ResponseEntity<CommonResponse<SignupResponse>> signup(@RequestBody SignupRequest request){
+        log.info("controller 진입 성공");
         SignupResponse response = userService.signup(request);
         return CommonResponseHandler.success(HttpStatus.OK, response);
     }
@@ -110,8 +113,7 @@ public class UserController {
 
     @PostMapping("/reissue")
     public ResponseEntity<CommonResponse<Void>> reissue(
-            @RequestHeader String refreshToken,
-            HttpServletResponse response){
+            @RequestHeader String refreshToken){
 
         String token = userService.reissue(refreshToken);
 
