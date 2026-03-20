@@ -251,6 +251,15 @@
                     throw new Error('API 응답 형식이 올바르지 않습니다.');
                 }
 
+                if (!Array.isArray(result)) {
+                    orders = [];
+                    loadingEl.innerHTML = '';
+                    emptyEl.style.display = 'block';
+                    containerEl.style.display = 'none';
+                    showNotification('주문 목록 응답이 배열 형식이 아닙니다', 'error');
+                    return;
+                }
+
                 orders = result;
                 loadingEl.style.display = 'none';
 
@@ -271,6 +280,8 @@
             const tbody = document.getElementById('order-list-body');
             tbody.innerHTML = '';
 
+            if (!Array.isArray(orders)) return;
+
             orders.forEach(order => {
                 const tr = document.createElement('tr');
                 tr.style.borderBottom = '1px solid var(--border)';
@@ -279,9 +290,10 @@
                 const statusStyle = getStatusStyle(order.status);
 
                 // 포인트 정보 구성
-                const usedPoints = order.usedPoints || 0;
-                const earnedPoints = order.earnedPoints || 0;
-                const finalAmount = order.finalAmount || order.totalAmount;
+                const usedPoints = Number(order.usedPoints || 0) || 0;
+                const earnedPoints = Number(order.earnedPoints || 0) || 0;
+                const totalAmountNum = Number(order.totalAmount || 0) || 0;
+                const finalAmountNum = Number(order.finalAmount ?? order.totalAmount) || totalAmountNum;
 
                 let pointsDisplay = '';
                 if (usedPoints > 0 || earnedPoints > 0) {
@@ -301,8 +313,8 @@
                     <td style="padding: 0.75rem; font-weight: 600;">${order.orderNumber}</td>
                     <td style="padding: 0.75rem; font-family: monospace; font-size: 0.875rem; color: var(--text-secondary);">${order.orderUid}</td>
                     <td style="padding: 0.75rem;">
-                        <div style="font-weight: 600;">${order.totalAmount.toLocaleString()}원</div>
-                        ${usedPoints > 0 ? `<div style="font-size: 0.75rem; color: var(--text-secondary);">실결제: ${finalAmount.toLocaleString()}원</div>` : ''}
+                        <div style="font-weight: 600;">${totalAmountNum.toLocaleString()}원</div>
+                        ${usedPoints > 0 ? `<div style="font-size: 0.75rem; color: var(--text-secondary);">실결제: ${finalAmountNum.toLocaleString()}원</div>` : ''}
                     </td>
                     <td style="padding: 0.75rem;">
                         ${pointsDisplay}
@@ -314,7 +326,7 @@
                     </td>
                     <td style="padding: 0.75rem; text-align: center;">
                         ${order.status === 'PENDING' ?
-                            `<button class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="payOrder('${order.orderUid}', ${finalAmount})">
+                            `<button class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="payOrder('${order.orderUid}', ${finalAmountNum})">
                                 💳 결제하기
                             </button>` :
                             `<span style="color: var(--text-secondary); font-size: 0.875rem;">-</span>`
