@@ -141,11 +141,20 @@
         }
 
         function normalizeOrderStatus(rawStatus) {
-            if (!rawStatus) return 'PENDING';
+            if (!rawStatus) return 'UNKNOWN';
             const s = String(rawStatus).trim().toUpperCase();
 
             // 이미 백엔드 enum 그대로 온 경우
-            if (['PENDING', 'PAID', 'CANCELLED', 'SHIPPED', 'DELIVERED'].includes(s)) return s;
+            if ([
+                'PENDING',
+                'PAID',
+                'CONFIRMED',
+                'FAILED',
+                'REFUNDED',
+                'CANCELLED',
+                'SHIPPED',
+                'DELIVERED'
+            ].includes(s)) return s;
 
             // 한글 상태 대응
             if (s === '결제 대기'.toUpperCase()) return 'PENDING';
@@ -154,8 +163,9 @@
             if (s === '배송중'.toUpperCase()) return 'SHIPPED';
             if (s === '배송 완료'.toUpperCase()) return 'DELIVERED';
 
-            // 알 수 없으면 기본을 PENDING으로 두되, 화면에서 걸러지지 않게 함
-            return 'PENDING';
+            // 알 수 없으면 실제 상태 문자열을 그대로 쓰고(필터링에서 제외되도록),
+            // 임의로 PENDING으로 오판하지 않게 합니다.
+            return s || 'UNKNOWN';
         }
 
         // API 목록 동적 생성
