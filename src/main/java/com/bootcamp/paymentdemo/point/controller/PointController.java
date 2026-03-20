@@ -6,10 +6,10 @@ import com.bootcamp.paymentdemo.common.global.PageResponse;
 import com.bootcamp.paymentdemo.point.dto.MembershipPolicyResponse;
 import com.bootcamp.paymentdemo.point.dto.MyPointResponse;
 import com.bootcamp.paymentdemo.point.dto.PointTransactionItem;
-import com.bootcamp.paymentdemo.point.entity.PointType;
 import com.bootcamp.paymentdemo.point.service.PointService;
 import com.bootcamp.paymentdemo.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -18,7 +18,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -51,8 +50,14 @@ public class PointController {
             ) Pageable pageable
     ) {
         Long userId = userDetails.getUserId();
+        // 요청값 검증 - size 상한선 방어 처리
+        Pageable safePageable = PageRequest.of(
+                pageable.getPageNumber(),
+                Math.min(pageable.getPageSize(), 50),
+                pageable.getSort()
+        );
         PageResponse<PointTransactionItem> response =
-                PageResponse.from(pointService.getPointHistory(userId, pageable));
+                PageResponse.from(pointService.getPointHistory(userId, safePageable));
         return CommonResponseHandler.success(HttpStatus.OK, response);
     }
 
