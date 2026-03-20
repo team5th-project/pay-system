@@ -152,6 +152,62 @@
         let orders = [];
         let selectedOrder = null;
 
+        // backend CommonResponse 래핑 제거 유틸
+        function unwrapCommonResponse(response) {
+            if (!response || typeof response !== 'object' || Array.isArray(response)) return response;
+            const looksLikeCommonResponse =
+                response.data !== undefined &&
+                (response.success !== undefined || response.status !== undefined) &&
+                'timestamp' in response;
+            return looksLikeCommonResponse ? response.data : response;
+        }
+
+        // points 화면 내부에서 쓰는 필드/값으로 정규화
+        function normalizeOrderForPoints(order) {
+            const orderUid = String(order.orderUid ?? order.orderId ?? order.uid ?? '');
+            const orderNumber = String(order.orderNumber ?? order.orderNo ?? '');
+
+            // totalAmount vs totalPrice 등 필드명 불일치 대응
+            const rawTotal = order.totalAmount ?? order.totalPrice ?? order.paymentPrice ?? 0;
+            const totalAmount = Number(rawTotal) || 0;
+
+            // 상태 값 매핑 (백엔드 enum(PENDING/PAID) 또는 한글 상태 문자열)
+            const rawStatus = order.status ?? order.orderStatus ?? order.orderState ?? '';
+            const normalizedStatus = normalizeOrderStatus(rawStatus);
+
+            const createdAt = String(
+                order.createdAt ?? order.orderedCreatedAt ?? order.created_at ?? new Date().toISOString()
+            );
+
+            return {
+                // paymentData(orderId)로 넘길 값이 controller가 기대하는 orderUid 여야 함
+                orderUid: orderUid,
+                orderId: orderUid,
+                orderNumber: orderNumber,
+                totalAmount: totalAmount,
+                status: normalizedStatus,
+                createdAt: createdAt
+            };
+        }
+
+        function normalizeOrderStatus(rawStatus) {
+            if (!rawStatus) return 'PENDING';
+            const s = String(rawStatus).trim().toUpperCase();
+
+            // 이미 백엔드 enum 그대로 온 경우
+            if (['PENDING', 'PAID', 'CANCELLED', 'SHIPPED', 'DELIVERED'].includes(s)) return s;
+
+            // 한글 상태 대응
+            if (s === '결제 대기'.toUpperCase()) return 'PENDING';
+            if (s === '결제 완료'.toUpperCase()) return 'PAID';
+            if (s === '취소됨'.toUpperCase()) return 'CANCELLED';
+            if (s === '배송중'.toUpperCase()) return 'SHIPPED';
+            if (s === '배송 완료'.toUpperCase()) return 'DELIVERED';
+
+            // 알 수 없으면 기본을 PENDING으로 두되, 화면에서 걸러지지 않게 함
+            return 'PENDING';
+        }
+
         // API 목록 동적 생성
         async function populateApiList() {
             const apiListElement = document.getElementById('api-list-points');
@@ -203,8 +259,8 @@
         // 사용자 정보 로드
         async function loadCurrentUser() {
             try {
-                currentUser = await makeApiRequest('get-current-user', {
-                });
+                const raw = await makeApiRequest('get-current-user', {});
+                currentUser = unwrapCommonResponse(raw);
 
                 if (!validateApiResponse('get-current-user', currentUser)) {
                     throw new Error('API 응답 형식이 올바르지 않습니다.');
@@ -218,19 +274,27 @@
         // 주문 목록 로드
         async function loadOrders() {
             try {
-                const result = await makeApiRequest('list-orders', {
-                });
+                const raw = await makeApiRequest('list-orders', {});
+                const result = unwrapCommonResponse(raw);
 
-                if (!validateApiResponse('list-orders', result)) {
-                    return;
+                // data가 배열이거나, { orders: [...] } 형태일 수 있어 둘 다 대응
+                let ordersArray = [];
+                if (Array.isArray(result)) {
+                    ordersArray = result;
+                } else if (result && Array.isArray(result.orders)) {
+                    ordersArray = result.orders;
                 }
 
-                if (result && Array.isArray(result)) {
-                    orders = result;
-                    renderOrders();
-                } else {
-                    showNotification('주문 목록이 배열 형식이 아닙니다', 'error');
+                // 화면/결제용으로 정규화
+                const normalized = ordersArray.map(normalizeOrderForPoints);
+
+                if (!validateApiResponse('list-orders', normalized)) {
+                    // 스키마 불일치가 있어도 화면이 안 보이는 것보다는 "최소 렌더링"을 우선
+                    console.warn('[points] list-orders schema validation failed, rendering anyway.');
                 }
+
+                orders = normalized;
+                renderOrders();
             } catch (error) {
                 console.error('Failed to load orders:', error);
                 showNotification('주문 목록을 불러올 수 없습니다', 'error');
@@ -295,8 +359,8 @@
 
         // 포인트 모달 열기
         function openPointsModal(orderId) {
-            // orders 배열에서 orderId로 주문 찾기
-            const order = orders.find(o => o.orderId === orderId);
+            // orders 배열에서 orderUid/orderId로 주문 찾기
+            const order = orders.find(o => o.orderId === orderId || o.orderUid === orderId);
 
             if (!order) {
                 showNotification('주문을 찾을 수 없습니다', 'error');

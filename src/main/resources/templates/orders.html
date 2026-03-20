@@ -417,10 +417,18 @@
             }
 
             try {
-                await confirmPaymentTemplate(paymentId);
+                const raw = await makeApiRequest('confirm-payment', {
+                    pathParams: paymentId
+                });
+                const data = unwrapCommonResponse(raw);
+
+                const orderId = data?.orderId ?? '-';
+                const status = data?.status ?? '-';
+                showNotification(`결제 확정 성공! (주문: ${orderId}, 상태: ${status})`, 'success');
                 await loadOrders(); // 주문 목록 새로고침
             } catch (error) {
                 console.error('Failed to confirm payment:', error);
+                showNotification('결제 확정 실패', 'error');
             }
         }
 
@@ -438,10 +446,21 @@
             }
 
             try {
-                await cancelPaymentTemplate(paymentId, 'Customer request');
+                const raw = await makeApiRequest('cancel-payment', {
+                    pathParams: paymentId,
+                    body: {
+                        reason: 'Customer request'
+                    }
+                });
+                const data = unwrapCommonResponse(raw);
+
+                const refundId = data?.refundId ?? '-';
+                const refundStatus = data?.refundStatus ?? '-';
+                showNotification(`환불 요청 성공! (환불ID: ${refundId}, 상태: ${refundStatus})`, 'success');
                 await loadOrders(); // 주문 목록 새로고침
             } catch (error) {
                 console.error('Failed to cancel payment:', error);
+                showNotification('환불 요청 실패', 'error');
             }
         }
 
