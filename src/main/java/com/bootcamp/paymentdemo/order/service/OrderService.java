@@ -58,15 +58,15 @@ public class OrderService {
 
         // 3. 주문 상품 생성
         request.getItems().forEach(orderItemRequest -> {
-
-            // TODO: 상품팀 API 연동 후 아래처럼 사용 예정
-//            Long productIdLong = Long.parseLong(orderItemRequest.getProductId());
+            // productService.getProductById()로 실제 상품 정보 조회
+            //  상품명, 가격을 하드코딩 없이 실제 값으로 저장
+            Product product = productService.getProductById(Long.parseLong(orderItemRequest.getProductId()));
 
             OrderItem orderItem = OrderItem.create(
                     order,
                     orderItemRequest.getProductId(),
-                    "상품명", // product팀 api 연동후 변경
-                    0L,                  // product팀 api 연동후 변경
+                    product.getName(),   // 실제 상품명
+                    product.getPrice(),  // 실제 가격
                     orderItemRequest.getQuantity()
             );
             orderItemRepository.save(orderItem);
