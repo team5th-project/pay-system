@@ -143,7 +143,7 @@
                 }
 
                 document.getElementById('current-user-email').textContent = currentUser.email;
-                document.getElementById('current-customer-id').textContent = currentUser.customerUid;
+                document.getElementById('current-customer-id').textContent = currentUser.id;
             } catch (error) {
                 console.error('Failed to load user info:', error);
                 showNotification('사용자 정보 로드 실패', 'error');
@@ -294,7 +294,8 @@
                     issueName: `${plan.name} Plan Subscription`,
                     billingKeyMethod: 'CARD',
                     customer: {
-                        customerId: currentUser.customerUid,
+                        // PortOne은 customerId에 string 타입을 요구합니다.
+                        customerId: String(currentUser.id),
                         fullName: currentUser.name,
                         phoneNumber: currentUser.phone || '01012345678',  // KG 이니시스 필수
                         email: currentUser.email
@@ -320,7 +321,7 @@
                 try {
                     subscriptionResult = await makeApiRequest('create-subscription', {
                         body: {
-                            customerUid: currentUser.customerUid,
+                            customerUid: currentUser.id,
                             planId: plan.planId,  // API에서 받은 planId 그대로 전송
                             billingKey: billingKey,
                             amount: plan.price

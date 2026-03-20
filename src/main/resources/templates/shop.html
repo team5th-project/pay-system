@@ -108,7 +108,11 @@
             response.data !== undefined &&
             (response.success !== undefined || response.status !== undefined) &&
             'timestamp' in response;
-        return looksLikeCommonResponse ? response.data.content : response;
+        // CommonResponse<T>의 data는 보통 바로 DTO 객체입니다.
+        // (일부 페이징 응답에서는 data.content 형태가 있을 수 있으므로 둘 다 대응)
+        if (!looksLikeCommonResponse) return response;
+        if (response.data && response.data.content !== undefined) return response.data.content;
+        return response.data;
     }
 
         // 페이지 로드 시 사용자 정보 가져오기

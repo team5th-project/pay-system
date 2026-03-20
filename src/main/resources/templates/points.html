@@ -520,7 +520,8 @@
                     currency: orderToProcess.currency,
                     payMethod: 'CARD',
                     customer: {
-                        customerId: currentUser.customerUid,
+                        // PortOne은 customerId에 string 타입을 요구합니다.
+                        customerId: String(currentUser.id),
                         fullName: currentUser.name,
                         phoneNumber: currentUser.phone || '01012345678',  // KG 이니시스 필수
                         email: currentUser.email

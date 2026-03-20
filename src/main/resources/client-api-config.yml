@@ -423,7 +423,7 @@ api:
       description: 구독 생성 (빌링키 저장 + 구독 생성을 하나의 트랜잭션으로 처리)
       request:
         fields:
-          - name: customerUid
+          - name: id
             type: string
             required: true
             description: PortOne 고객 고유 식별자
