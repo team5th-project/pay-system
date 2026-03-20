@@ -1,5 +1,6 @@
 package com.bootcamp.paymentdemo.common.config;
 
+import lombok.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -17,7 +18,7 @@ public class RestClientConfig {
 
             return RestClient.builder()
                     .requestFactory(factory)
-                    .baseUrl(properties.getApi().getBaseUrl())
+                    .baseUrl(properties.getApi().getBaseUrl())  // https://api.portone.io
                     .defaultHeader("Content-Type", "application/json")
                     .defaultHeader("Authorization","PortOne "+ properties.getApi().getSecret())
                     .build();
