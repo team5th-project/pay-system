@@ -262,47 +262,59 @@ api:
       response:
         body:
           fields:
-            - name: success
-              type: boolean
-              required: true
-              description: 확정 성공 여부
             - name: orderId
               type: string
-              required: false
-              description: 주문 ID
+              required: true
+              description: 주문 UID
             - name: status
               type: string
-              required: false
-              description: 변경된 주문 상태
+              required: true
+              description: 결제 상태 (PaymentStatus)
 
     cancel-payment:
-      url:
-      method:
-      description: 결제 취소/환불 (PortOne 결제 취소 및 주문 상태 업데이트)
+      url: /api/refunds/{paymentId}
+      method: POST
+      description: 결제 취소/환불 (RefundController를 통해 환불 요청)
       pathParams:
-        - name:
-          description: 결제 ID
+        - name: paymentId
+          description: 환불할 결제의 DB ID (RefundController는 Long paymentId를 기대)
       request:
         fields:
           - name: reason
             type: string
-            required: false
-            description: 취소 사유
+            required: true
+            description: 환불 사유
       response:
         body:
           fields:
-            - name: success
-              type: boolean
+            - name: refundId
+              type: number
               required: true
-              description: 취소 성공 여부
-            - name: orderId
+              description: 환불 ID
+            - name: orderUid
               type: string
-              required: false
-              description: 주문 ID
-            - name: status
+              required: true
+              description: 주문 UID
+            - name: paymentUid
               type: string
-              required: false
-              description: 변경된 주문 상태
+              required: true
+              description: 결제 UID
+            - name: refundAmount
+              type: number
+              required: true
+              description: 환불 금액
+            - name: reason
+              type: string
+              required: true
+              description: 환불 사유
+            - name: refundStatus
+              type: string
+              required: true
+              description: 환불 상태
+            - name: refundedAt
+              type: string
+              required: true
+              description: 환불 처리 시각
 
     # ========================================
     # 포인트 & 멤버십 (Point & Membership)
