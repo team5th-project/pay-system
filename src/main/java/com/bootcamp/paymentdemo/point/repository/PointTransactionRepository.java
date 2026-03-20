@@ -15,4 +15,6 @@ public interface PointTransactionRepository extends JpaRepository<PointTransacti
     List<PointTransaction> findByOrderIdAndType(Long orderId, PointType type);
     // 소멸용
     List<PointTransaction> findByTypeAndExpiredAtBefore(PointType type, LocalDateTime now);
+    // 기간 기반 소멸용 - EARN 적립-만료일 사이 use 포인트 조회
+    List<PointTransaction> findByUserIdAndTypeAndCreatedAtBetween(Long userId, PointType type, LocalDateTime start, LocalDateTime end);
 }

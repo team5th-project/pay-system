@@ -124,6 +124,12 @@ public class PointService {
     /** 포인트 소멸
      * 스케줄러(PointExpirationScheduler)에서 호출
      * 30일 지나면 포인트 자동 소멸
+     *
+     * 현재 방식: 기간 기반 소멸
+     * 소멸 포인트 = 만료될 EARN - 적립~만료일 사이 USE 포인트
+     *
+     * TODO: 한계점 - 두 EARN의 기간 겹치는 구간 use 있으면 같은 use가 두 EARN 계산에 중복 포함될 수 있음
+     *       FIFO같은 방식 개선 필요
      */
     @Transactional
     public void expirePoint() {
@@ -135,10 +141,22 @@ public class PointService {
         for (PointTransaction tx : expiredTransactions) {
             User user = userService.getUser(tx.getUserId());
 
-            //잔액 0이면 이미 다 사용 -> 소멸 처리 스킵
-            if (user.getPointBalance() <= 0) continue;
-            // 잔액 있다면 남은 잔액만큼 소멸
-            int expirePoints = Math.min(tx.getPoints(), user.getPointBalance());
+            // 해당 EARN 적립-만료일 사이 use포인트 합산
+            List<PointTransaction> usedTransactions = pointTransactionRepository.findByUserIdAndTypeAndCreatedAtBetween(
+                    tx.getUserId(),
+                    PointType.USE,
+                    tx.getCreatedAt(),  // earn 적립일
+                    tx.getExpiredAt() // 만료일
+            );
+
+            int totalUsed = usedTransactions.stream().mapToInt(
+                    t -> Math.abs(t.getPoints())).sum();
+
+            // 소멸 포인트 = EARN - 기간내 use (음수면 0)
+            int expirePoints = Math.max(0, tx.getPoints() - totalUsed);
+
+            //소멸포인트 없으면 스킵
+            if (expirePoints <= 0) continue;
             // 포인트 차감
             user.deductPoint(expirePoints);
             // EXPIRE 타입으로 거래내역 저장
