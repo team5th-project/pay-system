@@ -227,7 +227,7 @@
                         errorMessage.style.display = 'block';
                     }
                 } else {
-                    errorText.textContent = result.data.message || '이메일 또는 비밀번호가 올바르지 않습니다.';
+                    errorText.textContent = result.data.error?.message || '이메일 또는 비밀번호가 올바르지 않습니다.';
                     errorMessage.style.display = 'block';
                 }
             } catch (error) {

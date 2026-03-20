@@ -48,14 +48,14 @@ api:
             description: "JWT 토큰 (Bearer {token} 형식)"
         body:
           fields:
-            - name: success
-              type: boolean
-              required: true
-              description: 로그인 성공 여부
             - name: email
               type: string
-              required: false
+              required: true
               description: 로그인한 사용자 이메일
+            - name: id
+              type: string
+              required: true
+              description: 사용자 ID
 
     register:
       url: /api/auth/signup
@@ -78,14 +78,26 @@ api:
       response:
         body:
           fields:
-            - name: success
-              type: boolean
+            - name: id
+              type: number
               required: true
-              description: 회원가입 성공 여부
-            - name: message
+              description: 사용자 ID
+            - name: name
+              type: string
+              required: true
+              description: 사용자 이름
+            - name: customerUid
               type: string
               required: false
-              description: 에러 메시지 (실패 시)
+              description: PortOne 고객 고유 식별자
+            - name: email
+              type: string
+              required: true
+              description: 사용자 이메일
+            - name: phone
+              type: string
+              required: true
+              description: 사용자 전화번호
 
     get-current-user:
       url: /api/auth/me
@@ -114,10 +126,6 @@ api:
               required: true
               description: 사용자 전화번호 (KG 이니시스 필수)
               usage: PortOne payment window customer.phoneNumber
-            - name: pointBalance
-              type: number
-              required: true
-              description: 현재 포인트 잔액
 
     # ========================================
     # 상품 & 주문 (Product & Order)
@@ -184,34 +192,18 @@ api:
         body:
           type: array
           items:
+            - name: orderUid
+              type: string
+              required: true
+              description: 주문 UID (서버에서 주문을 식별하는 키)
             - name: orderNumber
               type: string
               required: true
               description: 주문 번호 (사용자에게 보이는 주문 번호)
-            - name: orderId
-              type: string
-              required: true
-              description: 주문 ID (시스템 고유 식별자)
             - name: totalAmount
               type: number
               required: true
-              description: 주문 금액 (포인트 차감 전)
-            - name: usedPoints
-              type: number
-              required: false
-              description: 사용한 포인트
-            - name: finalAmount
-              type: number
-              required: false
-              description: 최종 결제 금액 (포인트 차감 후)
-            - name: earnedPoints
-              type: number
-              required: false
-              description: 적립된 포인트
-            - name: currency
-              type: string
-              required: true
-              description: 통화
+              description: 주문 금액
             - name: status
               type: string
               required: true
@@ -245,18 +237,14 @@ api:
       response:
         body:
           fields:
-            - name: success
-              type: boolean
-              required: true
-              description: 생성 성공 여부
             - name: paymentId
               type: string
               required: true
               description: 생성된 결제 ID (PortOne SDK에 전달할 ID)
-            - name: status
+            - name: paymentStatus
               type: string
-              required: false
-              description: 결제 상태 (PENDING)
+              required: true
+              description: 결제 상태 (e.g. PENDING)
 
     confirm-payment:
       url:

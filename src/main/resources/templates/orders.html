@@ -165,6 +165,16 @@
         let currentUser = null;
         let orders = [];
 
+        // backend CommonResponse 래핑 제거 유틸
+        function unwrapCommonResponse(response) {
+            if (!response || typeof response !== 'object' || Array.isArray(response)) return response;
+            const looksLikeCommonResponse =
+                response.data !== undefined &&
+                (response.success !== undefined || response.status !== undefined) &&
+                'timestamp' in response;
+            return looksLikeCommonResponse ? response.data : response;
+        }
+
         // API 목록 동적 생성
         async function populateApiList() {
             const apiListElement = document.getElementById('api-list-orders');
@@ -214,8 +224,8 @@
         // 사용자 정보 로드
         async function loadCurrentUser() {
             try {
-                currentUser = await makeApiRequest('get-current-user', {
-                });
+                const raw = await makeApiRequest('get-current-user', {});
+                currentUser = unwrapCommonResponse(raw);
 
                 if (!validateApiResponse('get-current-user', currentUser)) {
                     throw new Error('API 응답 형식이 올바르지 않습니다.');
@@ -233,8 +243,8 @@
             const emptyEl = document.getElementById('order-list-empty');
 
             try {
-                const result = await makeApiRequest('list-orders', {
-                });
+                const raw = await makeApiRequest('list-orders', {});
+                const result = unwrapCommonResponse(raw);
 
                 // YML 스키마 기반 자동 검증
                 if (!validateApiResponse('list-orders', result)) {
@@ -289,7 +299,7 @@
 
                 tr.innerHTML = `
                     <td style="padding: 0.75rem; font-weight: 600;">${order.orderNumber}</td>
-                    <td style="padding: 0.75rem; font-family: monospace; font-size: 0.875rem; color: var(--text-secondary);">${order.orderId}</td>
+                    <td style="padding: 0.75rem; font-family: monospace; font-size: 0.875rem; color: var(--text-secondary);">${order.orderUid}</td>
                     <td style="padding: 0.75rem;">
                         <div style="font-weight: 600;">${order.totalAmount.toLocaleString()}원</div>
                         ${usedPoints > 0 ? `<div style="font-size: 0.75rem; color: var(--text-secondary);">실결제: ${finalAmount.toLocaleString()}원</div>` : ''}
@@ -304,7 +314,7 @@
                     </td>
                     <td style="padding: 0.75rem; text-align: center;">
                         ${order.status === 'PENDING' ?
-                            `<button class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="payOrder('${order.orderId}', ${finalAmount})">
+                            `<button class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="payOrder('${order.orderUid}', ${finalAmount})">
                                 💳 결제하기
                             </button>` :
                             `<span style="color: var(--text-secondary); font-size: 0.875rem;">-</span>`
@@ -324,7 +334,7 @@
             }
 
             // 해당 주문 찾기
-            const order = orders.find(o => o.orderId === orderId);
+            const order = orders.find(o => o.orderUid === orderId);
             if (!order) {
                 showNotification('⚠️ 주문을 찾을 수 없습니다', 'error');
                 return;

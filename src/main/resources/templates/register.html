@@ -274,7 +274,7 @@
                     flipCard('login');
                     document.getElementById('register-form').reset();
                 } else {
-                    errorText.textContent = result.message || '회원가입에 실패했습니다.';
+                    errorText.textContent = result.error?.message || '회원가입에 실패했습니다.';
                     errorMessage.style.display = 'block';
                 }
             } catch (error) {
