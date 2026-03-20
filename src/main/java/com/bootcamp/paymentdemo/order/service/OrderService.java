@@ -13,6 +13,8 @@ import com.bootcamp.paymentdemo.order.entity.OrderItem;
 import com.bootcamp.paymentdemo.order.enums.OrderStatus;
 import com.bootcamp.paymentdemo.order.repository.OrderItemRepository;
 import com.bootcamp.paymentdemo.order.repository.OrderRepository;
+import com.bootcamp.paymentdemo.product.Product;
+import com.bootcamp.paymentdemo.product.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,15 +31,22 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
+    private final ProductService productService;
 
     // 주문 생성
     @Transactional
     public OrderCreateResponse createOrder(Long userId,
                                            OrderCreateRequest request) {
         // 1. 총 금액 계산 (product와 협의 후 수정예정)
+//        Long totalAmount = request.getItems().stream()
+//                .mapToLong(item -> item.getQuantity())
+//                .sum();   // product팀 api 연동 후 실제 가격으로 변경
         Long totalAmount = request.getItems().stream()
-                .mapToLong(item -> item.getQuantity())
-                .sum();   // product팀 api 연동 후 실제 가격으로 변경
+            .mapToLong(item -> {
+                Product product = productService.getProductById(Long.parseLong(item.getProductId()));
+                return (long) item.getQuantity() * product.getPrice();
+            })
+            .sum();
 
         Long usedPoint = request.getUsedPoint() != null
                 ? request.getUsedPoint() : 0L;

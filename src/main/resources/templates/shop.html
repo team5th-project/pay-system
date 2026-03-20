@@ -108,7 +108,7 @@
             response.data !== undefined &&
             (response.success !== undefined || response.status !== undefined) &&
             'timestamp' in response;
-        return looksLikeCommonResponse ? response.data : response;
+        return looksLikeCommonResponse ? response.data.content : response;
     }
 
         // 페이지 로드 시 사용자 정보 가져오기
