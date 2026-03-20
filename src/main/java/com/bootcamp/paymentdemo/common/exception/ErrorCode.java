@@ -40,6 +40,7 @@ public enum ErrorCode {
     NOT_PAID_YET(HttpStatus.BAD_REQUEST, "PAY009", "아직 결제되지 않은 결제 요청입니다."),
     PAYMENT_AMOUNT_NOT_EQUALS(HttpStatus.BAD_REQUEST,"PAY010","결제 금액이 일치하지 않습니다."),
     PAYMENT_STATUS_NOT_PENDING(HttpStatus.BAD_REQUEST,"PAY011","결제 상태가 결제 대기 상태가 아닙니다."),
+    UNKNOWN_PORTONE_STATUS(HttpStatus.NOT_FOUND, "PAY012", "존재하지 않는 포트원 상태입니다."),
 
     // 포트원 에러
     INVALID_PAYMENT_VALIDATION_REQUEST(HttpStatus.BAD_REQUEST,"PAY005","잘못된 결제 검증 요청입니다."),

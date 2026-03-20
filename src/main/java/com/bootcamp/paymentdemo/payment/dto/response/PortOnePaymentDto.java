@@ -17,7 +17,7 @@ public record PortOnePaymentDto(
         return new PortOnePaymentDto(paymentTransaction.id(),
                 paymentTransaction.paymentId(),
                 paymentAmount.paid(),
-                paymentTransaction.status());
+                PortOnePaymentStatus.from(paymentTransaction.status().toString()));
 
 
     }

@@ -6,6 +6,8 @@ public enum PaymentStatus {
     FAILED,
     REFUNDED;
 
+
+
     public static PaymentStatus from(PortOnePaymentStatus status) {
         return switch (status) {
             case READY -> PaymentStatus.PENDING;
