@@ -134,11 +134,16 @@ public class PointService {
 
         for (PointTransaction tx : expiredTransactions) {
             User user = userService.getUser(tx.getUserId());
+
+            //잔액 0이면 이미 다 사용 -> 소멸 처리 스킵
+            if (user.getPointBalance() <= 0) continue;
+            // 잔액 있다면 남은 잔액만큼 소멸
+            int expirePoints = Math.min(tx.getPoints(), user.getPointBalance());
             // 포인트 차감
-            user.deductPoint(tx.getPoints());
+            user.deductPoint(expirePoints);
             // EXPIRE 타입으로 거래내역 저장
             pointTransactionRepository.save(
-                    PointTransaction.expire(tx.getUserId(), tx.getPoints())
+                    PointTransaction.expire(tx.getUserId(), expirePoints)
             );
         }
     }
