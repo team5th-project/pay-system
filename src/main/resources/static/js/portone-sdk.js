@@ -39,8 +39,8 @@ async function openPortOnePayment(paymentData) {
         // 1단계: 서버에 결제 시작 요청 (PENDING 상태로 DB 저장)
         console.log('1단계: 서버에 결제 시작 요청...');
         const createPaymentResult = await makeApiRequest('create-payment', {
+            pathParams: paymentData.orderId,
             body: {
-                orderId: paymentData.orderId,
                 totalAmount: paymentData.totalAmount
             }
         });
@@ -55,7 +55,10 @@ async function openPortOnePayment(paymentData) {
         }
 
         // 서버에서 생성한 paymentId 사용
-        const serverPaymentId = createPaymentResult.paymentId;
+        const serverPaymentId = createPaymentResult?.data?.paymentId;
+        if (!serverPaymentId) {
+            throw new Error('결제 시작 응답에 paymentId가 없습니다.');
+        }
         console.log('서버에서 생성한 결제 ID:', serverPaymentId);
 
         // 2단계: PortOne 결제창 열기
@@ -142,10 +145,9 @@ async function openPortOnePaymentWithPoints(paymentData) {
         // 1단계: 서버에 결제 시작 요청 (PENDING 상태로 DB 저장, 포인트 포함)
         console.log('1단계: 서버에 결제 시작 요청 (포인트 포함)...');
         const createPaymentResult = await makeApiRequest('create-payment', {
+            pathParams: paymentData.orderId,
             body: {
-                orderId: paymentData.orderId,
-                totalAmount: paymentData.totalAmount,
-                pointsToUse: pointsToUse
+                totalAmount: paymentData.totalAmount
             }
         });
 
@@ -159,7 +161,10 @@ async function openPortOnePaymentWithPoints(paymentData) {
         }
 
         // 서버에서 생성한 paymentId 사용
-        const serverPaymentId = createPaymentResult.paymentId;
+        const serverPaymentId = createPaymentResult?.data?.paymentId;
+        if (!serverPaymentId) {
+            throw new Error('결제 시작 응답에 paymentId가 없습니다.');
+        }
         console.log('서버에서 생성한 결제 ID:', serverPaymentId);
 
         // 포인트 차감 후 최종 금액 계산

@@ -28,7 +28,7 @@
                 <img src="/images/logos/main-logo.png" alt="Pay System">
             </h1>
         </div>
-        <p class="hover-hint">✨ 로고에 마우스를 올려 마법을 시작하세요! ✨</p>
+        <p class="hover-hint">✨ 로고를 클릭해 마법을 시작하세요! ✨</p>
         <p class="creators">Team 오조의 마법사 : 권지원, 김예은, 박소영, 정민교, 신현민</p>
     </div>
 
@@ -140,10 +140,11 @@
             // Allow forms to render completely before measuring 
             setTimeout(updateSceneHeight, 50);
 
-            // 로고 호버 애니메이션
+            // 로고 클릭 이벤트
             const authBrandLogo = document.getElementById('mainBrandLogo');
             if(authBrandLogo) {
-                authBrandLogo.addEventListener('mouseenter', showAuth);
+                authBrandLogo.style.cursor = 'pointer';
+                authBrandLogo.addEventListener('click', showAuth);
             }
         });
 
@@ -273,7 +274,7 @@
                     flipCard('login');
                     document.getElementById('register-form').reset();
                 } else {
-                    errorText.textContent = result.message || '회원가입에 실패했습니다.';
+                    errorText.textContent = result.error?.message || '회원가입에 실패했습니다.';
                     errorMessage.style.display = 'block';
                 }
             } catch (error) {

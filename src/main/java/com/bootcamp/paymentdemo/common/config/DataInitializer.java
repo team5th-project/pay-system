@@ -3,6 +3,9 @@ package com.bootcamp.paymentdemo.common.config;
 import com.bootcamp.paymentdemo.point.entity.MembershipGrade;
 import com.bootcamp.paymentdemo.point.entity.MembershipPolicy;
 import com.bootcamp.paymentdemo.point.repository.MembershipPolicyRepository;
+import com.bootcamp.paymentdemo.user.UserService;
+
+import com.bootcamp.paymentdemo.user.dto.SignupRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -18,10 +21,25 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DataInitializer implements ApplicationRunner {
 
+    private final UserService userService;
     private final MembershipPolicyRepository membershipPolicyRepository;
 
     @Override
     public void run(ApplicationArguments args) {
+        // 프론트 로그인 페이지에 표시된 테스트 계정
+        String name = "권지원";
+        String email = "admin@test.com";
+        String password = "admin";
+
+
+        userService.signup(SignupRequest.builder()
+                        .name(name)
+                        .email(email)
+                        .phone("01012341234")
+                        .password(password)
+                .build());
+
+
         // MembershipPolicy 초기 데이터 삽입
         // 없으면 등급 갱신, 포인트 적립, 등급 정책 조회 API 동작 안 함
         // NORMAL(1%), VIP(5%), VVIP(10%)

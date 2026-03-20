@@ -6,6 +6,7 @@ import com.bootcamp.paymentdemo.point.dto.PointHistoryResponse;
 import com.bootcamp.paymentdemo.point.entity.MembershipGrade;
 import com.bootcamp.paymentdemo.point.entity.MembershipPolicy;
 import com.bootcamp.paymentdemo.point.entity.PointTransaction;
+import com.bootcamp.paymentdemo.point.entity.PointType;
 import com.bootcamp.paymentdemo.point.repository.MembershipPolicyRepository;
 import com.bootcamp.paymentdemo.point.repository.PointTransactionRepository;
 import com.bootcamp.paymentdemo.user.entity.User;
@@ -36,7 +37,7 @@ public class PointService {
     public void usePoint(Long userId, Long orderId, int points) {
         // 사용자 조회
         User user = userService.getUser(userId);
-        // 포인트 차감(잔액 부족시 INSUFFICIENt_POINTS 에러 발생)
+        // 포인트 차감
         user.deductPoint(points);
         //포인트 거래 내역 저장
         pointTransactionRepository.save(PointTransaction.use(userId, orderId, points));
@@ -55,7 +56,7 @@ public class PointService {
         User user = userService.getUser(userId);
         // 멤버십 등급 조회
         MembershipPolicy policy = membershipPolicyRepository.findByGrade(user.getMembershipGrade());
-        // 적립 포인트 게산
+        // 적립 포인트 계산
         int earnedPoints = PointCalculator.calculate(paymentAmount,policy.getPointRate());
         // 전액 포인트 결제 시 적립 없음
         if (earnedPoints == 0 ) return;
@@ -67,6 +68,35 @@ public class PointService {
         );
 
     }
+
+    /**
+     * 포인트 환불
+     * 환불 완료 이벤트(RefundCompletedEvent) 수신 시 PointEventHandler 에서 호출
+     * 해당 주문에서 사용한 포인트를 복구하고 등급 롤백
+     */
+    @Transactional
+    public void refundPoint(Long userId, Long orderId, long refundAmount) {
+        User user = userService.getUser(userId);
+
+        List<PointTransaction> usedTransactions = pointTransactionRepository.findByOrderIdAndType(orderId, PointType.USE);
+        //사용한 포인트 있는 경우만 복구
+        if (!usedTransactions.isEmpty()) {
+            // USE 거래 points 음수로 저장되어 있기때문에 절대값으로 복구
+            int refundPoints = usedTransactions.stream()
+                    .mapToInt(tx -> Math.abs(tx.getPoints()))
+                    .sum();
+            // 포인트 잔액 복구
+            user.addPoint(refundPoints);
+            // Refund 타입으로 거래내역 저장
+            pointTransactionRepository.save(
+                    PointTransaction.refund(userId, orderId, refundPoints));
+        }
+        // 누적 주문금액 차감 -> 등급 롤백 기준
+        user.deductTotalOrderAmount(refundAmount);
+        // 등급 롤백
+        updateMembershipGrade(userId);
+    }
+
 
     /**
      * 멤버십 등급 갱신
@@ -88,6 +118,52 @@ public class PointService {
                 .orElse(MembershipGrade.VVIP);
 
         user.updateGrade(newGrade);
+    }
+
+
+    /** 포인트 소멸
+     * 스케줄러(PointExpirationScheduler)에서 호출
+     * 30일 지나면 포인트 자동 소멸
+     *
+     * 현재 방식: 기간 기반 소멸
+     * 소멸 포인트 = 만료될 EARN - 적립~만료일 사이 USE 포인트
+     *
+     * TODO: 한계점 - 두 EARN의 기간 겹치는 구간 use 있으면 같은 use가 두 EARN 계산에 중복 포함될 수 있음
+     *       FIFO같은 방식 개선 필요
+     */
+    @Transactional
+    public void expirePoint() {
+        List<PointTransaction> expiredTransactions = pointTransactionRepository.findByTypeAndExpiredAtBefore(
+                PointType.EARN, LocalDateTime.now());
+        // 만료된 포인트 없으면 종료
+        if (expiredTransactions.isEmpty()) return;
+
+        for (PointTransaction tx : expiredTransactions) {
+            User user = userService.getUser(tx.getUserId());
+
+            // 해당 EARN 적립-만료일 사이 USE포인트 합산
+            List<PointTransaction> usedTransactions = pointTransactionRepository.findByUserIdAndTypeAndCreatedAtBetween(
+                    tx.getUserId(),
+                    PointType.USE,
+                    tx.getCreatedAt(),  //적립일
+                    tx.getExpiredAt() // 만료일
+            );
+
+            int totalUsed = usedTransactions.stream().mapToInt(
+                    t -> Math.abs(t.getPoints())).sum();
+
+            // 소멸 포인트 = EARN - 기간내 use (음수면 0)
+            int expirePoints = Math.max(0, tx.getPoints() - totalUsed);
+
+            //소멸포인트 없으면 스킵
+            if (expirePoints <= 0) continue;
+            // 포인트 차감
+            user.deductPoint(expirePoints);
+            // EXPIRE 타입으로 거래내역 저장
+            pointTransactionRepository.save(
+                    PointTransaction.expire(tx.getUserId(), expirePoints)
+            );
+        }
     }
 
     // 현재 포인트+등급 조회 (GET /api/points/me)
