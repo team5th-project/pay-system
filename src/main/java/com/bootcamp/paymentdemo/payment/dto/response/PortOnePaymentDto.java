@@ -12,6 +12,7 @@ public record PortOnePaymentDto(
     public static PortOnePaymentDto from(PortOneResponse portOneResponse) {
         PortOneResponse.PaymentTransaction paymentTransaction
                 = portOneResponse.items().stream().findFirst().get();
+
         PortOneResponse.PaymentTransaction.PaymentAmount paymentAmount = paymentTransaction.amount().stream().findFirst().get();
 
         return new PortOnePaymentDto(paymentTransaction.id(),

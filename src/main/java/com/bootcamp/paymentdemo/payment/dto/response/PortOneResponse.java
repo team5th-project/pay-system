@@ -14,7 +14,7 @@ public record PortOneResponse(
             FAILED      // 결제 실패
             CANCELED    // 결제 취소
              */
-        PortOnePaymentStatus status,
+        String status,
         String id,  // transactionId
         String paymentId,
         List<PaymentAmount> amount
