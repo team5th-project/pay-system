@@ -10,6 +10,7 @@ import com.bootcamp.paymentdemo.order.dto.response.OrderDetailResponse;
 import com.bootcamp.paymentdemo.order.dto.response.OrderListResponse;
 import com.bootcamp.paymentdemo.order.entity.Order;
 import com.bootcamp.paymentdemo.order.entity.OrderItem;
+import com.bootcamp.paymentdemo.order.enums.OrderStatus;
 import com.bootcamp.paymentdemo.order.repository.OrderItemRepository;
 import com.bootcamp.paymentdemo.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
@@ -65,22 +66,23 @@ public class OrderService {
     }
 
 
-//    //
-//      내 주문 목록 페이징 조회
 //
-//      - 기존 List 반환 → Page 기반 PageResponse 반환으로 변경
+//      내 주문 목록 페이징 + 상태 필터 조회
+//
+//      - status가 null이면 전체 조회, 값이 있으면 해당 상태만 필터링
 //      - Pageable을 파라미터로 받아 Controller에서 지정한 정렬·페이지 정보를 그대로 Repository에 전달
 //      - Page<Order> → Page<OrderListResponse> 변환 후 PageResponse로 래핑
 //        (PageResponse.from()은 content, page, size, totalElements, totalPages를 담아 반환)
 //
 //      @param userId   조회할 유저 ID
+//      @param status   필터링할 주문 상태 (null 이면 전체 조회)
 //      @param pageable 페이지 번호·사이즈·정렬 정보
-//      @return 페이징 정보 + 주문 목록
+//      @return 페이징 메타 정보 + 주문 목록
 //
-    public PageResponse<OrderListResponse> getMyOrders(Long userId, Pageable pageable) {
-        // 1. userId 조건 + 동적 정렬·페이징으로 Order 목록 조회
+    public PageResponse<OrderListResponse> getMyOrders(Long userId, OrderStatus status, Pageable pageable) {
+        // 1. userId + status 조건으로 필터링, 동적 정렬·페이징 적용
         Page<OrderListResponse> page = orderRepository
-                .findByUserIdWithPaging(userId, pageable)
+                .findByUserIdWithPaging(userId, status, pageable)
                 // 2. Page<Order> → Page<OrderListResponse> 변환 (Spring Data map() 활용)
                 .map(OrderListResponse::from);
 

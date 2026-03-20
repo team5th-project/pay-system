@@ -8,6 +8,7 @@ import com.bootcamp.paymentdemo.order.dto.response.OrderConfirmResponse;
 import com.bootcamp.paymentdemo.order.dto.response.OrderCreateResponse;
 import com.bootcamp.paymentdemo.order.dto.response.OrderDetailResponse;
 import com.bootcamp.paymentdemo.order.dto.response.OrderListResponse;
+import com.bootcamp.paymentdemo.order.enums.OrderStatus;
 import com.bootcamp.paymentdemo.order.service.OrderService;
 import com.bootcamp.paymentdemo.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -40,27 +41,32 @@ public class OrderController {
     }
 
 //
-//      내 주문 목록 페이징 조회
+//      내 주문 목록 페이징 + 상태 필터 조회
 //
+//      - @RequestParam status: 주문 상태 필터 (선택값)
+//        → 없으면 전체 조회, 있으면 해당 상태만 필터링
+//        → 예: ?status=PAID, ?status=CONFIRMED
 //      - @PageableDefault: 클라이언트가 아무 파라미터도 안 보내면 적용되는 기본값
-//          size=10      → 한 페이지에 10건
-//          sort="createdAt" + DESC → 최신 주문 먼저
-//      - 동적 정렬: 클라이언트가 ?sort=totalAmount,asc 처럼 보내면 그 기준으로 덮어씀
-//      - 반환 타입을 List → PageResponse로 변경해 페이징 메타(총 건수, 총 페이지 등) 함께 응답
+//        → size=10 (한 페이지 10건), createdAt DESC (최신순)
+//      - 동적 정렬: ?sort=totalAmount,asc 처럼 보내면 그 기준으로 덮어씀
 //
 //      요청 예시)
-//        GET /api/orders                          → 기본값 (1페이지, 10건, 최신순)
-//        GET /api/orders?page=0&size=5            → 1페이지, 5건
-//        GET /api/orders?sort=totalAmount,desc    → 금액 높은 순 정렬
+//        GET /api/orders                          → 전체 조회 (10건, 최신순)
+//        GET /api/orders?status=PAID              → 결제완료 주문만
+//        GET /api/orders?status=CONFIRMED         → 확정 주문만
+//        GET /api/orders?page=0&size=5            → 5건씩 페이징
+//       GET /api/orders?sort=totalAmount,desc    → 금액 높은 순 정렬
 //
     @GetMapping
     public ResponseEntity<CommonResponse<PageResponse<OrderListResponse>>> getMyOrders(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            // 기본값: size=10, createdAt 기준 최신순 / 클라이언트 ?sort= 파라미터로 동적 변경 가능
+            // 주문 상태 필터 (선택값) - null이면 전체 조회
+            @RequestParam(required = false) OrderStatus status,
+            // 기본값: size=10, createdAt 기준 최신순 / ?sort= 파라미터로 동적 변경 가능
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Long userId = userDetails.getUserId();
-        PageResponse<OrderListResponse> response = orderService.getMyOrders(userId, pageable);
+        PageResponse<OrderListResponse> response = orderService.getMyOrders(userId, status, pageable);
         return CommonResponseHandler.success(HttpStatus.OK, response);
     }
     //  주문 단건 조회
