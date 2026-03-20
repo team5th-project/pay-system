@@ -1,43 +1,11 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{}, ~{::.content-area})}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}">
     <title>포인트 결제 - Commerce Demo</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <script src="https://cdn.portone.io/v2/browser-sdk.js"></script>
-    <script th:src="@{/js/cookie-util.js}"></script>
-    <script th:src="@{/js/app-config.js}"></script>
-    <script th:src="@{/js/api-handler.js}"></script>
-    <script th:src="@{/js/api-validator.js}"></script>
-    <script th:src="@{/js/theme.js}"></script>
-    <script th:src="@{/js/portone-sdk.js}"></script>
-    <script th:src="@{/js/auth-check.js}"></script>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="navbar-container">
-            <a href="/" class="navbar-brand">🏪 CommerceHub</a>
-            <ul class="navbar-nav">
-                <li><a href="/" class="nav-link">홈</a></li>
-                <li><a href="/pages/shop" class="nav-link">상점</a></li>
-                <li><a href="/pages/orders" class="nav-link">주문</a></li>
-                <li><a href="/pages/points" class="nav-link active">포인트</a></li>
-                <li><a href="/pages/plans" class="nav-link">플랜</a></li>
-                <li><a href="/pages/subscribe" class="nav-link">구독 신청</a></li>
-                <li><a href="/pages/subscriptions" class="nav-link">구독 관리</a></li>
-            </ul>
-            <div class="navbar-actions">
-                <div class="config-badge-container"></div>
-                <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()">🌙</button>
-            </div>
-        </div>
-    </nav>
-
-    <div class="main-container">
-        <div class="content-area">
-            <h1 style="font-size: 2rem; margin-bottom: 2rem;">💰 포인트 포함 결제</h1>
+    <div class="content-area">
+        <h1 style="font-size: 2rem; margin-bottom: 2rem;">💰 포인트 포함 결제</h1>
 
             <!-- API 구현 상태 안내 -->
             <div class="alert alert-info" style="margin-bottom: 1.5rem;">
@@ -85,25 +53,7 @@
                     <div id="orders-container"></div>
                 </div>
             </div>
-        </div>
 
-        <div class="api-panel">
-            <div class="panel-section">
-                <h3 class="panel-title">📡 현재 엔드포인트</h3>
-                <div id="current-endpoint" class="endpoint-badge">아직 요청 없음</div>
-            </div>
-            <div class="panel-section">
-                <h3 class="panel-title">📤 요청</h3>
-                <textarea id="request-body" class="api-textarea"></textarea>
-            </div>
-            <div class="panel-section">
-                <h3 class="panel-title">📥 응답</h3>
-                <pre id="response-output" class="response-box">요청 대기 중...</pre>
-            </div>
-        </div>
-    </div>
-
-    <!-- 포인트 입력 모달 -->
     <div id="points-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
         <div class="card" style="width: 90%; max-width: 500px; margin: 0;">
             <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
@@ -570,5 +520,6 @@
             }
         });
     </script>
+    </div>
 </body>
 </html>
