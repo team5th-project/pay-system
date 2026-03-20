@@ -11,6 +11,10 @@
  * @returns {boolean} 검증 성공 여부
  */
 function validateApiResponse(endpointKey, response, headers = null) {
+    // backend CommonResponse 래핑을 자동으로 제거하고 body만 검증한다.
+    // 예: { success, status, data, error, timestamp } -> data
+    const bodyToValidate = unwrapCommonResponse(response);
+
     // YML에서 로드한 계약 정보 가져오기
     const contract = window.APP_RUNTIME?.config?.api?.endpoints?.[endpointKey];
 
@@ -29,22 +33,20 @@ function validateApiResponse(endpointKey, response, headers = null) {
 
         // Array 타입 검증
         if (bodySchema.type === 'array') {
-            if (!Array.isArray(response)) {
-                errors.push(`응답이 배열이어야 하지만 ${typeof response} 타입입니다.`);
+            if (!Array.isArray(bodyToValidate)) {
+                errors.push(`응답이 배열이어야 하지만 ${typeof bodyToValidate} 타입입니다.`);
             } else if (bodySchema.items) {
                 // 배열 아이템 필드 검증 (첫 번째 아이템만 체크)
-                if (response.length > 0) {
+                if (bodyToValidate.length > 0) {
                     bodySchema.items.forEach(fieldDef => {
-                        validateField(response[0], fieldDef, errors, '배열 첫 번째 아이템');
+                        validateField(bodyToValidate[0], fieldDef, errors, '배열 첫 번째 아이템');
                     });
                 }
             }
         }
         // Object 타입 검증
         else if (bodySchema.fields) {
-            bodySchema.fields.forEach(fieldDef => {
-                validateField(response, fieldDef, errors);
-            });
+            bodySchema.fields.forEach(fieldDef => validateField(bodyToValidate, fieldDef, errors));
         }
     }
 
@@ -67,7 +69,7 @@ function validateApiResponse(endpointKey, response, headers = null) {
     // ========================================
     if (errors.length > 0) {
         const expectedFormat = buildExpectedFormatMessage(contract);
-        const howToFix = buildHowToFixMessage(endpointKey, errors, contract, response);
+        const howToFix = buildHowToFixMessage(endpointKey, errors, contract, bodyToValidate);
 
         // Console에 상세 정보 출력
         console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -83,7 +85,7 @@ function validateApiResponse(endpointKey, response, headers = null) {
         console.error('');
         console.error(howToFix);
         console.error('');
-        console.error('실제 응답 데이터:', response);
+        console.error('실제 응답 데이터(검증대상):', bodyToValidate);
         console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
         // 화면에 간단한 알림 표시
@@ -93,6 +95,24 @@ function validateApiResponse(endpointKey, response, headers = null) {
     }
 
     return true;
+}
+
+/**
+ * CommonResponse 래핑 제거 유틸
+ * @param {any} response
+ * @returns {any} 검증할 body (래핑 제거 시 response.data, 아니면 원본)
+ */
+function unwrapCommonResponse(response) {
+    // 배열은 CommonResponse로 보지 않는다.
+    if (!response || typeof response !== 'object' || Array.isArray(response)) return response;
+
+    // CommonResponse 패턴: { data, success, status, error, timestamp }
+    const looksLikeCommonResponse =
+        response.data !== undefined &&
+        (response.success !== undefined || response.status !== undefined) &&
+        'timestamp' in response;
+
+    return looksLikeCommonResponse ? response.data : response;
 }
 
 /**
@@ -267,7 +287,23 @@ function buildHowToFixMessage(endpointKey, errors, contract, response) {
     parts.push('');
 
     // 실제 응답 미리보기
-    if (response && Object.keys(response).length > 0) {
+    if (Array.isArray(response)) {
+        if (response.length > 0) {
+            parts.push('💡 실제 응답 (배열의 첫 번째 요소):');
+            const first = response[0];
+            const actualFields = first && typeof first === 'object' ? Object.keys(first).slice(0, 3) : [];
+            actualFields.forEach(field => {
+                const value = first[field];
+                const type = Array.isArray(value) ? 'array' : typeof value;
+                parts.push(`   "${field}": ${type}`);
+            });
+            if (first && typeof first === 'object' && Object.keys(first).length > 3) {
+                parts.push(`   ... (첫 요소 총 ${Object.keys(first).length}개 필드)`);
+            }
+        } else {
+            parts.push('💡 실제 응답 (배열): []');
+        }
+    } else if (response && Object.keys(response).length > 0) {
         parts.push('💡 실제 응답 (처음 3개 필드):');
         const actualFields = Object.keys(response).slice(0, 3);
         actualFields.forEach(field => {

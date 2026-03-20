@@ -101,11 +101,21 @@
         // 현재 사용자 정보 (서버에서 로드)
         let currentUser = null;
 
+    // backend CommonResponse 래핑 제거 유틸
+    function unwrapCommonResponse(response) {
+        if (!response || typeof response !== 'object' || Array.isArray(response)) return response;
+        const looksLikeCommonResponse =
+            response.data !== undefined &&
+            (response.success !== undefined || response.status !== undefined) &&
+            'timestamp' in response;
+        return looksLikeCommonResponse ? response.data : response;
+    }
+
         // 페이지 로드 시 사용자 정보 가져오기
         async function loadCurrentUser() {
             try {
-                currentUser = await makeApiRequest('get-current-user', {
-                });
+            const raw = await makeApiRequest('get-current-user', {});
+            currentUser = unwrapCommonResponse(raw);
 
                 // YML 스키마 기반 자동 검증
                 if (!validateApiResponse('get-current-user', currentUser)) {
@@ -120,8 +130,8 @@
         // API에서 상품 목록 로드 (구현 필수)
         async function loadProductsFromApi() {
             try {
-                const result = await makeApiRequest('list-products', {
-                });
+            const raw = await makeApiRequest('list-products', {});
+            const result = unwrapCommonResponse(raw);
 
                 // YML 스키마 기반 자동 검증
                 if (!validateApiResponse('list-products', result)) {
@@ -309,20 +319,24 @@
             };
 
             try {
-                const result = await makeApiRequest('create-order', {
+                const raw = await makeApiRequest('create-order', {
                     body: orderData
                 });
 
                 // YML 스키마 기반 자동 검증
-                if (!validateApiResponse('create-order', result)) {
+                if (!validateApiResponse('create-order', raw)) {
                     throw new Error('API 응답 형식이 올바르지 않습니다.');
                 }
 
-                if (result.orderId) {
+                const result = unwrapCommonResponse(raw);
+
+                if (result && result.orderUid) {
                     showNotification('주문 생성 완료!', 'success');
                     setTimeout(() => {
-                        window.location.href = `/pages/orders?orderId=${result.orderId}`;
+                        window.location.href = `/pages/orders`;
                     }, 1000);
+                } else {
+                    showNotification('주문 생성은 되었지만 orderUid를 확인할 수 없습니다.', 'warning');
                 }
             } catch (error) {
                 console.error('Failed to create order:', error);

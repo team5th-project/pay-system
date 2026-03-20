@@ -164,6 +164,26 @@
         // 현재 사용자 정보
         let currentUser = null;
         let orders = [];
+        let selectedOrderUid = null;
+
+        function getSelectedOrderUidFromQuery() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                return params.get('orderUid');
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // backend CommonResponse 래핑 제거 유틸
+        function unwrapCommonResponse(response) {
+            if (!response || typeof response !== 'object' || Array.isArray(response)) return response;
+            const looksLikeCommonResponse =
+                response.data !== undefined &&
+                (response.success !== undefined || response.status !== undefined) &&
+                'timestamp' in response;
+            return looksLikeCommonResponse ? response.data : response;
+        }
 
         // API 목록 동적 생성
         async function populateApiList() {
@@ -206,6 +226,7 @@
             // API 목록 동적 생성 (비동기)
             populateApiList();
 
+            selectedOrderUid = getSelectedOrderUidFromQuery();
 
             await loadCurrentUser();
             await loadOrders();
@@ -214,8 +235,8 @@
         // 사용자 정보 로드
         async function loadCurrentUser() {
             try {
-                currentUser = await makeApiRequest('get-current-user', {
-                });
+                const raw = await makeApiRequest('get-current-user', {});
+                currentUser = unwrapCommonResponse(raw);
 
                 if (!validateApiResponse('get-current-user', currentUser)) {
                     throw new Error('API 응답 형식이 올바르지 않습니다.');
@@ -233,16 +254,34 @@
             const emptyEl = document.getElementById('order-list-empty');
 
             try {
-                const result = await makeApiRequest('list-orders', {
-                });
+                const raw = await makeApiRequest('list-orders', {});
+                const result = unwrapCommonResponse(raw);
 
                 // YML 스키마 기반 자동 검증
                 if (!validateApiResponse('list-orders', result)) {
                     throw new Error('API 응답 형식이 올바르지 않습니다.');
                 }
 
+                if (!Array.isArray(result)) {
+                    orders = [];
+                    loadingEl.innerHTML = '';
+                    emptyEl.style.display = 'block';
+                    containerEl.style.display = 'none';
+                    showNotification('주문 목록 응답이 배열 형식이 아닙니다', 'error');
+                    return;
+                }
+
                 orders = result;
                 loadingEl.style.display = 'none';
+
+                if (selectedOrderUid) {
+                    const matched = orders.find(o => o.orderUid === selectedOrderUid);
+                    if (matched) {
+                        orders = [matched];
+                    } else {
+                        showNotification('선택한 주문을 찾을 수 없습니다. 전체 목록을 표시합니다.', 'warning');
+                    }
+                }
 
                 if (orders.length === 0) {
                     emptyEl.style.display = 'block';
@@ -261,17 +300,24 @@
             const tbody = document.getElementById('order-list-body');
             tbody.innerHTML = '';
 
+            if (!Array.isArray(orders)) return;
+
             orders.forEach(order => {
                 const tr = document.createElement('tr');
                 tr.style.borderBottom = '1px solid var(--border)';
+
+                if (selectedOrderUid && order.orderUid === selectedOrderUid) {
+                    tr.style.background = 'rgba(59, 130, 246, 0.08)'; // 하이라이트
+                }
 
                 // 상태에 따른 스타일
                 const statusStyle = getStatusStyle(order.status);
 
                 // 포인트 정보 구성
-                const usedPoints = order.usedPoints || 0;
-                const earnedPoints = order.earnedPoints || 0;
-                const finalAmount = order.finalAmount || order.totalAmount;
+                const usedPoints = Number(order.usedPoints || 0) || 0;
+                const earnedPoints = Number(order.earnedPoints || 0) || 0;
+                const totalAmountNum = Number(order.totalAmount || 0) || 0;
+                const finalAmountNum = Number(order.finalAmount ?? order.totalAmount) || totalAmountNum;
 
                 let pointsDisplay = '';
                 if (usedPoints > 0 || earnedPoints > 0) {
@@ -289,10 +335,10 @@
 
                 tr.innerHTML = `
                     <td style="padding: 0.75rem; font-weight: 600;">${order.orderNumber}</td>
-                    <td style="padding: 0.75rem; font-family: monospace; font-size: 0.875rem; color: var(--text-secondary);">${order.orderId}</td>
+                    <td style="padding: 0.75rem; font-family: monospace; font-size: 0.875rem; color: var(--text-secondary);">${order.orderUid}</td>
                     <td style="padding: 0.75rem;">
-                        <div style="font-weight: 600;">${order.totalAmount.toLocaleString()}원</div>
-                        ${usedPoints > 0 ? `<div style="font-size: 0.75rem; color: var(--text-secondary);">실결제: ${finalAmount.toLocaleString()}원</div>` : ''}
+                        <div style="font-weight: 600;">${totalAmountNum.toLocaleString()}원</div>
+                        ${usedPoints > 0 ? `<div style="font-size: 0.75rem; color: var(--text-secondary);">실결제: ${finalAmountNum.toLocaleString()}원</div>` : ''}
                     </td>
                     <td style="padding: 0.75rem;">
                         ${pointsDisplay}
@@ -304,7 +350,7 @@
                     </td>
                     <td style="padding: 0.75rem; text-align: center;">
                         ${order.status === 'PENDING' ?
-                            `<button class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="payOrder('${order.orderId}', ${finalAmount})">
+                            `<button class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="payOrder('${order.orderUid}', ${finalAmountNum})">
                                 💳 결제하기
                             </button>` :
                             `<span style="color: var(--text-secondary); font-size: 0.875rem;">-</span>`
@@ -324,7 +370,7 @@
             }
 
             // 해당 주문 찾기
-            const order = orders.find(o => o.orderId === orderId);
+            const order = orders.find(o => o.orderUid === orderId);
             if (!order) {
                 showNotification('⚠️ 주문을 찾을 수 없습니다', 'error');
                 return;
