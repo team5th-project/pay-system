@@ -8,9 +8,12 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum ProductCategory {
-    GROCERY("사료, 간식"),
-    TOY("장난감"),
-    TOILET("화장실 용품")
+    MAGIC_WAND("지팡이"),
+    CRYSTAL_BALL("수정구"),
+    BOOK("전공책"),
+    BROOM_PLAN("마법 빗자루 플랜(구독)"),
+    MEDICINE("물약"),
+    POCKET_CAT("버프 고양이")
     ;
 
     private final String name;
