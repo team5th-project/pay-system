@@ -10,8 +10,9 @@ import com.bootcamp.paymentdemo.payment.service.PaymentService;
 import com.bootcamp.paymentdemo.refund.dto.request.CreateRefundRequest;
 import com.bootcamp.paymentdemo.refund.dto.response.CreateRefundResponse;
 import com.bootcamp.paymentdemo.refund.dto.response.GetRefundDetailResponse;
-import com.bootcamp.paymentdemo.refund.dto.response.GetRefundListResponse;
+import com.bootcamp.paymentdemo.refund.dto.response.PortOneCancellationDto;
 import com.bootcamp.paymentdemo.refund.entity.Refund;
+import com.bootcamp.paymentdemo.refund.enums.PortOneRefundStatus;
 import com.bootcamp.paymentdemo.refund.enums.RefundStatus;
 import com.bootcamp.paymentdemo.refund.repository.RefundRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,13 +27,13 @@ public class RefundService {
     private final RefundRepository refundRepository;
     private final PaymentService paymentService;
     private final ApplicationEventPublisher eventPublisher;
+    private final PortOneRefundService portOneRefundService;
 
     private void validateRefundable(Payment payment, Order order) {
         // 결제 상태 검증
         if (payment.getPaymentStatus() != PaymentStatus.SUCCESS) {
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
         }
-
         // 주문 상태 검증
         if (order.getStatus() != OrderStatus.CONFIRMED) {
             throw new ServiceException(ErrorCode.INVALID_ORDER_STATUS);
@@ -73,24 +74,27 @@ public class RefundService {
             refundRepository.save(refund);
         }
 
-        // TODO portone 호출
         try {
-//            cancelPaymentToPortOne(payment); // mock 성공 처리
-            // 성공 처리 상태 변경
-            refund.complete(); // 환불 완료시 상태 전이
-            payment.refund(); // 결제상태
-            order.refund(); // 주문상태
+            PortOneCancellationDto cancellationDto =
+                    portOneRefundService.cancelPayment(payment.getPaymentUid(), request.getReason());
+            PortOneRefundStatus status = cancellationDto.status();
 
-            // TODO 이벤트 발행
-//            eventPublisher.publishEvent(
-//                    new RefundCompletedEvent(
-//                            refund.getId(),
-//                            payment.getId(),
-//                            order.getId(),
-//                            order.getCustomer().getId(),
-//                            payment.getAmount()
-//                    )
-//            );
+            switch (status) {
+                case SUCCEEDED -> {
+                    refund.complete(); // 환불 완료시 상태 전이Z
+                    payment.refund(); // 결제상태
+                    order.refund(); // 주문상태
+                }
+                case REQUESTED -> {
+                    // 요청 상태 유지
+                }
+                case FAILED, UNKNOWN -> {
+                    refund.fail();
+                    throw new ServiceException(ErrorCode.REFUND_FAILED);
+                }
+            }
+        } catch (ServiceException e) {
+            throw e;
         }
         // 실패 처리
         catch (Exception e) {
@@ -99,23 +103,18 @@ public class RefundService {
         }
         return CreateRefundResponse.from(refund);
     }
-    // TODO: PortOne API 호출
-    //}    private void cancelPaymentToPortOne(Payment payment) {
-    // mock 처리
-//    log.info("PortOne 환불 요청 (mock): {}", payment.getPaymentUid());
-
-    // 환불내역 목록 조회
-    public GetRefundListResponse getRefunds(Long userId) {
-
-
-        // TODO 환불목록 로직 추가
-        return null;
-    }
 
     public GetRefundDetailResponse getRefundDetail(Long refundId, Long userId) {
+        // 저장된 환불 건과 동일한 환불 건인지 검증
+        Refund refund = refundRepository.findById(refundId)
+                .orElseThrow(() -> new ServiceException(ErrorCode.REFUND_NOT_FOUND));
 
-        // TODO 환불상세 조회 로직 추가
-        return null;
+        Order order = refund.getPayment().getOrder();
+
+        // 로그인한 사용자가 해당 환불 건의 주문 소유자인지 검증
+        if (!order.getUserId().equals(userId)) {
+            throw new ServiceException(ErrorCode.ORDER_NOT_OWNED);
+        }
+        return GetRefundDetailResponse.from(refund);
     }
 }
-

@@ -59,17 +59,14 @@ public enum ErrorCode {
     //환불
     INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, "R001", "현재 환불 상태에서는 요청한 작업을 수행할 수 없습니다."),
     INVALID_PAYMENT_STATUS(HttpStatus.BAD_REQUEST, "ROO2", "환불은 결제 완료 상태에서만 가능합니다."),
-//    PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "R003", "존재하지 않는 결제내역입니다."),
-    REFUND_FAILED(HttpStatus.BAD_REQUEST,"R004", "환불 처리 중 오류가 발생했습니다."),
+    REFUND_FAILED(HttpStatus.BAD_REQUEST,"R003", "환불 처리 중 오류가 발생했습니다."),
+    REFUND_NOT_FOUND(HttpStatus.NOT_FOUND, "R004", "환불내역을 찾을 수 없습니다."),
 
 
     //포인트
     INSUFFICIENT_POINT(HttpStatus.BAD_REQUEST, "PT001", "포인트 잔액이 부족합니다."),
     INVALID_POINT_AMOUNT(HttpStatus.BAD_REQUEST, "PT002", "포인트는 양수여야 합니다.")
-
-
-    ;
-
+;
     private final HttpStatus status;
     private final String code;
     private final String message;
