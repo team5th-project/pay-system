@@ -17,13 +17,17 @@ import com.bootcamp.paymentdemo.payment.enums.PortOnePaymentStatus;
 import com.bootcamp.paymentdemo.payment.respository.PaymentRepository;
 import com.bootcamp.paymentdemo.point.service.UserPointService;
 import com.bootcamp.paymentdemo.product.ProductService;
+import jakarta.persistence.Table;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -51,7 +55,6 @@ public class PaymentService {
         // 중복 결제 방지
         // 같은 주문에 대해서 결제 요청 후 대기중(PENDING) 상태인 결제가 있는 경우 결제 생성 불가능
         boolean existence = paymentRepository.existsByOrderAndPaymentStatus(order, PaymentStatus.PENDING);
-
         if(existence){
             throw new ServiceException(ErrorCode.ALREADY_PENDING_PAYMENT);
         }
@@ -72,7 +75,6 @@ public class PaymentService {
             if (pointToUse > totalAmount) {
                 throw new ServiceException(ErrorCode.INVALID_POINT_AMOUNT);
             }
-            // TODO : 포인트 DB 비관적 락 거는 메서드 호출
 
             // 포인트 가점유. 포인트 쪽에서 포인트 사용 가능 여부 확인
             // userId, orderId, point
@@ -97,6 +99,7 @@ public class PaymentService {
     }
 
     // 결제 확정 요청
+    @Transactional
     public ConfirmPaymentResponse confirmPayment(String paymentUid) {
 
         // paymentId 검증
@@ -108,7 +111,7 @@ public class PaymentService {
                 () -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND)
         );
 
-        // Payment 객체 상태 검증. 결제 대기 상태가 아니면 이미 결제 완료 처리된 결제 요청
+        // Payment 객체 상태 검증. 결제 대기 상태가 아니면 이미 결제 완료 처리 되었거나 환불되었거나 결제 취소처리 된 결제 요청으로 판단
         if (!payment.getPaymentStatus().equals(PaymentStatus.PENDING)) {
             throw new ServiceException(ErrorCode.ALREADY_PROCESSED_PAYMENT);
         }
@@ -124,12 +127,25 @@ public class PaymentService {
             portOnePaymentDto = getPaymentWithRetry(paymentUid);
             // 조회 성공한 경우 결제 결과 가져오기
             result = getPaymentResult(portOnePaymentDto);
+
+            log.info("confirm paymentUid={}", paymentUid);
+            log.info("portone status={}", portOnePaymentDto.status());
+            log.info("portone amount={}", portOnePaymentDto.amount());
+            log.info("db finalAmount={}", payment.getFinalAmount());
+            log.info("payment result={}", result);
+
             // 조회 성공한 경우
             // TODO : 조회 성공 시 상태별로 실행할 메서드
             switch (result) {
                 case SUCCESS -> {
-                    if (isAmountEquals(payment, portOnePaymentDto)) {   // 실제 결제 금액 검증
-                        setPaymentSuccess(payment);
+                    if (isAmountEquals(payment, portOnePaymentDto)) {// 실제 결제 금액 검증
+                        try {
+                            setPaymentSuccess(payment);
+
+                        } catch (ServiceException e) {
+                            requestCancelAfterInternalFailure(payment);
+                            throw e;
+                        }
                         return ConfirmPaymentResponse.of(orderUid, PaymentStatus.SUCCESS);
                     } else {
                         portOneService.cancelPayment(paymentUid);
@@ -149,26 +165,64 @@ public class PaymentService {
         } catch (RuntimeException e) { // 재시도할 수 없는 에러(PortOneException), 네트워크에러인 경우 모두 결제 실패 처리
             setPaymentFailed(payment);
             return ConfirmPaymentResponse.of(payment.getOrder().getOrderUid(), PaymentStatus.FAILED);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("PortOne confirm interrupted. paymentUid={}", paymentUid, e);
+            throw new ServiceException(ErrorCode.PORTONE_UNAVAILABLE);
         }
 
         return ConfirmPaymentResponse.of(payment.getOrder().getOrderUid(), PaymentStatus.FAILED);
 
     }
 
-    // TODO : 결제 검증 성공 시 결제 성공 처리
+    // 결제 성공했는데 재고 문제로 결제 취소 요청 보내야 하는 경우
+    private void requestCancelAfterInternalFailure(Payment payment) {
+        markCancelRequested(payment.getId());
+        try {
+            portOneService.cancelPayment(payment.getPaymentUid());
+        } catch (RuntimeException cancelEx) {
+            // 여기서는 일단 CANCEL_REQUESTED 유지
+            log.warn("Payment Cancel Requested Failed - {}", cancelEx.getMessage());
+            // 로그 남기고 재시도 대상 처리
+            return;
+        }
+        markCanceled(payment.getId());
+    }
+
+    // 현재 진행 중인 트랜잭션을 잠시 멈추고, 완전히 새로운 트랜잭션을 시작하는 옵션.
+    // 재고 취소 요청에 실패하더라도 취소 요청했다는 기록은 롤백되면 안되기 때문. 취소 처리도 마찬가지
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void markCancelRequested(Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND));
+        payment.cancelRequested();
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void markCanceled(Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND));
+        payment.cancelled();
+    }
+
+
     private void setPaymentSuccess(Payment payment){
-        // TODO 결제 완료 시 주문, 유저, 포인트 쪽에 전달해줘야 함.
         Order order = payment.getOrder();
-        // 포인트 차감
-        userPointService.usePoint(order.getUserId(), order.getId(), payment.getPointToUse());
-        // 재고 차감
-//        productService.deductStock(order);
 
         // 결제 상태 성공으로 변경
         payment.success();
 
         // 주문 상태 결제 성공으로 변경
-        order.markAsPaid();
+        orderService.paymentSuccess(order.getId());
+
+        // 재고 차감
+        productService.decreaseStockByOrder(order);
+
+        // 포인트 차감
+        if (payment.getPointToUse() > 0) {
+            userPointService.usePoint(order.getUserId(), order.getId(), payment.getPointToUse());
+        }
+
     }
 
     // TODO : 결제 검증 실패 시 결제 실패 처리
@@ -180,11 +234,10 @@ public class PaymentService {
 
         // 주문 상태는 PENDING으로 유지. 호출할 것 없음
 
-        // TODO : 포인트 락 해제는 웹훅이 왔을 때 .. 하기?
+        // TODO : 포인트 락 해제는 웹훅이 왔을 때 ..할까? 고민중..
         if (payment.getPointToUse() > 0) {
             userPointService.cancelUsePoint(order.getUserId(), order.getId(), payment.getPointToUse());
         }
-        // 웹훅 확인 후 실제 결제 되어있으면 결제 취소 요청 보내기
 
     }
 
@@ -195,16 +248,27 @@ public class PaymentService {
     }
 
     // 포트원 조회 (재시도 포함 3회)
-    private PortOnePaymentDto getPaymentWithRetry(String paymentUid) {
+    private PortOnePaymentDto getPaymentWithRetry(String paymentUid) throws InterruptedException {
 
         int retry = 0;
 
         while (retry < 3) { // 조회 총 3번 시도
             try {
-                return portOneService.getPayment(paymentUid);
+                PortOnePaymentDto payment = portOneService.getPayment(paymentUid);
+                if (payment.status() == PortOnePaymentStatus.PAID) {
+                    return payment;
+                }
+                if (payment.status() == PortOnePaymentStatus.READY
+                        || payment.status() == PortOnePaymentStatus.PAY_PENDING) {
+                    retry++;
+                    Thread.sleep(1000);
+                    continue;
+                }
+                return payment;
             } catch (RuntimeException e) {
                 if(isRetryable(e)){ // 네트워크 에러인 경우 재시도
                     retry ++;
+                    Thread.sleep(1000); // ⭐ 추가
                 }else{  // 재시도 할 수 없는 에러인 경우 PortOneException 그대로 던지기
                     throw e;
                 }

@@ -2,7 +2,13 @@ package com.bootcamp.paymentdemo.order.repository;
 
 import com.bootcamp.paymentdemo.order.entity.Order;
 import com.bootcamp.paymentdemo.order.enums.OrderStatus;
+import com.bootcamp.paymentdemo.product.Product;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -22,4 +28,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     );
     // 소영 추가.
     Optional<Order> findByOrderUid(String orderUid);
+
+//    // 소영 추가
+//    @Lock(LockModeType.PESSIMISTIC_WRITE)
+//    @Query("select o from Order o where o.id = :orderId")
+//    Order findByIdForUpdate(@Param("orderId") Long orderId);
 }

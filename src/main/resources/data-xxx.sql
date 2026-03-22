@@ -20,4 +20,4 @@ INSERT INTO products (id, name, price, stock, url, product_category) VALUES (19,
 INSERT INTO products (id, name, price, stock, url, product_category) VALUES (20, '튜터님 마법사 빗자루 플랜', 50000, 10, null, 'BROOM_PLAN');
 INSERT INTO products (id, name, price, stock, url, product_category) VALUES (21, '복실복실 버프 고양이', 50000, 10, null, 'POCKET_CAT');
 INSERT INTO products (id, name, price, stock, url, product_category) VALUES (22, '잘 자는 버프 고양이', 50000, 10, null, 'POCKET_CAT');
-INSERT INTO products (id, name, price, stock, url, product_category) VALUES (23, '내손의 튜터님 버프 고양이', 50000, 10, null, 'POCKET_CAT');
+INSERT INTO products (id, name, price, stock, url, product_category) VALUES (23, '내손의 튜터님 버프 고양이', 1000, 10, null, 'POCKET_CAT');

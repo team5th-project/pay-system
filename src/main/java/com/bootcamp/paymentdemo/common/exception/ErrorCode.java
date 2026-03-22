@@ -23,7 +23,8 @@ public enum ErrorCode {
     //상품
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "P001", "상품을 찾을 수 없습니다."),
     INVALID_CATEGORY(HttpStatus.BAD_REQUEST, "P001", "유효하지 않은 카테고리입니다."),
-
+    INVALID_PRODUCT_QUANTITY(HttpStatus.BAD_REQUEST, "P002", "상품 수량은 1개 이상이어야 합니다."),
+    INSUFFICIENT_STOCK(HttpStatus.BAD_REQUEST, "P003", "현재 재고가 부족하여 주문할 수 없습니다."),
     //주문
     INVALID_ORDER_STATUS(HttpStatus.BAD_REQUEST, "O001", "잘못된 주문 상태 전이입니다."),
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "O002", "주문을 찾을 수 없습니다."),
