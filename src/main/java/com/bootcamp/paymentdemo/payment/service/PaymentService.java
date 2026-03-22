@@ -13,6 +13,7 @@ import com.bootcamp.paymentdemo.payment.entity.Payment;
 import com.bootcamp.paymentdemo.payment.enums.PaymentStatus;
 import com.bootcamp.paymentdemo.payment.enums.PortOnePaymentStatus;
 import com.bootcamp.paymentdemo.payment.respository.PaymentRepository;
+import com.bootcamp.paymentdemo.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final OrderService orderService;
     private final PortOneService portOneService;
+    private final UserService userService;
 
     @Transactional
     public CreatePaymentResponse createPayment(String orderId, CreatePaymentRequest request) {
@@ -37,6 +39,14 @@ public class PaymentService {
             throw new ServiceException(ErrorCode.ORDER_STATUS_NOT_PENDING);
         }
 
+        // TODO : 결제 생성 시 포인트 있는지 검증.
+        Long userId = order.getUserId();
+        int currentPoint = userService.getCurrentPoint(userId);
+        Integer pointToUse = request.getPointToUse();
+        if (currentPoint < pointToUse) {
+            throw new ServiceException(ErrorCode.INSUFFICIENT_POINT);
+        }
+
         // 중복 결제 방지
         // 같은 주문에 대해서 결제 요청 후 대기중(PENDING) 상태인 결제가 있는 경우
         boolean existence = paymentRepository.existsByOrderAndPaymentStatus(order, PaymentStatus.PENDING);
@@ -45,28 +55,23 @@ public class PaymentService {
             throw new ServiceException(ErrorCode.ALREADY_PENDING_PAYMENT);
         }
 
-        // 결제 금액 검증
+        // 주문 금액 검증
         Long totalAmount = request.getTotalAmount();
         if (totalAmount == null) {
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_AMOUNT);
         }
 
-        /*
-         클라이언트 측에서 보낸 결제 금액과, order 테이블의 결제 금액이 같은지 검증
-         TODO : Order에 point 관련 코드 추가 후
-         방법 1. Order 엔티티에 finalAmount를 추가해서
-         getTotalAmount 대신 실재 결제금액 반환 메서드로 변경하기.
-         방법 2. Order에 getTotalAmount와 getUsedPoint 추가해서
-         결제 쪽 테이블에 finalAmount 계산 후 저장
-         */
-        if (!totalAmount.equals(order.getTotalAmount())) {
+        if (!totalAmount.equals(order.getTotalAmount())) { // 결제 요청시 들어온 금액과 주문 금액이 일치하는지 검증
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_AMOUNT);
         }
+        // 실제 결제 금액 계산
+        Long finalAmount = totalAmount - pointToUse;
 
         Payment payment = Payment.builder()
                 .paymentUid(createPaymentId())
                 .order(order)
-                .amount(totalAmount)
+                .finalAmount(finalAmount)
+                .pointToUse(pointToUse)
                 .paymentStatus(PaymentStatus.PENDING)
                 .build();
 

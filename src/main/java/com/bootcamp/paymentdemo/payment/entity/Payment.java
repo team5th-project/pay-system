@@ -35,11 +35,14 @@ public class Payment extends BaseEntity {
     private Order order;     // 주문 ID
 
     @Column(nullable = false)
-    private Long amount;     // 결제 금액
+    private Long finalAMount;     // 최종 결제 금액
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private PaymentStatus paymentStatus;   // 결제 상태'
+
+    @Column(nullable = true)
+    private int pointToUse;
 
     private LocalDateTime paidAt;   // 결제 성공 시각
 
@@ -47,10 +50,11 @@ public class Payment extends BaseEntity {
 
 
     @Builder
-    public Payment(String paymentUid, Order order, Long amount, PaymentStatus paymentStatus) {
+    public Payment(String paymentUid, Order order, Long finalAmount, int pointToUse, PaymentStatus paymentStatus) {
         this.paymentUid = paymentUid;
         this.order = order;
-        this.amount = amount;
+        this.finalAmount = finalAmount;
+        this.pointToUse = pointToUse;
         this.paymentStatus = paymentStatus;
     }
 
