@@ -23,7 +23,7 @@ public class PortOneService {
 
     }
 
-    public PortOnePaymentDto getPayment(String paymentUid) throws PortOneException{
+    public PortOnePaymentDto getPayment(String paymentUid) throws RuntimeException{
         try {
             PortOneResponse portOneResponse = portOneRestClient.get()
                     .uri("/payments/{paymentUid}", paymentUid) // RestClientConfig에 설정해놓은 baseUrl 뒤에 붙을 경로
@@ -51,7 +51,7 @@ public class PortOneService {
                             {
                                 int errorcode = response.getStatusCode().value();
                                 log.error("Portone 5xx Error : status : {}, paymentUid : {}", errorcode, paymentUid);
-                                throw new PortOneException(ErrorCode.PORTONE_SERVER_ERROR);
+                                throw new ServiceException(ErrorCode.PORTONE_SERVER_ERROR);
                             }))
                     .body(PortOneResponse.class);   // JSON 반환값을 Response Dto로 역직렬화(Deserialization)
                     /*
@@ -59,15 +59,14 @@ public class PortOneService {
                     데이터 역직렬화 : 디스크에 저장한 데이터를 읽거나, 네트워크 통신으로 받은 데이터를 메모리에 쓸 수 있도록 변환하는 것이다.
                      */
             if (portOneResponse == null) {
-                throw new PortOneException(ErrorCode.PORTONE_UNAVAILABLE);
+                throw new ServiceException(ErrorCode.PORTONE_UNAVAILABLE);
             }
+
             return PortOnePaymentDto.from(portOneResponse);
-        } catch (RestClientException e) { // 네트워크 및 기타 예외
+
+        } catch (RestClientException | ServiceException  e) { // 네트워크 및 기타 예외
             log.error("PortOne 통신 실패 - {}", e.getMessage());
-            throw new PortOneException(ErrorCode.PORTONE_COMMUNICATION_ERROR);
-        }catch (Exception e) { // 네트워크 및 기타 예외
-            log.error("Unknown_Error - {}", e.getMessage());
-            throw new PortOneException(ErrorCode.PORTONE_COMMUNICATION_ERROR);
+            throw e;
         }
     }
 }

@@ -6,7 +6,7 @@ import com.bootcamp.paymentdemo.payment.enums.PortOnePaymentStatus;
 public record PortOnePaymentDto(
         String id,  // transactionId
         String paymentUid,
-        int paid,
+        Long amount,
         PortOnePaymentStatus status
 ) {
     public static PortOnePaymentDto from(PortOneResponse portOneResponse) {
@@ -15,11 +15,11 @@ public record PortOnePaymentDto(
 
         PortOneResponse.PaymentTransaction.PaymentAmount paymentAmount = paymentTransaction.amount().stream().findFirst().get();
 
-        return new PortOnePaymentDto(paymentTransaction.id(),
-                paymentTransaction.paymentId(),
-                paymentAmount.paid(),
-                PortOnePaymentStatus.from(paymentTransaction.status().toString()));
+        String id = paymentTransaction.id();
+        String paymentUid = paymentTransaction.paymentId();
+        Long amount = (long) paymentAmount.paid();
+        PortOnePaymentStatus status = PortOnePaymentStatus.from(paymentTransaction.status().toString());
 
-
+        return new PortOnePaymentDto(id, paymentUid,amount,status);
     }
 }

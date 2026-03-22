@@ -14,7 +14,7 @@ public class RestClientConfig {
 
             SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
             factory.setConnectTimeout(5000); // 5초 안에 연결 안 되면 포기
-            factory.setReadTimeout(30000);   // 연결 후 30초 안에 응답 안 오면 포기
+            factory.setReadTimeout(60000);   // 연결 후 60초 안에 응답 안 오면 포기(포트원 API 공식 문서 요청 타임아 정책 권장 사항)
 
             return RestClient.builder()
                     .requestFactory(factory)

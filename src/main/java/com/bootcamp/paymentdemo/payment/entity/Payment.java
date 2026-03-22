@@ -72,4 +72,12 @@ public class Payment extends BaseEntity {
         }
         this.paymentStatus = PaymentStatus.REFUNDED;
     }
+
+    // 결제상태 결제 실패로 전환하는 메서드
+    public void failed() {
+        if(this.paymentStatus!=PaymentStatus.PENDING){
+            throw new ServiceException(ErrorCode.PAYMENT_STATUS_NOT_PENDING);
+        }
+        this.paymentStatus = PaymentStatus.FAILED;
+    }
 }

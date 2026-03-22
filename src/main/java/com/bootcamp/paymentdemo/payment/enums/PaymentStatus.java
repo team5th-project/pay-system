@@ -10,7 +10,7 @@ public enum PaymentStatus {
 
     public static PaymentStatus from(PortOnePaymentStatus status) {
         return switch (status) {
-            case READY -> PaymentStatus.PENDING;
+            case READY,PAY_PENDING -> PaymentStatus.PENDING;
             case PAID -> PaymentStatus.SUCCESS;
             case FAILED -> PaymentStatus.FAILED;
             case CANCELLED -> PaymentStatus.REFUNDED;
