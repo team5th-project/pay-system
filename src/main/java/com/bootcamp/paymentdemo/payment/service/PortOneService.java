@@ -2,6 +2,7 @@ package com.bootcamp.paymentdemo.payment.service;
 
 import com.bootcamp.paymentdemo.common.config.PortOneProperties;
 import com.bootcamp.paymentdemo.common.exception.ErrorCode;
+import com.bootcamp.paymentdemo.common.exception.PortOneException;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
 import com.bootcamp.paymentdemo.payment.dto.response.PortOnePaymentDto;
 import com.bootcamp.paymentdemo.payment.dto.response.PortOneResponse;
@@ -9,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 @Service
 @RequiredArgsConstructor
@@ -21,7 +23,7 @@ public class PortOneService {
 
     }
 
-    public PortOnePaymentDto getPayment(String paymentUid) {
+    public PortOnePaymentDto getPayment(String paymentUid) throws RuntimeException{
         try {
             PortOneResponse portOneResponse = portOneRestClient.get()
                     .uri("/payments/{paymentUid}", paymentUid) // RestClientConfig에 설정해놓은 baseUrl 뒤에 붙을 경로
@@ -34,13 +36,13 @@ public class PortOneService {
                                 int errorcode = response.getStatusCode().value();
                                 log.error("Portone 4xx Error - status : {}, paymentUid : {}", errorcode, paymentUid);
                                 if (errorcode == 400) { // paymentId 또는 요청 형식 문제. 사용자에게 내려주면 안됨
-                                    throw new ServiceException(ErrorCode.INVALID_PAYMENT_VALIDATION_REQUEST);
+                                    throw new PortOneException(ErrorCode.INVALID_PAYMENT_VALIDATION_REQUEST);
                                 } else if (errorcode == 401 || errorcode == 403) { // 인증 또는 권한 문제 (Secret Key)
-                                    throw new ServiceException(ErrorCode.UNAUTHORIZED_PAYMENT_VALIDATION_REQUEST);
+                                    throw new PortOneException(ErrorCode.UNAUTHORIZED_PAYMENT_VALIDATION_REQUEST);
                                 } else if (errorcode == 404) {  // 1. 클라이언트 조작 가능성 2. PG -> 포트원 동기화 지연 가능성
-                                    throw new ServiceException(ErrorCode.PORTONE_PAYMENT_NOT_FOUND);
+                                    throw new PortOneException(ErrorCode.PORTONE_PAYMENT_NOT_FOUND);
                                 } else {
-                                    throw new ServiceException(ErrorCode.PORTONE_UNKNOWN_ERROR);
+                                    throw new PortOneException(ErrorCode.PORTONE_UNKNOWN_ERROR);
                                 }
                             })
                     )
@@ -59,13 +61,12 @@ public class PortOneService {
             if (portOneResponse == null) {
                 throw new ServiceException(ErrorCode.PORTONE_UNAVAILABLE);
             }
+
             return PortOnePaymentDto.from(portOneResponse);
 
-        } catch (ServiceException e) {  // onStatus 통해서 던진 예외 -> PaymentService에서 처리
+        } catch (RestClientException | ServiceException  e) { // 네트워크 및 기타 예외
+            log.error("PortOne 통신 실패 - {}", e.getMessage());
             throw e;
-        } catch (Exception e) { // 네트워크 및 기타 예외
-            log.error("PortOne 통신 실패", e);
-            throw new ServiceException(ErrorCode.PORTONE_COMMUNICATION_ERROR);
         }
     }
 }
