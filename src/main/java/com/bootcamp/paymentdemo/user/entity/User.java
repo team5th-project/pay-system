@@ -39,9 +39,6 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private UserRole userRole;
 
-    @Min(0)
-    private int pointBalance;
-
     @Column(nullable = false)
     private Long totalOrderAmount;
 
@@ -57,29 +54,28 @@ public class User extends BaseEntity {
         this.password = password;
         this.phone = phone;
         this.userRole = UserRole.USER;
-        this.pointBalance = 0;
         this.totalOrderAmount = 0L;
         this.membershipGrade = MembershipGrade.NORMAL;
     }
 
-    // 포인트 차감
-    public void deductPoint(int points) {
-        if (points <= 0) {
-            throw new ServiceException(ErrorCode.INVALID_POINT_AMOUNT);
-        }
-        if (this.pointBalance < points) {
-            throw new ServiceException(ErrorCode.INSUFFICIENT_POINT);
-        }
-        this.pointBalance -= points;
-    }
-    // 포인트 적립
-// 주문 확정시 멤버십 등급에 따라 포인트 적립
-    public void addPoint(int points) {
-        if (points <= 0) {
-            throw new ServiceException(ErrorCode.INVALID_POINT_AMOUNT);
-        }
-        this.pointBalance += points;
-    }
+//    // 포인트 차감
+//    public void deductPoint(int points) {
+//        if (points <= 0) {
+//            throw new ServiceException(ErrorCode.INVALID_POINT_AMOUNT);
+//        }
+//        if (this.pointBalance < points) {
+//            throw new ServiceException(ErrorCode.INSUFFICIENT_POINT);
+//        }
+//        this.pointBalance -= points;
+//    }
+//    // 포인트 적립
+//// 주문 확정시 멤버십 등급에 따라 포인트 적립
+//    public void addPoint(int points) {
+//        if (points <= 0) {
+//            throw new ServiceException(ErrorCode.INVALID_POINT_AMOUNT);
+//        }
+//        this.pointBalance += points;
+//    }
     // 멤버십 등급 변경
 // 결제 완료 및 환불 시 totalOrderAmount 기준으로 등급 재계산 후 호출
     public void updateGrade(MembershipGrade grade) {
