@@ -4,14 +4,12 @@ import com.bootcamp.paymentdemo.common.BaseEntity;
 import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
 import com.bootcamp.paymentdemo.point.entity.MembershipGrade;
+import com.bootcamp.paymentdemo.point.entity.UserPoint;
 import com.bootcamp.paymentdemo.user.dto.SignupRequest;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Table(name = "users")
 @Entity
@@ -21,6 +19,10 @@ public class User extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Setter
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private UserPoint userPoint;
 
     private String customerUid;
 
@@ -103,6 +105,5 @@ public class User extends BaseEntity {
         }
         this.totalOrderAmount -= refundAmount;
     }
-
 
 }

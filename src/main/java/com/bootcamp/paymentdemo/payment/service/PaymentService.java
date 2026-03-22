@@ -15,6 +15,7 @@ import com.bootcamp.paymentdemo.payment.enums.PaymentResult;
 import com.bootcamp.paymentdemo.payment.enums.PaymentStatus;
 import com.bootcamp.paymentdemo.payment.enums.PortOnePaymentStatus;
 import com.bootcamp.paymentdemo.payment.respository.PaymentRepository;
+import com.bootcamp.paymentdemo.point.service.UserPointService;
 import com.bootcamp.paymentdemo.product.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -64,16 +65,19 @@ public class PaymentService {
         if (!totalAmount.equals(order.getTotalAmount())) {
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_AMOUNT);
         }
+        // 사용하려는 포인트가 있을때에만 포인트 락 걸기
+        if (pointToUse > 0) {
 
-        // 사용 포인트량이 주문 금액보다 작거나 같은지 검증
-        if (pointToUse > totalAmount) {
-            throw new ServiceException(ErrorCode.INVALID_POINT_AMOUNT);
+            // 사용 포인트량이 주문 금액보다 작거나 같은지 검증
+            if (pointToUse > totalAmount) {
+                throw new ServiceException(ErrorCode.INVALID_POINT_AMOUNT);
+            }
+            // TODO : 포인트 DB 비관적 락 거는 메서드 호출
+
+            // 포인트 가점유. 포인트 쪽에서 포인트 사용 가능 여부 확인
+            // userId, orderId, point
+            userPointService.holdPoint(order.getUserId(), order.getId(), pointToUse);
         }
-        // TODO : 포인트 DB 비관적 락 거는 메서드 호출
-
-        // 포인트 가점유. 포인트 쪽에서 포인트 사용 가능 여부 확인
-        userPointService.hold(pointToUse);
-
 
         // 실제 결제 금액 계산
         Long finalAmount = totalAmount - pointToUse;
@@ -147,6 +151,7 @@ public class PaymentService {
             return ConfirmPaymentResponse.of(payment.getOrder().getOrderUid(), PaymentStatus.FAILED);
         }
 
+        return ConfirmPaymentResponse.of(payment.getOrder().getOrderUid(), PaymentStatus.FAILED);
 
     }
 
@@ -155,7 +160,7 @@ public class PaymentService {
         // TODO 결제 완료 시 주문, 유저, 포인트 쪽에 전달해줘야 함.
         Order order = payment.getOrder();
         // 포인트 차감
-        userPointService.commit(payment.getPointToUse());
+        userPointService.usePoint(order.getUserId(), order.getId(), payment.getPointToUse());
         // 재고 차감
 //        productService.deductStock(order);
 
@@ -168,12 +173,17 @@ public class PaymentService {
 
     // TODO : 결제 검증 실패 시 결제 실패 처리
     private void setPaymentFailed(Payment payment){
+        Order order = payment.getOrder();
 
         // 결제 상태 실패로 변경
         payment.failed();
+
         // 주문 상태는 PENDING으로 유지. 호출할 것 없음
-        // 포인트 락 해제
-        userPointService.release(payment.getPointToUse());
+
+        // TODO : 포인트 락 해제는 웹훅이 왔을 때 .. 하기?
+        if (payment.getPointToUse() > 0) {
+            userPointService.cancelUsePoint(order.getUserId(), order.getId(), payment.getPointToUse());
+        }
         // 웹훅 확인 후 실제 결제 되어있으면 결제 취소 요청 보내기
 
     }

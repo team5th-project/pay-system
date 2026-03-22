@@ -22,7 +22,7 @@ public record GetRefundListResponse(
                 refund.getId(),
                 refund.getPayment().getOrder().getOrderUid(),
                 refund.getPayment().getPaymentUid(),
-                refund.getPayment().getAmount(),
+                refund.getPayment().getFinalAmount(),
                 refund.getRefundStatus().name(),
                 refund.getRefundedAt()
         );
