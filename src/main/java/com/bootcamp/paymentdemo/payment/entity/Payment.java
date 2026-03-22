@@ -35,7 +35,7 @@ public class Payment extends BaseEntity {
     private Order order;     // 주문 ID
 
     @Column(nullable = false)
-    private Long finalAMount;     // 최종 결제 금액
+    private Long finalAmount;     // 최종 결제 금액
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
@@ -59,7 +59,7 @@ public class Payment extends BaseEntity {
     }
 
     // 결제 완료로 전환하는 메서드
-    public void paid() {
+    public void success() {
         if (this.paymentStatus != PaymentStatus.PENDING) {
             throw new ServiceException(ErrorCode.PAYMENT_STATUS_NOT_PENDING);
         }

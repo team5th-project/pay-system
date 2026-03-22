@@ -14,6 +14,7 @@ import com.bootcamp.paymentdemo.payment.enums.PaymentStatus;
 import com.bootcamp.paymentdemo.payment.enums.PortOnePaymentStatus;
 import com.bootcamp.paymentdemo.payment.respository.PaymentRepository;
 import com.bootcamp.paymentdemo.user.UserService;
+import com.bootcamp.paymentdemo.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,17 +35,14 @@ public class PaymentService {
     public CreatePaymentResponse createPayment(String orderId, CreatePaymentRequest request) {
         Order order = orderService.getOrderByOrderUid(orderId);
 
+        // request 데이터 추출
+        Long totalAmount = request.getTotalAmount();
+        Integer pointToUse = request.getPointToUse();
+
+
         // 주문 상태 검증
         if(order.getStatus()!= OrderStatus.PENDING){
             throw new ServiceException(ErrorCode.ORDER_STATUS_NOT_PENDING);
-        }
-
-        // TODO : 결제 생성 시 포인트 있는지 검증.
-        Long userId = order.getUserId();
-        int currentPoint = userService.getCurrentPoint(userId);
-        Integer pointToUse = request.getPointToUse();
-        if (currentPoint < pointToUse) {
-            throw new ServiceException(ErrorCode.INSUFFICIENT_POINT);
         }
 
         // 중복 결제 방지
@@ -55,18 +53,42 @@ public class PaymentService {
             throw new ServiceException(ErrorCode.ALREADY_PENDING_PAYMENT);
         }
 
-        // 주문 금액 검증
-        Long totalAmount = request.getTotalAmount();
+        // 주문 금액 null 검증
         if (totalAmount == null) {
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_AMOUNT);
         }
 
-        if (!totalAmount.equals(order.getTotalAmount())) { // 결제 요청시 들어온 금액과 주문 금액이 일치하는지 검증
+        // 결제 요청시 들어온 금액과 주문 금액이 일치하는지 검증
+        if (!totalAmount.equals(order.getTotalAmount())) {
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_AMOUNT);
         }
+
+        // 사용 포인트량이 주문 금액보다 작거나 같은지 검증
+        if (pointToUse > totalAmount) {
+            throw new ServiceException(ErrorCode.INVALID_POINT_AMOUNT);
+        }
+
+        // TODO : 사용할 포인트 있는지 검증.
+        Long userId = order.getUserId();
+        User user = userService.getUser(userId);
+        int pointBalance = user.getPointBalance();
+        if (pointBalance < pointToUse) {
+            throw new ServiceException(ErrorCode.INSUFFICIENT_POINT);
+        }
+
+        // TODO : 포인트 DB 비관적 락 거는 메서드 호출
+
+
+        // 포인트 객체 받아오기
+        UserPoint point = UserPointService.getPoint(pointToUse);
+        // 포인트 가점유
+        point.hold(pointToUse);
+
+
         // 실제 결제 금액 계산
         Long finalAmount = totalAmount - pointToUse;
 
+        // 결제 생성
         Payment payment = Payment.builder()
                 .paymentUid(createPaymentId())
                 .order(order)
@@ -80,12 +102,8 @@ public class PaymentService {
         return CreatePaymentResponse.from(payment);
     }
 
-    /*
-    catch (PAYMENT_NOT_FOUND) → PENDING
-    catch (PORTONE_SERVER_ERROR) → PENDING
-    catch (PORTONE_COMMUNICATION_ERROR) → PENDING
-     */
-    public ConfirmPaymentResponse completePayment(String paymentUid) {
+
+    public ConfirmPaymentResponse confirmPayment(String paymentUid) {
 
         // paymentId 검증
         if(!StringUtils.hasLength(paymentUid)){
@@ -117,7 +135,7 @@ public class PaymentService {
 
 
         // 포트원 데이터 결제금액과 Payment 객체 결제 금액 동일한지 검증
-        if(!payment.getAmount().equals((long) portOnePaymentDto.paid())){
+        if(!payment.getFinalAmount().equals((long) portOnePaymentDto.paid())){
             // TODO : 포트원에서 결제는 되었는데 결제 금액이 동일하지 않으면 결제 취소 요청을 보내기..
             portOneService.cancelPayment(paymentUid);
             throw new ServiceException(ErrorCode.PAYMENT_AMOUNT_NOT_EQUALS);
