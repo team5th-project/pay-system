@@ -2,6 +2,8 @@ package com.bootcamp.paymentdemo.product;
 
 import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
+import com.bootcamp.paymentdemo.order.entity.OrderItem;
+import com.bootcamp.paymentdemo.order.service.OrderService;
 import com.bootcamp.paymentdemo.product.dto.GetProductResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -16,6 +18,7 @@ import java.util.List;
 @Transactional
 public class ProductService {
     private final ProductRepository productRepository;
+    private final OrderService orderService;
 
     // 1. 상품 목록 조회
     public Page<GetProductResponse> getProducts(ProductCategory productCategory, Pageable pageable) {
@@ -37,5 +40,25 @@ public class ProductService {
         return productRepository.findById(productId).orElseThrow(
                 ()-> new ServiceException(ErrorCode.PRODUCT_NOT_FOUND)
         );
+    }
+
+    public int getProductStockById(Long productId){
+        return getProductById(productId).getStock();
+    }
+
+    public void isOrderItemEnough(OrderItem orderItem){
+        Product product = getProductById(Long.parseLong(orderItem.getProductId()));
+
+        if (orderItem.getQuantity() >= product.getStock()){
+            throw new ServiceException(ErrorCode.STOCK_NOT_ENOUGH);
+        }
+    }
+
+    // orderItemList 에 주문 가능한 상품(재고 충분)만 담겨있는지 확인하는 메서드
+    public boolean isOrderItemListValid(List<OrderItem> orderItemList){
+        for (OrderItem orderItem : orderItemList) {
+            isOrderItemEnough(orderItem);
+        }
+        return true;
     }
 }

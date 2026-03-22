@@ -121,4 +121,16 @@ public class OrderService {
         return orderRepository.findByOrderUid(orderUid)
                 .orElseThrow(() -> new ServiceException(ErrorCode.ORDER_NOT_FOUND));
     }
+
+    // 지원 추가
+    // 확인할 주문의 orderItem들의 재고가 결제 시 유효한지 확인
+    public List<OrderItem> getOrderItemList(Long orderId){
+        return orderItemRepository.findByOrderId(orderId);
+    }
+
+    public OrderItem getOrderItemById(Long orderItemId){
+        return orderItemRepository.findById(orderItemId).orElseThrow(
+                ()-> new ServiceException(ErrorCode.ORDER_ITEM_NOT_FOUND)
+        );
+    }
 }
