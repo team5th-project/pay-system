@@ -22,9 +22,13 @@ public enum ErrorCode {
 
     //상품
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "P001", "상품을 찾을 수 없습니다."),
-    INVALID_CATEGORY(HttpStatus.BAD_REQUEST, "P001", "유효하지 않은 카테고리입니다."),
-    INVALID_PRODUCT_QUANTITY(HttpStatus.BAD_REQUEST, "P002", "상품 수량은 1개 이상이어야 합니다."),
-    INSUFFICIENT_STOCK(HttpStatus.BAD_REQUEST, "P003", "현재 재고가 부족하여 주문할 수 없습니다."),
+    INVALID_CATEGORY(HttpStatus.BAD_REQUEST, "P002", "유효하지 않은 카테고리입니다."),
+
+    //주문 상품
+    ORDER_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "P003", "주문 상품을 찾을 수 없습니다."),
+    STOCK_NOT_ENOUGH(HttpStatus.BAD_REQUEST, "P004", "재고가 부족합니다."),
+
+    INVALID_PRODUCT_QUANTITY(HttpStatus.BAD_REQUEST, "P005", "상품 수량은 1개 이상이어야 합니다."),
     //주문
     INVALID_ORDER_STATUS(HttpStatus.BAD_REQUEST, "O001", "잘못된 주문 상태 전이입니다."),
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "O002", "주문을 찾을 수 없습니다."),
@@ -61,17 +65,14 @@ public enum ErrorCode {
     //환불
     INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, "R001", "현재 환불 상태에서는 요청한 작업을 수행할 수 없습니다."),
     INVALID_PAYMENT_STATUS(HttpStatus.BAD_REQUEST, "ROO2", "환불은 결제 완료 상태에서만 가능합니다."),
-//    PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "R003", "존재하지 않는 결제내역입니다."),
-    REFUND_FAILED(HttpStatus.BAD_REQUEST,"R004", "환불 처리 중 오류가 발생했습니다."),
-
+    REFUND_FAILED(HttpStatus.BAD_REQUEST,"R003", "환불 처리 중 오류가 발생했습니다."),
+    REFUND_NOT_FOUND(HttpStatus.NOT_FOUND, "R004", "환불내역을 찾을 수 없습니다."),
+    REFUND_PERIOD_EXPIRED(HttpStatus.BAD_REQUEST, "R005", "환불 가능 기간이 지났습니다."),
 
     //포인트
     INSUFFICIENT_POINT(HttpStatus.BAD_REQUEST, "PT001", "포인트 잔액이 부족합니다."),
     INVALID_POINT_AMOUNT(HttpStatus.BAD_REQUEST, "PT002", "포인트는 양수여야 합니다.")
-
-
-    ;
-
+;
     private final HttpStatus status;
     private final String code;
     private final String message;

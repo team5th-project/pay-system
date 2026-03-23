@@ -5,7 +5,6 @@ import com.bootcamp.paymentdemo.common.global.CommonResponseHandler;
 import com.bootcamp.paymentdemo.refund.dto.request.CreateRefundRequest;
 import com.bootcamp.paymentdemo.refund.dto.response.CreateRefundResponse;
 import com.bootcamp.paymentdemo.refund.dto.response.GetRefundDetailResponse;
-import com.bootcamp.paymentdemo.refund.dto.response.GetRefundListResponse;
 import com.bootcamp.paymentdemo.refund.service.RefundService;
 import com.bootcamp.paymentdemo.security.CustomUserDetails;
 import jakarta.validation.Valid;
@@ -21,24 +20,15 @@ import org.springframework.web.bind.annotation.*;
 public class RefundController {
     private final RefundService refundService;
     // 환불 요청
-    @PostMapping("/{paymentId}")
+    @PostMapping("/{paymentUid}")
     public ResponseEntity<CommonResponse<CreateRefundResponse>> requestRefund(
-            @PathVariable Long paymentId,
+            @PathVariable String paymentUid,
             @Valid @RequestBody CreateRefundRequest refundRequest,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         CreateRefundResponse response = refundService.requestRefund(
-                paymentId, refundRequest, userDetails.getUserId());
+                paymentUid, refundRequest, userDetails.getUserId());
         return CommonResponseHandler.success(HttpStatus.CREATED, response);
     }
-
-    // 환불 목록조회
-    @GetMapping
-    public ResponseEntity<CommonResponse<GetRefundListResponse>> getRefunds(
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        GetRefundListResponse response = refundService.getRefunds(userDetails.getUserId());
-        return CommonResponseHandler.success(HttpStatus.OK, response);
-    }
-
     // 환불 상세조회
     @GetMapping("/{refundId}")
     public ResponseEntity<CommonResponse<GetRefundDetailResponse>> getRefundDetail(
@@ -47,5 +37,4 @@ public class RefundController {
         GetRefundDetailResponse response = refundService.getRefundDetail(refundId, userDetails.getUserId());
         return CommonResponseHandler.success(HttpStatus.OK, response);
     }
-
 }

@@ -23,8 +23,8 @@ function checkAuthentication() {
         return;
     }
 
-    // 사용자 정보 표시
-    displayUserInfo();
+    // 사용자 정보 표시는 layout.html에서 직접 처리하므로 중복 실행을 막기 위해 주석 처리합니다.
+    // displayUserInfo();
 }
 
 /**

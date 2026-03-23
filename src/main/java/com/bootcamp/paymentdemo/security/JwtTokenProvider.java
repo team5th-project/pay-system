@@ -150,14 +150,14 @@ public class JwtTokenProvider {
             return true;
 
         } catch (ExpiredJwtException e) {
-            log.info("Expired Jwt Exception");
+//            log.info("Expired Jwt Exception");
             throw new ServiceException(ErrorCode.JWT_EXPIRED);
         } catch (MalformedJwtException | IllegalArgumentException e) {
-            log.info("토큰 형식 오류 (Malformed Jwt Exception)");
+//            log.info("토큰 형식 오류 (Malformed Jwt Exception)");
             throw new ServiceException(ErrorCode.JWT_INVALID);
             // 토큰이 애초에 형식이 이상하거나 비어있을때
         } catch (UnsupportedJwtException e) {
-            log.info("Unsupported Jwt Exception");
+//            log.info("Unsupported Jwt Exception");
             throw new ServiceException(ErrorCode.JWT_INVALID);
         } catch (SignatureException e) {
             log.error("위조된 토큰!!! 조 심 해 ");
