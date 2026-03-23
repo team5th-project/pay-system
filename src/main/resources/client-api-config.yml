@@ -316,6 +316,49 @@ api:
               required: true
               description: 환불 처리 시각
 
+    get-refund-detail:
+      url: /api/refund/{refundId}
+      method: GET
+      description: 환불 상세조회 (현재 로그인한 사용자의 환불ID를 통해 요청)
+      pathParams:
+        - name: refundId
+          description: 환불 ID
+      response:
+        body:
+          fields:
+            - name: refundId
+              type: string
+              required: true
+              description: 환불 ID
+            - name: orderUid
+              type: string
+              required: true
+              description: 주문 UUID
+            - name: paymentUid
+              type: string
+              required: true
+              description: 결제 UUID
+            - name: refundAmount
+              type: number
+              required: true
+              description: 환불금액
+            - name: reason
+              type: string
+              required: true
+              description: 취소 사유
+            - name: refundStatus
+              type: string
+              required: true
+              description: 변경된 주문 상태
+            - name: requestedAt
+              type: string
+              required: true
+              description: 환불 요청 시각
+            - name: refundedAt
+              type: string
+              required: true
+              description: 환불 완료 시각
+
     # ========================================
     # 포인트 & 멤버십 (Point & Membership)
     # ========================================

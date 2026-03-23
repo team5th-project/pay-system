@@ -20,13 +20,13 @@ import org.springframework.web.bind.annotation.*;
 public class RefundController {
     private final RefundService refundService;
     // 환불 요청
-    @PostMapping("/{paymentId}")
+    @PostMapping("/{paymentUid}")
     public ResponseEntity<CommonResponse<CreateRefundResponse>> requestRefund(
-            @PathVariable Long paymentId,
+            @PathVariable String paymentUid,
             @Valid @RequestBody CreateRefundRequest refundRequest,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         CreateRefundResponse response = refundService.requestRefund(
-                paymentId, refundRequest, userDetails.getUserId());
+                paymentUid, refundRequest, userDetails.getUserId());
         return CommonResponseHandler.success(HttpStatus.CREATED, response);
     }
     // 환불 상세조회

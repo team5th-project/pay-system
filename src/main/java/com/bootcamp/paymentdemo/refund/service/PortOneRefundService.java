@@ -36,11 +36,13 @@ public class PortOneRefundService {
                     .body(PortOneCancelResponse.class);
 
             // 응답 DTO 받기
-            if (response == null || response.cancellation() == null) {
+            PortOneCancellationDto cancellation = response.cancellation();
+            // 환불 정보 자체가 없거나 환불 상태값이 없을 시
+            if (response == null || cancellation == null || cancellation.status() == null) {
                 log.error("PortOne 환불 응답이 비어 있습니다. paymentUid : {}", paymentUid);
                 throw new ServiceException(ErrorCode.REFUND_FAILED);
             }
-            return response.cancellation();
+            return cancellation;
             // 의도적으로 만든 예외는 그대로 통과
         } catch (ServiceException e) {
             throw e;

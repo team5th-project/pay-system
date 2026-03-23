@@ -41,9 +41,9 @@ public class RefundService {
     }
 
     @Transactional
-    public CreateRefundResponse requestRefund(Long paymentId, CreateRefundRequest request, Long userId) {
+    public CreateRefundResponse requestRefund(String paymentUid, CreateRefundRequest request, Long userId) {
         // 결제 조회(paymentService를 통해 호출)
-        Payment payment = paymentService.getPaymentById(paymentId);
+        Payment payment = paymentService.getPaymentById(paymentUid);
 
         Order order = payment.getOrder();
 
@@ -81,10 +81,11 @@ public class RefundService {
 
             switch (status) {
                 case SUCCEEDED -> {
-                    refund.complete(); // 환불 완료시 상태 전이Z
+                    refund.complete(); // 환불 완료시 상태 전이
                     payment.refund(); // 결제상태
                     order.refund(); // 주문상태
                 }
+                // TODO: 환불 완료 후 포인트 복구 / 재고 복구 / 멤버십 갱신 : RefundCompletedEvent 발행하여 리스너를 통해
                 case REQUESTED -> {
                     // 요청 상태 유지
                 }
