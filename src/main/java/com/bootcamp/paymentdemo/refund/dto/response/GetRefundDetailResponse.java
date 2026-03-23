@@ -19,7 +19,7 @@ public record GetRefundDetailResponse(
                 refund.getId(),
                 refund.getPayment().getOrder().getOrderUid(),
                 refund.getPayment().getPaymentUid(),
-                refund.getPayment().getAmount(),
+                refund.getPayment().getFinalAmount(),
                 refund.getReason(),
                 refund.getRefundStatus().name(),
                 refund.getCreatedAt(),

@@ -2,6 +2,8 @@ package com.bootcamp.paymentdemo.product;
 
 import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
+import com.bootcamp.paymentdemo.order.entity.Order;
+import com.bootcamp.paymentdemo.order.entity.OrderItem;
 import com.bootcamp.paymentdemo.product.dto.GetProductResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -37,5 +39,17 @@ public class ProductService {
         return productRepository.findById(productId).orElseThrow(
                 ()-> new ServiceException(ErrorCode.PRODUCT_NOT_FOUND)
         );
+    }
+
+
+
+    // 소영 추가
+    @Transactional
+    public void decreaseStockByOrder(Order order) {
+        for (OrderItem orderItem : order.getOrderItems()) {
+            // TODO : // 현재 order 엔티티쪽에서 productId가 String으로 되어 있습니다. 이부분은 Long으로 바꾸는게 좋아보입니다.
+            Product product = productRepository.findByIdForUpdate(Long.valueOf(orderItem.getProductId()));
+            product.decreaseStock(orderItem.getQuantity());
+        }
     }
 }

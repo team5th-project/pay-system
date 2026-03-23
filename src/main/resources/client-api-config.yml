@@ -240,6 +240,10 @@ api:
             type: number
             required: true
             description: 결제 금액
+          - name: pointToUse
+            type: number
+            required: false
+            description: 사용할 포인트
       response:
         body:
           fields:
@@ -431,6 +435,7 @@ api:
               required: true
               description: 포인트 적립률 (%)
               example: "1"
+
 
     # ========================================
     # 구독 & 빌링키 (Subscription & Billing Key)
