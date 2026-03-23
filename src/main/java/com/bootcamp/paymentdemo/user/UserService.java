@@ -2,6 +2,8 @@ package com.bootcamp.paymentdemo.user;
 
 import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
+import com.bootcamp.paymentdemo.point.entity.UserPoint;
+import com.bootcamp.paymentdemo.point.repository.UserPointRepository;
 import com.bootcamp.paymentdemo.security.JwtTokenProvider;
 import com.bootcamp.paymentdemo.security.token.BlacklistRepository;
 import com.bootcamp.paymentdemo.security.token.BlacklistToken;
@@ -9,6 +11,7 @@ import com.bootcamp.paymentdemo.security.token.RefreshToken;
 import com.bootcamp.paymentdemo.security.token.RefreshTokenRepository;
 import com.bootcamp.paymentdemo.user.dto.*;
 import com.bootcamp.paymentdemo.user.entity.User;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -76,15 +79,21 @@ public class UserService {
         // CUST_XXXXXXXX 의 customerUid 생성하기
         String encodedPassword = passwordEncoder.encode(request.getPassword());
 
-        User user = userRepository.save(
-                User.builder()
+        User user = User.builder()
                         .name(request.getName())
                         .email(request.getEmail())
                         .password(encodedPassword)
                         .phone(request.getPhone())
-                        .build());
+                        .build();
 
 //        membershipService.createMembership(user.getId());
+
+
+        UserPoint userPoint = UserPoint.builder()
+                .user(user)
+                .build();
+        user.setUserPoint(userPoint);
+        userRepository.save(user);
 
         return SignupResponse.of(user);
     }

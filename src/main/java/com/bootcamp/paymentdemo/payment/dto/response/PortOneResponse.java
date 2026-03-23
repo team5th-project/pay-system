@@ -1,27 +1,18 @@
 package com.bootcamp.paymentdemo.payment.dto.response;
 
+
 import com.bootcamp.paymentdemo.payment.enums.PortOnePaymentStatus;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-import java.util.List;
-
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record PortOneResponse(
-        List<PaymentTransaction> items
-){
-    public record PaymentTransaction(
-            /*
-            READY       // 결제 준비
-            PAID        // 결제 성공
-            FAILED      // 결제 실패
-            CANCELED    // 결제 취소
-             */
-        String status,
-        String id,  // transactionId
-        String paymentId,
-        List<PaymentAmount> amount
-    ){
-        public record PaymentAmount(
-            int paid
-        ){}
-
-    }
+        PortOnePaymentStatus status,
+        String id,
+        String transactionId,
+        PaymentAmount amount
+) {
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record PaymentAmount(
+            Long paid
+    ) {}
 }

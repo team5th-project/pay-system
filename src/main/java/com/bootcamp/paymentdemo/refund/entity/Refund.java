@@ -47,7 +47,7 @@ public class Refund extends BaseEntity {
 
     // 환불 요청 메서드
     public static Refund create(Payment payment, String reason) {
-        Long amount = payment.getAmount();
+        Long amount = payment.getFinalAmount();
 
         if (amount == null || amount <= 0) {
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_AMOUNT);

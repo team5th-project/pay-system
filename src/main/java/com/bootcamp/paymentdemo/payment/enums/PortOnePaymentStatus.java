@@ -4,10 +4,11 @@ import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
 
 public enum PortOnePaymentStatus {
-    READY,
     PAID,
     FAILED,
-    CANCELLED;
+    CANCELLED,
+    READY,
+    PAY_PENDING;
 
 
     public static PortOnePaymentStatus from(String status) {
@@ -16,6 +17,7 @@ public enum PortOnePaymentStatus {
             case "PAID" -> PortOnePaymentStatus.PAID;
             case "FAILED" -> PortOnePaymentStatus.FAILED;
             case "CANCELLED" -> PortOnePaymentStatus.CANCELLED;
+            case "PAY_PENDING" -> PortOnePaymentStatus.PAY_PENDING;
             default -> throw new ServiceException(ErrorCode.UNKNOWN_PORTONE_STATUS);
         };
     }
