@@ -92,11 +92,11 @@ public class Payment extends BaseEntity {
         this.paymentStatus = PaymentStatus.CANCEL_REQUESTED;
     }
 
-    // 결제 취소 성공이랑 환불 상태 통일하겠습니다.
+    // 결제 취소 성공이랑 환불 상태 나눠야겠네요..
     public void cancelled(){
         if (this.paymentStatus != PaymentStatus.CANCEL_REQUESTED) {
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
         }
-        this.paymentStatus = PaymentStatus.REFUNDED;
+        this.paymentStatus = PaymentStatus.CANCELLED;
     }
 }

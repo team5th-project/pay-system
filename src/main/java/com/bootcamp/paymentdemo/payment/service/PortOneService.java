@@ -22,7 +22,7 @@ public class PortOneService {
 
     }
 
-    public PortOnePaymentDto getPayment(String paymentUid) throws RuntimeException{
+    public PortOnePaymentDto getPayment(String paymentUid){
         try {
             PortOneResponse portOneResponse = portOneRestClient.get()
                     .uri("/payments/{paymentUid}", paymentUid) // RestClientConfig에 설정해놓은 baseUrl 뒤에 붙을 경로
