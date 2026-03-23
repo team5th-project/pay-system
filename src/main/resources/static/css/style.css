@@ -66,6 +66,9 @@ body {
     color: var(--text-primary);
     line-height: 1.6;
     transition: background-color 0.3s, color 0.3s;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 h1, h2, h3, h4, h5, h6, .navbar-brand, .form-title, .card-header {
@@ -142,6 +145,8 @@ h1, h2, h3, h4, h5, h6, .navbar-brand, .form-title, .card-header {
     margin: 0 auto;
     padding: var(--spacing-xl) var(--spacing-lg);
     display: block;
+    flex: 1;
+    width: 100%;
 }
 
 /* Responsive Navbar */
@@ -394,4 +399,21 @@ h1, h2, h3, h4, h5, h6, .navbar-brand, .form-title, .card-header {
 }
 .cart-bounce {
     animation: cartBounce 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Footer */
+.app-footer {
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border);
+    padding: var(--spacing-lg) 0;
+    margin-top: auto;
+    text-align: center;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    color: var(--text-primary);
+    font-family: 'Gowun Dodum', sans-serif;
+    font-weight: 600;
 }
