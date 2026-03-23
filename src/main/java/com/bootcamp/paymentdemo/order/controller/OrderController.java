@@ -90,4 +90,23 @@ public class OrderController {
         OrderConfirmResponse response = orderService.confirmOrder(userId, orderUid);
         return CommonResponseHandler.success(HttpStatus.OK, response);
     }
+
+//
+//         주문 취소
+//        PENDING 상태인 주문만 취소 가능
+//        -> 결제가 완료된 주문(PAID, CONFIRMED)은 취소 불가, 환불 프로세스로 진행해야 함
+//      - 본인 주문인지 서비스 레이어에서 검증
+//      - 반환값 없음 (취소 완료 여부만 200 OK로 응답)
+
+
+    @PatchMapping("/{orderUid}/cancel")
+    public ResponseEntity<CommonResponse<Void>> cancelOrder(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable String orderUid
+    ) {
+        Long userId = userDetails.getUserId();
+        // PENDING 상태 검증 및 CANCELLED 상태 전이는 서비스 레이어에서 처리
+        orderService.cancelOrder(userId, orderUid);
+        return CommonResponseHandler.success(HttpStatus.OK, null);
+    }
 }
