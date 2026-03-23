@@ -31,7 +31,12 @@ async function makeApiRequest(endpointKey, options = {}) {
         const method = options.method || endpointContract.method || 'GET';
 
         // URL 생성
-        const url = await buildApiUrl(endpointKey, pathParams);
+        let url = await buildApiUrl(endpointKey, pathParams);
+
+        if (params && Object.keys(params).length > 0) {
+            const queryString = new URLSearchParams(params).toString();
+            url += (url.includes('?') ? '&' : '?') + queryString;
+        }
 
         // 엔드포인트 표시 업데이트
         updateEndpointDisplay(method, url);

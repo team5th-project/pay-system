@@ -35,7 +35,10 @@
                 <li><a href="/pages/subscriptions" class="nav-link">구독관리</a></li>
             </ul>
             <div class="navbar-actions" id="user-navbar-section" style="display: flex; align-items: center; gap: 10px;">
-                 <span id="nav-user-info" style="font-weight: bold; color: var(--text-primary); font-size: 0.95rem; display: none;"></span>
+                <span id="nav-user-info" style="font-weight: bold; color: var(--text-primary); font-size: 0.95rem; display: none;"></span>
+                <button id="nav-cart-btn" class="btn btn-outline" style="padding: 0.4rem 0.8rem; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-size: 0.85rem;" onclick="toggleCartModal()">
+                    🛒 <span id="nav-cart-count" style="background: var(--primary); color: white; border-radius: 50%; padding: 0.1rem 0.4rem; font-size: 0.75rem; font-weight: bold;">0</span>
+                </button>
                  <button class="btn btn-outline" style="padding: 0.4rem 1rem; font-size: 0.85rem; border-radius: 20px; display: none;" onclick="handleLogout()" id="nav-logout-btn">로그아웃</button>
             </div>
         </div>
@@ -106,6 +109,19 @@
             if (typeof removeToken === 'function') removeToken();
             localStorage.removeItem('accessToken');
             window.location.href = '/pages/login';
+        }
+
+        function toggleCartModal() {
+            const modal = document.getElementById('cart-modal');
+            if (modal) {
+                if (modal.style.display === 'none') {
+                    modal.style.display = 'flex';
+                } else {
+                    modal.style.display = 'none';
+                }
+            } else {
+                window.location.href = '/';
+            }
         }
     </script>
 </body>

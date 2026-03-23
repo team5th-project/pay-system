@@ -384,3 +384,14 @@ h1, h2, h3, h4, h5, h6, .navbar-brand, .form-title, .card-header {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--primary);
 }
+
+/* Cart Animations */
+@keyframes cartBounce {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.15) rotate(-10deg); }
+    60% { transform: scale(1.15) rotate(10deg); }
+    100% { transform: scale(1); }
+}
+.cart-bounce {
+    animation: cartBounce 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}

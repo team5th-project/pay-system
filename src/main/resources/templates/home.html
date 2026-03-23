@@ -41,31 +41,39 @@
             <!-- Page numbers will be rendered here -->
         </div>
 
-        <!-- Cart Summary -->
-        <div class="cart-summary" style="margin-top: 3rem; background: var(--bg-secondary); padding: 2rem; border-radius: var(--radius-lg); box-shadow: 0 4px 20px var(--shadow);">
-            <h3 style="margin-bottom: 1rem; font-family: 'Jua', sans-serif; font-size: 1.8rem; color: var(--text-primary);">🛒 장바구니</h3>
-            <div id="cart-items">
-                <p style="color: var(--text-secondary); text-align: center; padding: 1rem 0;">장바구니가 비어 있습니다.</p>
-            </div>
-            
-            <div class="cart-total" style="display: flex; justify-content: space-between; font-size: 1.5rem; font-weight: 700; margin-top: 1.5rem; color: var(--primary);">
-                <span>총 주문 금액:</span>
-                <span id="cart-total">₩0</span>
-            </div>
-
-            <!-- Point Usage -->
-            <div class="point-usage" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed var(--border);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                    <label for="use-points" style="font-weight: bold; font-family: 'Jua', sans-serif; font-size: 1.2rem; color: var(--text-primary);">💎 포인트 사용 (현재 <span id="current-points">0</span>P)</label>
-                    <span style="font-size: 0.9rem; color: var(--text-secondary);">100P 단위로 사용 가능</span>
+        <!-- Cart Modal Overlay -->
+        <div id="cart-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px);">
+            <div class="cart-summary" style="background: var(--bg-primary); padding: 2rem; border-radius: var(--radius-lg); box-shadow: 0 10px 40px rgba(0,0,0,0.2); width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; position: relative;">
+                <button onclick="toggleCartModal()" style="position: absolute; top: 1.5rem; right: 1.5rem; background: none; border: none; font-size: 2rem; cursor: pointer; color: var(--text-secondary); line-height: 1;">&times;</button>
+                <h3 style="margin-bottom: 1.5rem; font-family: 'Jua', sans-serif; font-size: 1.8rem; color: var(--text-primary); border-bottom: 2px solid var(--primary); padding-bottom: 0.5rem; display: inline-block;">🛒 내 장바구니</h3>
+                <div id="cart-items" style="min-height: 100px;">
+                    <p style="color: var(--text-secondary); text-align: center; padding: 2rem 0;">장바구니가 비어 있습니다.</p>
                 </div>
-                <input type="number" id="use-points" class="form-input" style="width: 100%; margin-bottom: 1.5rem; font-size: 1.1rem; padding: 0.75rem;" 
-                       placeholder="사용할 포인트를 입력하세요 (100 단위)" min="0" step="100" value="0">
-            </div>
+                
+                <div class="cart-total" style="display: flex; justify-content: space-between; font-size: 1.5rem; font-weight: 700; margin-top: 1.5rem; color: var(--primary-dark); border-top: 2px solid var(--border); padding-top: 1rem;">
+                    <span>총 주문 금액:</span>
+                    <span id="cart-total">₩0</span>
+                </div>
 
-            <button class="btn btn-primary" onclick="createOrder()" style="width: 100%; font-size: 1.25rem; padding: 1rem; font-family: 'Jua', sans-serif;">
-                📦 주문 생성하기
-            </button>
+                <!-- Point Usage -->
+                <div class="point-usage" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed var(--border);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <label for="use-points" style="font-weight: bold; font-family: 'Gowun Dodum', sans-serif; font-size: 1.1rem; color: var(--text-primary);">💎 포인트 사용 (현재 <span id="current-points">0</span>P)</label>
+                        <span style="font-size: 0.85rem; color: var(--text-secondary); background: var(--bg-tertiary); padding: 2px 8px; border-radius: 10px;">100P 단위</span>
+                    </div>
+                    <input type="number" id="use-points" class="form-input" style="width: 100%; margin-bottom: 1.5rem; font-size: 1.1rem; padding: 0.75rem;" 
+                           placeholder="사용할 포인트를 입력 (100 단위)" min="0" step="100" value="0">
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                    <button class="btn btn-outline" onclick="toggleCartModal()" style="flex: 1; font-size: 1.1rem; padding: 1rem; font-family: 'Gowun Dodum', sans-serif;">
+                        닫기
+                    </button>
+                    <button class="btn btn-primary" onclick="createOrder()" style="flex: 2; font-size: 1.15rem; padding: 1rem; font-family: 'Jua', sans-serif;">
+                        📦 주문 결제하기
+                    </button>
+                </div>
+            </div>
         </div>
 
         <script>
@@ -76,7 +84,7 @@
             let currentUser = null;
             let currentPage = 1;
             let totalPages = 1;
-            const pageSize = 9;
+            const pageSize = 6;
             
             function unwrapCommonResponse(response) {
                 if (!response || typeof response !== 'object' || Array.isArray(response)) return response;
@@ -135,8 +143,9 @@
 
             async function loadProductsFromApi(page = 1) {
                 try {
+                    // Spring Data JPA는 기본적으로 0-indexed page를 사용하므로 클라이언트의 1-indexed를 변환하여 요청
                     const raw = await makeApiRequest('list-products', {
-                        query: { page: page, size: pageSize }
+                        params: { page: page - 1, size: pageSize }
                     });
                     
                     const result = unwrapCommonResponse(raw);
@@ -283,6 +292,16 @@
                 cart[productId] = qty;
                 updateCartSummary();
                 validatePoints();
+                
+                // Add bounce animation to navbar cart icon if increasing quantity
+                if (delta > 0) {
+                    const cartBtn = document.getElementById('nav-cart-btn');
+                    if (cartBtn) {
+                        cartBtn.classList.remove('cart-bounce');
+                        void cartBtn.offsetWidth; // trigger reflow to reset animation
+                        cartBtn.classList.add('cart-bounce');
+                    }
+                }
             };
 
             function updateCartSummary() {
@@ -322,6 +341,17 @@
                     : '<p style="color: var(--text-secondary); text-align: center; padding: 1rem 0;">장바구니가 비어 있습니다.</p>';
                     
                 cartTotalSpan.textContent = `₩${total.toLocaleString()}`;
+
+                // Update headers navigation badge count
+                const navCartCount = document.getElementById('nav-cart-count');
+                if (navCartCount) {
+                    let totalQty = 0;
+                    Object.values(cart).forEach(q => totalQty += q);
+                    navCartCount.textContent = totalQty;
+                    navCartCount.style.transition = 'transform 0.2s';
+                    navCartCount.style.transform = 'scale(1.2)';
+                    setTimeout(() => navCartCount.style.transform = 'scale(1)', 200);
+                }
             }
 
             function validatePoints() {
@@ -422,6 +452,10 @@
 
                     if (result && result.orderUid) {
                         if (window.showNotification) showNotification('주문 생성 완료! 🛒', 'success');
+                        
+                        // 주문 완료 시 장바구니 모달 닫기
+                        toggleCartModal();
+                        
                         setTimeout(() => {
                             window.location.href = `/pages/orders`;
                         }, 1000);
