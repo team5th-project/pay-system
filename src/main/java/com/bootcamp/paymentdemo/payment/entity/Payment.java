@@ -35,11 +35,14 @@ public class Payment extends BaseEntity {
     private Order order;     // 주문 ID
 
     @Column(nullable = false)
-    private Long amount;     // 결제 금액
+    private Long finalAmount;     // 최종 결제 금액
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private PaymentStatus paymentStatus;   // 결제 상태'
+
+    @Column(nullable = false)
+    private int pointToUse;
 
     private LocalDateTime paidAt;   // 결제 성공 시각
 
@@ -47,19 +50,21 @@ public class Payment extends BaseEntity {
 
 
     @Builder
-    public Payment(String paymentUid, Order order, Long amount, PaymentStatus paymentStatus) {
+    public Payment(String paymentUid, Order order, Long finalAmount, int pointToUse, PaymentStatus paymentStatus) {
         this.paymentUid = paymentUid;
         this.order = order;
-        this.amount = amount;
+        this.finalAmount = finalAmount;
+        this.pointToUse = pointToUse;
         this.paymentStatus = paymentStatus;
     }
 
     // 결제 완료로 전환하는 메서드
-    public void paid() {
+    public void success() {
         if (this.paymentStatus != PaymentStatus.PENDING) {
             throw new ServiceException(ErrorCode.PAYMENT_STATUS_NOT_PENDING);
         }
         this.paymentStatus = PaymentStatus.SUCCESS;
+        this.paidAt = LocalDateTime.now();
     }
     // 결제상태 환불완료로 전환메서드
     public void refund() {
@@ -67,5 +72,32 @@ public class Payment extends BaseEntity {
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
         }
         this.paymentStatus = PaymentStatus.REFUNDED;
+    }
+
+    // 결제상태 결제 실패로 전환하는 메서드
+    public void failed() {
+        if(this.paymentStatus!=PaymentStatus.PENDING){
+            throw new ServiceException(ErrorCode.PAYMENT_STATUS_NOT_PENDING);
+        }
+        this.paymentStatus = PaymentStatus.FAILED;
+    }
+
+    // 환불이랑은 다른 개념. 결제 성공했다가 내부 사정으로 pg사로 다시 결제 취소 요청을 보내고 응답을 기다리는 상태!
+    public void cancelRequested(){
+        // 포트원 결제 성공 후 재고 차감 문제로 취소 요청이 보내진 경우 트랜잭션 롤백으로 paymentStatus는 다시 PENDING 상태가 되어버림.
+        // 상태를 좀 더 세분화하면 좋을 것 같기도..
+        if (this.paymentStatus != PaymentStatus.PENDING
+                && this.paymentStatus != PaymentStatus.SUCCESS) {
+            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
+        }
+        this.paymentStatus = PaymentStatus.CANCEL_REQUESTED;
+    }
+
+    // 환불이랑은 다른 개념. 결제 성공했다가 내부 사정으로 pg사로 다시 결제 취소 요청을 보내고 성공한 상태!
+    public void cancelled(){
+        if (this.paymentStatus != PaymentStatus.CANCEL_REQUESTED) {
+            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
+        }
+        this.paymentStatus = PaymentStatus.CANCELLED;
     }
 }

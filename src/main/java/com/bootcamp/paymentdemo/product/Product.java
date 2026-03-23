@@ -1,6 +1,8 @@
 package com.bootcamp.paymentdemo.product;
 
 import com.bootcamp.paymentdemo.common.BaseEntity;
+import com.bootcamp.paymentdemo.common.exception.ErrorCode;
+import com.bootcamp.paymentdemo.common.exception.ServiceException;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import lombok.Getter;
@@ -37,5 +39,26 @@ public class Product extends BaseEntity {
         this.stock = stock;
         this.url = url;
         this.productCategory = productCategory;
+    }
+
+
+
+
+    // 소영 : 결제 성공 시 재고 차감 확인 및 주문 상태변경 확인을 위해 추가
+    public void decreaseStock(int quantity) {
+        if (quantity <= 0) {
+            throw new ServiceException(ErrorCode.INVALID_PRODUCT_QUANTITY);
+        }
+        if (this.stock < quantity) {
+            throw new ServiceException(ErrorCode.INSUFFICIENT_STOCK);
+        }
+        this.stock -= quantity;
+    }
+
+    public void increaseStock(int quantity) {
+        if (quantity <= 0) {
+            throw new ServiceException(ErrorCode.INVALID_PRODUCT_QUANTITY);
+        }
+        this.stock += quantity;
     }
 }
