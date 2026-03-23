@@ -49,6 +49,8 @@ public enum ErrorCode {
     PAYMENT_AMOUNT_NOT_EQUALS(HttpStatus.BAD_REQUEST,"PAY010","결제 금액이 일치하지 않습니다."),
     PAYMENT_STATUS_NOT_PENDING(HttpStatus.BAD_REQUEST,"PAY011","결제 상태가 결제 대기 상태가 아닙니다."),
     UNKNOWN_PORTONE_STATUS(HttpStatus.NOT_FOUND, "PAY012", "존재하지 않는 포트원 상태입니다."),
+    PAYMENT_FAILED(HttpStatus.BAD_REQUEST, "PAY013", "결제에 실패하였습니다."),
+    PAYMENT_CHECK_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PAY014","포트원 결제 조회에 실패했습니다."),
 
     // 포트원 에러
     INVALID_PAYMENT_VALIDATION_REQUEST(HttpStatus.BAD_REQUEST,"PAY005","잘못된 결제 검증 요청입니다."),
@@ -59,7 +61,6 @@ public enum ErrorCode {
     PORTONE_UNKNOWN_ERROR(HttpStatus.INTERNAL_SERVER_ERROR,"PAY010","알 수 없는 오류가 발생했습니다."),
     PORTONE_COMMUNICATION_ERROR(HttpStatus.SERVICE_UNAVAILABLE,"PAY011","네트워크 통신에 실패했습니다."),
     PORTONE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE,"PAY012","포트원 API를 호출에 실패했습니다."),
-
 
     //환불
     INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, "R001", "현재 환불 상태에서는 요청한 작업을 수행할 수 없습니다."),

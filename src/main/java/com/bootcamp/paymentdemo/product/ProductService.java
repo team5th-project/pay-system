@@ -3,7 +3,6 @@ package com.bootcamp.paymentdemo.product;
 import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
 import com.bootcamp.paymentdemo.order.entity.OrderItem;
-import com.bootcamp.paymentdemo.order.service.OrderService;
 import com.bootcamp.paymentdemo.order.entity.Order;
 import com.bootcamp.paymentdemo.product.dto.GetProductResponse;
 import lombok.RequiredArgsConstructor;
@@ -55,14 +54,12 @@ public class ProductService {
     }
 
     // orderItemList 에 주문 가능한 상품(재고 충분)만 담겨있는지 확인하는 메서드
-    public boolean isOrderItemListValid(List<OrderItem> orderItemList){
+    public boolean isOrderItemListValid(List<OrderItem> orderItemList) {
         for (OrderItem orderItem : orderItemList) {
             isOrderItemEnough(orderItem);
         }
         return true;
     }
-
-
 
     // 소영 추가
     @Transactional
