@@ -72,7 +72,6 @@ public class UserPoint extends BaseEntity {
     }
 
     // 포인트 차감
-    // 결제했다가 환불한 경우 total point 차감해줘야함
     public void deductPoint(int amount) {
         if (amount <= 0 || this.usedPoint < amount || this.totalPoint < amount) {
             throw new ServiceException(ErrorCode.INVALID_POINT_AMOUNT);

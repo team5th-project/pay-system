@@ -4,15 +4,16 @@ import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
 import com.bootcamp.paymentdemo.point.dto.MembershipPolicyResponse;
 import com.bootcamp.paymentdemo.point.dto.MyPointResponse;
-import com.bootcamp.paymentdemo.point.dto.PointHistoryResponse;
+import com.bootcamp.paymentdemo.point.dto.PointTransactionItem;
 import com.bootcamp.paymentdemo.point.entity.*;
 import com.bootcamp.paymentdemo.point.repository.MembershipPolicyRepository;
 import com.bootcamp.paymentdemo.point.repository.UserPointRepository;
 import com.bootcamp.paymentdemo.point.repository.PointTransactionRepository;
 import com.bootcamp.paymentdemo.user.UserRepository;
-import com.bootcamp.paymentdemo.user.UserService;
 import com.bootcamp.paymentdemo.user.entity.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -124,13 +125,12 @@ public class UserPointService {
             refundPoints = usedTransactions.stream()
                     .mapToInt(tx -> Math.abs(tx.getPoints()))
                     .sum();
-            // 포인트 잔액 복구
-            userPoint.addPoint(refundPoints);
+
+            userPoint.deductPoint(refundPoints);
             // Refund 타입으로 거래내역 저장
             saveTransaction(PointTransaction.refund(userId, orderId, refundPoints));
         }
         // 누적 주문금액 차감 -> 등급 롤백 기준
-        userPoint.deductPoint(refundPoints);
         user.deductTotalOrderAmount(refundAmount);
         // 등급 롤백
         updateMembershipGrade(userId);
@@ -225,9 +225,8 @@ public class UserPointService {
     }
 
     // 포인트 거래 내역 조회 (GET /api/points)
-    public PointHistoryResponse getPointHistory(Long userId) {
-        List<PointTransaction> transactions = pointTransactionRepository.findByUserId(userId);
-        return PointHistoryResponse.from(transactions);
+    public Page<PointTransactionItem> getPointHistory(Long userId, Pageable pageable) {
+        return pointTransactionRepository.findByUserIdWithPaging(userId, pageable).map(PointTransactionItem::from);
     }
 
 }
