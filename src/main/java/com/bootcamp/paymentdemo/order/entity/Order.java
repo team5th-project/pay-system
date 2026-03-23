@@ -128,4 +128,20 @@ public class Order extends BaseEntity {
         }
         this.status = OrderStatus.REFUNDED;
     }
+
+//
+//      주문 취소
+//
+//      - PENDING 상태일 때만 취소 가능
+//        → 결제 전 단계이므로 사용자가 자유롭게 취소할 수 있음
+//      - PAID, CONFIRMED 상태에서는 취소 불가
+//        → 이미 결제가 완료된 주문은 환불 프로세스(PATCH /api/refunds)로 진행해야 함
+//      - 잘못된 상태에서 호출 시 INVALID_ORDER_STATUS 예외 발생
+
+    public void cancel() {
+        if (this.status != OrderStatus.PENDING) {
+            throw new ServiceException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+        this.status = OrderStatus.CANCELLED;
+    }
 }

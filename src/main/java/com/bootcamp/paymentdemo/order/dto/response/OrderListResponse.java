@@ -6,6 +6,7 @@ public record OrderListResponse(
         String orderUid,
         String orderNumber,
         Long totalAmount,
+        Long usedPoint,
         String status,
         String createdAt
 ) {
@@ -14,6 +15,7 @@ public record OrderListResponse(
                 order.getOrderUid(),
                 order.getOrderNumber(),
                 order.getTotalAmount(),
+                order.getUsedPoint(),
                 order.getStatus().name(),
                 order.getCreatedAt().toString()
         );

@@ -150,6 +150,32 @@ public class OrderService {
         return OrderConfirmResponse.from(order);
     }
 
+//
+//      주문 취소
+//
+//      - PENDING 상태인 주문만 취소 가능
+//        → 결제 전 단계이므로 사용자가 자유롭게 취소할 수 있음
+//      - 본인 주문인지 검증 후 Order.cancel() 호출
+//        → PAID, CONFIRMED 상태에서 호출 시 INVALID_ORDER_STATUS 예외 발생
+//      - 취소 후 별도 반환값 없음 (204 No Content 대신 200 OK + null 반환)
+//
+//      @param userId   로그인한 유저 ID
+//      @param orderUid 취소할 주문 UID
+
+    @Transactional
+    public void cancelOrder(Long userId, String orderUid) {
+        Order order = orderRepository.findByOrderUid(orderUid)
+                .orElseThrow(() -> new ServiceException(ErrorCode.ORDER_NOT_FOUND));
+
+        // 본인 주문인지 확인
+        if (!order.getUserId().equals(userId)) {
+            throw new ServiceException(ErrorCode.ORDER_NOT_OWNED);
+        }
+
+        // 상태 전이 (PENDING → CANCELLED), 다른 상태면 예외 발생
+        order.cancel();
+    }
+
     // 소영 추가. Payment에서 사용하는 orderUid로 order 객체 검색하는 메서드
     public Order getOrderByOrderUid(String orderUid) {
         if (orderUid == null || orderUid.isBlank()) {
