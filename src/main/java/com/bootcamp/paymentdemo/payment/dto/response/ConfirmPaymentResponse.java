@@ -11,7 +11,7 @@ public record ConfirmPaymentResponse(
         String orderId,
         PaymentStatus status
 ) {
-    public static ConfirmPaymentResponse of(String orderId, PortOnePaymentDto portOnePaymentDto) {
-        return new ConfirmPaymentResponse(orderId, PaymentStatus.from(portOnePaymentDto.status()));
+    public static ConfirmPaymentResponse of(String orderId, PaymentStatus status) {
+        return new ConfirmPaymentResponse(orderId, status);
     }
 }

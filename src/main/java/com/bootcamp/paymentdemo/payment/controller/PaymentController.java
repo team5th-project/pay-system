@@ -32,7 +32,7 @@ public class PaymentController {
     public ResponseEntity<CommonResponse<ConfirmPaymentResponse>> completePayment(
             @PathVariable String paymentId){
 
-        ConfirmPaymentResponse response = paymentService.completePayment(paymentId);
+        ConfirmPaymentResponse response = paymentService.confirmPayment(paymentId);
         return CommonResponseHandler.success(HttpStatus.OK,response);
     }
 
