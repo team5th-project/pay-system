@@ -2,8 +2,8 @@ package com.bootcamp.paymentdemo.product;
 
 import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
-import com.bootcamp.paymentdemo.order.entity.Order;
 import com.bootcamp.paymentdemo.order.entity.OrderItem;
+import com.bootcamp.paymentdemo.order.entity.Order;
 import com.bootcamp.paymentdemo.product.dto.GetProductResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -41,7 +41,25 @@ public class ProductService {
         );
     }
 
+    public int getProductStockById(Long productId){
+        return getProductById(productId).getStock();
+    }
 
+    public void isOrderItemEnough(OrderItem orderItem){
+        Product product = getProductById(Long.parseLong(orderItem.getProductId()));
+
+        if (orderItem.getQuantity() >= product.getStock()){
+            throw new ServiceException(ErrorCode.STOCK_NOT_ENOUGH);
+        }
+    }
+
+    // orderItemList 에 주문 가능한 상품(재고 충분)만 담겨있는지 확인하는 메서드
+    public boolean isOrderItemListValid(List<OrderItem> orderItemList) {
+        for (OrderItem orderItem : orderItemList) {
+            isOrderItemEnough(orderItem);
+        }
+        return true;
+    }
 
     // 소영 추가
     @Transactional
