@@ -201,28 +201,49 @@ api:
       description: 주문 목록 조회 (현재 로그인한 사용자의 주문)
       response:
         body:
-          type: array
-          items:
-            - name: orderUid
-              type: string
+          type: object
+          fields:
+            - name: content
+              type: array
               required: true
-              description: 주문 UID (서버에서 주문을 식별하는 키)
-            - name: orderNumber
-              type: string
-              required: true
-              description: 주문 번호 (사용자에게 보이는 주문 번호)
-            - name: totalAmount
+              description: 페이지네이션된 주문 목록 배열
+              items:
+                - name: orderUid
+                  type: string
+                  required: true
+                  description: 주문 UID (서버에서 주문을 식별하는 키)
+                - name: orderNumber
+                  type: string
+                  required: true
+                  description: 주문 번호 (사용자에게 보이는 주문 번호)
+                - name: totalAmount
+                  type: number
+                  required: true
+                  description: 주문 금액
+                - name: status
+                  type: string
+                  required: true
+                  description: 주문 상태 (PENDING, PAID, CANCELLED 등)
+                - name: createdAt
+                  type: string
+                  required: false
+                  description: 주문 생성 시간
+            - name: page
               type: number
               required: true
-              description: 주문 금액
-            - name: status
-              type: string
+              description: 현재 페이지 번호
+            - name: size
+              type: number
               required: true
-              description: 주문 상태 (PENDING, PAID, CANCELLED 등)
-            - name: createdAt
-              type: string
-              required: false
-              description: 주문 생성 시간
+              description: 페이지당 사이즈
+            - name: totalElements
+              type: number
+              required: true
+              description: 전체 데이터 개수
+            - name: totalPages
+              type: number
+              required: true
+              description: 전체 페이지 수
 
     # ========================================
     # 결제 (Payment)
