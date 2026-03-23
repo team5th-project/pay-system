@@ -13,6 +13,9 @@ import com.bootcamp.paymentdemo.order.entity.OrderItem;
 import com.bootcamp.paymentdemo.order.enums.OrderStatus;
 import com.bootcamp.paymentdemo.order.repository.OrderItemRepository;
 import com.bootcamp.paymentdemo.order.repository.OrderRepository;
+import com.bootcamp.paymentdemo.payment.entity.Payment;
+import com.bootcamp.paymentdemo.payment.respository.PaymentRepository;
+import com.bootcamp.paymentdemo.point.service.UserPointService;
 import com.bootcamp.paymentdemo.product.Product;
 import com.bootcamp.paymentdemo.product.ProductService;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +36,12 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final ProductService productService;
+
+    // PaymentService 대신 PaymentRepository 직접 주입
+    // -> OrderService ↔ PaymentService 순환 참조 방지
+    // -> confirmOrder() 에서 finalAmount 조회 시에만 사용
+    private final PaymentRepository paymentRepository;
+    private final UserPointService userPointService;   //  주문 확정 시 포인트 적립용
 
     // 주문 생성
     @Transactional
@@ -127,9 +136,17 @@ public class OrderService {
 
         }
 
-        order.confirm(); //상태 전이 (PAID에서 CONFIRMED)
+        order.confirm(); // 상태 전이 (PAID → CONFIRMED)
 
-        // 추후 포인트팀 적립 트리거 (EDD 이벤트 발행하면 상호작 용 예정)
+
+        // 주문 확정 시 포인트 적립 (EDD 미사용, 직접 호출 방식)
+        // 적립 기준: 실제 PG 결제 금액 (포인트 차감 후 finalAmount)
+        // 전액 포인트 결제 시 finalAmount = 0 → earnPoint() 내부에서 적립 없음 처리
+        // PaymentService 대신 PaymentRepository 직접 사용 (OrderService ↔ PaymentService 순환 참조 방지)
+        Payment payment = paymentRepository.findByOrderId(order.getId())
+                .orElseThrow(() -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND));
+        userPointService.earnPoint(userId, order.getId(), payment.getFinalAmount());
+
         return OrderConfirmResponse.from(order);
     }
 

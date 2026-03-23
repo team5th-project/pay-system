@@ -296,5 +296,21 @@ public class PaymentService {
     public Payment getPaymentById(String paymentUid) {
         return paymentRepository.findByPaymentUid(paymentUid)
                 .orElseThrow(() -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND));
-        }
     }
+
+    // 민교가 추가함
+//
+//      orderId로 결제 정보 조회
+//
+//      - 주문 확정 시 포인트 적립을 위해 finalAmount(실제 PG 결제 금액) 가져올 때 사용
+//      - confirmOrder() 및 OrderScheduler에서 호출
+//
+//      @param orderId 조회할 주문 ID
+//      @return 해당 주문의 Payment 객체
+
+
+        public Payment getPaymentByOrderId(Long orderId) {
+        return paymentRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND));
+    }
+}

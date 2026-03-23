@@ -36,8 +36,12 @@ public class RefundService {
         if (payment.getPaymentStatus() != PaymentStatus.SUCCESS) {
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
         }
+        // 민교가 수정함
         // 주문 상태 검증
-        if (order.getStatus() != OrderStatus.CONFIRMED) {
+        // - 기존: CONFIRMED 상태일 때만 환불 가능 → 주문 확정 이후에도 환불 가능해지는 잘못된 흐름
+        // - 변경: PAID 상태일 때만 환불 가능
+        //   → 결제 완료(PAID) 후 7일 이내에만 환불 가능, CONFIRMED 이후에는 환불 불가
+        if (order.getStatus() != OrderStatus.PAID) {
             throw new ServiceException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
