@@ -128,11 +128,6 @@ public class PaymentService {
             // 조회 성공한 경우 결제 결과 가져오기
             result = getPaymentResult(portOnePaymentDto);
 
-            log.info("confirm paymentUid={}", paymentUid);
-            log.info("portone status={}", portOnePaymentDto.status());
-            log.info("portone amount={}", portOnePaymentDto.amount());
-            log.info("db finalAmount={}", payment.getFinalAmount());
-            log.info("payment result={}", result);
 
             // 조회 성공한 경우
             // TODO : 조회 성공 시 상태별로 실행할 메서드
@@ -213,7 +208,7 @@ public class PaymentService {
         payment.success();
 
         // 주문 상태 결제 성공으로 변경
-        orderService.paymentSuccess(order.getId());
+        order.markAsPaid();
 
         // 재고 차감
         productService.decreaseStockByOrder(order);

@@ -122,22 +122,4 @@ public class OrderService {
         return orderRepository.findByOrderUid(orderUid)
                 .orElseThrow(() -> new ServiceException(ErrorCode.ORDER_NOT_FOUND));
     }
-
-    // 소영 추가
-    @Transactional
-    public void paymentSuccess(Long orderId) {
-        Order order = orderRepository.findById(orderId).orElseThrow(
-                ()-> new ServiceException(ErrorCode.ORDER_NOT_FOUND)
-        );
-        order.markAsPaid();
-    }
-
-    @Transactional
-    public void paymentFailed(Long orderId) {
-        Order order = orderRepository.findById(orderId).orElseThrow(
-                ()-> new ServiceException(ErrorCode.ORDER_NOT_FOUND)
-        );
-        order.markAsFailed();
-    }
-
 }
