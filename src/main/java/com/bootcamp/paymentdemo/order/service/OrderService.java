@@ -2,6 +2,7 @@ package com.bootcamp.paymentdemo.order.service;
 
 import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
+import com.bootcamp.paymentdemo.common.global.PageResponse;
 import com.bootcamp.paymentdemo.order.dto.request.OrderCreateRequest;
 import com.bootcamp.paymentdemo.order.dto.response.OrderConfirmResponse;
 import com.bootcamp.paymentdemo.order.dto.response.OrderCreateResponse;
@@ -9,11 +10,14 @@ import com.bootcamp.paymentdemo.order.dto.response.OrderDetailResponse;
 import com.bootcamp.paymentdemo.order.dto.response.OrderListResponse;
 import com.bootcamp.paymentdemo.order.entity.Order;
 import com.bootcamp.paymentdemo.order.entity.OrderItem;
+import com.bootcamp.paymentdemo.order.enums.OrderStatus;
 import com.bootcamp.paymentdemo.order.repository.OrderItemRepository;
 import com.bootcamp.paymentdemo.order.repository.OrderRepository;
 import com.bootcamp.paymentdemo.product.Product;
 import com.bootcamp.paymentdemo.product.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,15 +59,15 @@ public class OrderService {
 
         // 3. 주문 상품 생성
         request.getItems().forEach(orderItemRequest -> {
-
-            // TODO: 상품팀 API 연동 후 아래처럼 사용 예정
-//            Long productIdLong = Long.parseLong(orderItemRequest.getProductId());
+            // productService.getProductById()로 실제 상품 정보 조회
+            //  상품명, 가격을 하드코딩 없이 실제 값으로 저장
+            Product product = productService.getProductById(Long.parseLong(orderItemRequest.getProductId()));
 
             OrderItem orderItem = OrderItem.create(
                     order,
                     orderItemRequest.getProductId(),
-                    "상품명", // product팀 api 연동후 변경
-                    0L,                  // product팀 api 연동후 변경
+                    product.getName(),   // 실제 상품명
+                    product.getPrice(),  // 실제 가격
                     orderItemRequest.getQuantity()
             );
             orderItemRepository.save(orderItem);
@@ -72,12 +76,28 @@ public class OrderService {
     }
 
 
-    // 내 주문 목록 조회
-    public List<OrderListResponse> getMyOrders(Long userId) {
-        return orderRepository.findByUserId(userId)
-                .stream()
-                .map(OrderListResponse::from)
-                .toList();
+//
+//      내 주문 목록 페이징 + 상태 필터 조회
+//
+//      - status가 null이면 전체 조회, 값이 있으면 해당 상태만 필터링
+//      - Pageable을 파라미터로 받아 Controller에서 지정한 정렬·페이지 정보를 그대로 Repository에 전달
+//      - Page<Order> → Page<OrderListResponse> 변환 후 PageResponse로 래핑
+//        (PageResponse.from()은 content, page, size, totalElements, totalPages를 담아 반환)
+//
+//      @param userId   조회할 유저 ID
+//      @param status   필터링할 주문 상태 (null 이면 전체 조회)
+//      @param pageable 페이지 번호·사이즈·정렬 정보
+//      @return 페이징 메타 정보 + 주문 목록
+//
+    public PageResponse<OrderListResponse> getMyOrders(Long userId, OrderStatus status, Pageable pageable) {
+        // 1. userId + status 조건으로 필터링, 동적 정렬·페이징 적용
+        Page<OrderListResponse> page = orderRepository
+                .findByUserIdWithPaging(userId, status, pageable)
+                // 2. Page<Order> → Page<OrderListResponse> 변환 (Spring Data map() 활용)
+                .map(OrderListResponse::from);
+
+        // 3. PageResponse로 래핑하여 반환 (content + 페이징 메타)
+        return PageResponse.from(page);
     }
 
     // 주문 단건 조회
