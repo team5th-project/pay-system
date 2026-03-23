@@ -20,6 +20,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
@@ -37,6 +39,16 @@ public class RefundService {
         // 주문 상태 검증
         if (order.getStatus() != OrderStatus.CONFIRMED) {
             throw new ServiceException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+
+        // 환불 가능 시각 검증
+        LocalDateTime paidAt = payment.getPaidAt(); // 결제성공 시각
+        LocalDateTime expireAt = paidAt.plusDays(7); // 결제성공 시각 7일 이후
+        LocalDateTime now = LocalDateTime.now(); // 환불진행하려는 현재시각
+
+        // 현재 시각이 expireAt 이후 시간이라면 예외처리
+        if (now.isAfter(expireAt)) {
+            throw new ServiceException(ErrorCode.REFUND_PERIOD_EXPIRED);
         }
     }
 

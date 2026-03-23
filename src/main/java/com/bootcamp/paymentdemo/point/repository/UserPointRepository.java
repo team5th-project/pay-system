@@ -17,5 +17,6 @@ public interface UserPointRepository extends JpaRepository<UserPoint, Long> {
     @Query("select p from UserPoint p where p.user.id = :userId")
     UserPoint findByUserIdForUpdate(@Param("userId") Long userId);
 
-    UserPoint findByUserId(Long userId);
+    @Query("select p from UserPoint p where p.user.id = :userId")
+    UserPoint findByUserId(@Param("userId") Long userId);
 }
