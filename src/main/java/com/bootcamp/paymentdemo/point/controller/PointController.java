@@ -6,7 +6,7 @@ import com.bootcamp.paymentdemo.common.global.PageResponse;
 import com.bootcamp.paymentdemo.point.dto.MembershipPolicyResponse;
 import com.bootcamp.paymentdemo.point.dto.MyPointResponse;
 import com.bootcamp.paymentdemo.point.dto.PointTransactionItem;
-import com.bootcamp.paymentdemo.point.service.PointService;
+import com.bootcamp.paymentdemo.point.service.UserPointService;
 import com.bootcamp.paymentdemo.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -27,14 +27,14 @@ import java.util.List;
 @RequestMapping("/api/points")
 public class PointController {
 
-    private final PointService pointService;
+    private final UserPointService userPointService;
 
     // 현재 포인트 + 등급 조회
     @GetMapping("/me")
     public ResponseEntity<CommonResponse<MyPointResponse>> getMyPoint(
             @AuthenticationPrincipal CustomUserDetails userDetails
             ) {
-        MyPointResponse response = pointService.getMyPoints(userDetails.getUserId());
+        MyPointResponse response = userPointService.getMyPoints(userDetails.getUserId());
         return CommonResponseHandler.success(HttpStatus.OK, response);
     }
 
@@ -57,14 +57,14 @@ public class PointController {
                 pageable.getSort()
         );
         PageResponse<PointTransactionItem> response =
-                PageResponse.from(pointService.getPointHistory(userId, safePageable));
+                PageResponse.from(userPointService.getPointHistory(userId, safePageable));
         return CommonResponseHandler.success(HttpStatus.OK, response);
     }
 
     // 등급 정책 조회
     @GetMapping("/grades")
     public ResponseEntity<CommonResponse<List<MembershipPolicyResponse>>> getMembershipPolicies() {
-        List<MembershipPolicyResponse> response = pointService.getMembershipPolicies();
+        List<MembershipPolicyResponse> response = userPointService.getMembershipPolicies();
         return CommonResponseHandler.success(HttpStatus.OK, response);
     }
 }
