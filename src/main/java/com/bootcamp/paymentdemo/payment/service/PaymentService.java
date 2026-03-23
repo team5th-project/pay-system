@@ -156,6 +156,8 @@ public class PaymentService {
                 case PENDING -> {// 펜딩으로 두고 스케쥴러 실행
                     return ConfirmPaymentResponse.of(orderUid, PaymentStatus.PENDING);
                 }
+                default -> throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
+
             }
         } catch (RuntimeException e) { // 재시도할 수 없는 에러(PortOneException), 네트워크에러인 경우 모두 결제 실패 처리
             setPaymentFailed(payment);
@@ -166,7 +168,6 @@ public class PaymentService {
             throw new ServiceException(ErrorCode.PORTONE_UNAVAILABLE);
         }
 
-        return ConfirmPaymentResponse.of(payment.getOrder().getOrderUid(), PaymentStatus.FAILED);
 
     }
 
