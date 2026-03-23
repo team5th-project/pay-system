@@ -103,14 +103,26 @@
         let selectedOrder = null;
 
         // backend CommonResponse 래핑 제거 유틸
+        // function unwrapCommonResponse(response) {
+        //     if (!response || typeof response !== 'object' || Array.isArray(response)) return response;
+        //     const looksLikeCommonResponse =
+        //         response.data !== undefined &&
+        //         (response.success !== undefined || response.status !== undefined) &&
+        //         'timestamp' in response;
+        //     return looksLikeCommonResponse ? response.data : response;
+        // }
+        // backend CommonResponse 래핑 제거 유틸
         function unwrapCommonResponse(response) {
             if (!response || typeof response !== 'object' || Array.isArray(response)) return response;
             const looksLikeCommonResponse =
                 response.data !== undefined &&
                 (response.success !== undefined || response.status !== undefined) &&
                 'timestamp' in response;
-            return looksLikeCommonResponse ? response.data : response;
+            if (!looksLikeCommonResponse) return response;
+            if (response.data && response.data.content !== undefined) return response.data.content;
+            return response.data;
         }
+
 
         // points 화면 내부에서 쓰는 필드/값으로 정규화
         function normalizeOrderForPoints(order) {
@@ -241,8 +253,8 @@
                 let ordersArray = [];
                 if (Array.isArray(result)) {
                     ordersArray = result;
-                } else if (result && Array.isArray(result.orders)) {
-                    ordersArray = result.orders;
+                } else if (result && Array.isArray(result.content)) {
+                    ordersArray = result.content;
                 }
 
                 // 화면/결제용으로 정규화

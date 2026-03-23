@@ -50,7 +50,7 @@ public class Product extends BaseEntity {
             throw new ServiceException(ErrorCode.INVALID_PRODUCT_QUANTITY);
         }
         if (this.stock < quantity) {
-            throw new ServiceException(ErrorCode.INSUFFICIENT_STOCK);
+            throw new ServiceException(ErrorCode.STOCK_NOT_ENOUGH);
         }
         this.stock -= quantity;
     }

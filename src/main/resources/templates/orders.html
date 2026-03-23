@@ -127,14 +127,26 @@
         }
 
         // backend CommonResponse 래핑 제거 유틸
+        // function unwrapCommonResponse(response) {
+        //     if (!response || typeof response !== 'object' || Array.isArray(response)) return response;
+        //     const looksLikeCommonResponse =
+        //         response.data !== undefined &&
+        //         (response.success !== undefined || response.status !== undefined) &&
+        //         'timestamp' in response;
+        //     return looksLikeCommonResponse ? response.data : response;
+        // }
+        // backend CommonResponse 래핑 제거 유틸
         function unwrapCommonResponse(response) {
             if (!response || typeof response !== 'object' || Array.isArray(response)) return response;
             const looksLikeCommonResponse =
                 response.data !== undefined &&
                 (response.success !== undefined || response.status !== undefined) &&
                 'timestamp' in response;
-            return looksLikeCommonResponse ? response.data : response;
+            if (!looksLikeCommonResponse) return response;
+            if (response.data && response.data.content !== undefined) return response.data.content;
+            return response.data;
         }
+
 
         // API 목록 동적 생성
         async function populateApiList() {
