@@ -80,7 +80,22 @@ async function makeApiRequest(endpointKey, options = {}) {
         if (!response.ok) {
             displayError(data);
             // HTTP 에러 발생 시 예외 throw
-            const errorMessage = data.message || data.error || `HTTP ${response.status}: ${response.statusText}`;
+            // 서버는 CommonResponse 포맷으로 에러를 내려주는 경우가 많아서
+            // data.error 하위의 message를 우선 사용한다.
+            let errorMessage =
+                (typeof data?.message === 'string' && data.message) ||
+                (typeof data?.error?.message === 'string' && data.error.message) ||
+                (typeof data?.error?.errorName === 'string' && data.error.errorName) ||
+                (typeof data?.error === 'string' && data.error) ||
+                `HTTP ${response.status}: ${response.statusText}`;
+
+            if (typeof errorMessage !== 'string') {
+                try {
+                    errorMessage = JSON.stringify(errorMessage);
+                } catch (e) {
+                    errorMessage = String(errorMessage);
+                }
+            }
             throw new Error(errorMessage);
         }
 

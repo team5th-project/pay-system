@@ -3,21 +3,21 @@
 /* Modern Commerce Demo UI - Responsive 2-Column Layout */
 
 :root {
-    /* Light Mode Colors */
-    --primary: #4f46e5;
-    --primary-dark: #4338ca;
-    --secondary: #06b6d4;
-    --success: #10b981;
-    --warning: #f59e0b;
+    /* Light Mode Colors (Pink Ghibli Theme) */
+    --primary: #ff8fa3;
+    --primary-dark: #ff4d6d;
+    --secondary: #ffb3c1;
+    --success: #4ade80;
+    --warning: #fbbf24;
     --danger: #ef4444;
     --bg-primary: #ffffff;
-    --bg-secondary: #f9fafb;
-    --bg-tertiary: #f3f4f6;
-    --text-primary: #111827;
-    --text-secondary: #6b7280;
-    --border: #e5e7eb;
-    --shadow: rgba(0, 0, 0, 0.1);
-    --shadow-lg: rgba(0, 0, 0, 0.15);
+    --bg-secondary: #fff0f5;
+    --bg-tertiary: #ffe4e1;
+    --text-primary: #4a4a4a;
+    --text-secondary: #8c8c8c;
+    --border: #ffd1dc;
+    --shadow: rgba(255, 143, 163, 0.15);
+    --shadow-lg: rgba(255, 143, 163, 0.25);
 
     /* Spacing */
     --spacing-xs: 0.5rem;
@@ -27,25 +27,26 @@
     --spacing-xl: 3rem;
 
     /* Border Radius */
-    --radius-sm: 0.5rem;
-    --radius-md: 0.75rem;
-    --radius-lg: 1rem;
-    --radius-xl: 1.5rem;
+    --radius-sm: 0.75rem;
+    --radius-md: 1rem;
+    --radius-lg: 1.5rem;
+    --radius-xl: 2rem;
 }
 
 [data-theme="dark"] {
-    --primary: #6366f1;
-    --primary-dark: #4f46e5;
-    --secondary: #22d3ee;
+    /* Magical Night Theme */
+    --primary: #ffb3c1;
+    --primary-dark: #ff8fa3;
+    --secondary: #c8b6ff;
     --success: #34d399;
     --warning: #fbbf24;
     --danger: #f87171;
-    --bg-primary: #111827;
-    --bg-secondary: #1f2937;
-    --bg-tertiary: #374151;
-    --text-primary: #f9fafb;
-    --text-secondary: #9ca3af;
-    --border: #374151;
+    --bg-primary: #2b213a;
+    --bg-secondary: #3b2f4f;
+    --bg-tertiary: #4c3d63;
+    --text-primary: #f8f9fa;
+    --text-secondary: #d4d4d8;
+    --border: #4c3d63;
     --shadow: rgba(0, 0, 0, 0.3);
     --shadow-lg: rgba(0, 0, 0, 0.5);
 }

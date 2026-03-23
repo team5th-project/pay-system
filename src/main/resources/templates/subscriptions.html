@@ -1,43 +1,11 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{}, ~{::.content-area})}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}">
     <title>구독 관리 - Commerce Demo</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <script src="https://cdn.portone.io/v2/browser-sdk.js"></script>
-    <script th:src="@{/js/cookie-util.js}"></script>
-    <script th:src="@{/js/app-config.js}"></script>
-    <script th:src="@{/js/api-handler.js}"></script>
-    <script th:src="@{/js/api-validator.js}"></script>
-    <script th:src="@{/js/theme.js}"></script>
-    <script th:src="@{/js/portone-sdk.js}"></script>
-    <script th:src="@{/js/auth-check.js}"></script>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="navbar-container">
-            <a href="/" class="navbar-brand">🏪 CommerceHub</a>
-            <ul class="navbar-nav">
-                <li><a href="/" class="nav-link">홈</a></li>
-                <li><a href="/pages/shop" class="nav-link">상점</a></li>
-                <li><a href="/pages/orders" class="nav-link">주문</a></li>
-                <li><a href="/pages/points" class="nav-link">포인트</a></li>
-                <li><a href="/pages/plans" class="nav-link">플랜</a></li>
-                <li><a href="/pages/subscribe" class="nav-link">구독 신청</a></li>
-                <li><a href="/pages/subscriptions" class="nav-link active">구독 관리</a></li>
-            </ul>
-            <div class="navbar-actions">
-                <div class="config-badge-container"></div>
-                <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()">🌙</button>
-            </div>
-        </div>
-    </nav>
-
-    <div class="main-container">
-        <div class="content-area">
-            <h1 style="font-size: 2rem; margin-bottom: 2rem;">🔄 구독 관리</h1>
+    <div class="content-area">
+        <h1 style="font-size: 2rem; margin-bottom: 2rem;">🔄 구독 관리</h1>
 
             <div class="card">
                 <div class="card-header">구독 정보</div>
@@ -132,23 +100,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="api-panel">
-            <div class="panel-section">
-                <h3 class="panel-title">📡 현재 엔드포인트</h3>
-                <div id="current-endpoint" class="endpoint-badge">아직 요청 없음</div>
-            </div>
-            <div class="panel-section">
-                <h3 class="panel-title">📤 요청</h3>
-                <textarea id="request-body" class="api-textarea"></textarea>
-            </div>
-            <div class="panel-section">
-                <h3 class="panel-title">📥 응답</h3>
-                <pre id="response-output" class="response-box">요청 대기 중...</pre>
-            </div>
-        </div>
-    </div>
 
     <script>
         // Get subscriptionId from URL
@@ -342,5 +293,6 @@
             }
         }
     </script>
+    </div>
 </body>
 </html>
