@@ -1,6 +1,5 @@
 package com.bootcamp.paymentdemo.payment.service;
 
-import com.bootcamp.paymentdemo.common.config.PortOneProperties;
 import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.PortOneException;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
