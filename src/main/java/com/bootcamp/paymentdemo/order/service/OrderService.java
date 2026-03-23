@@ -13,6 +13,9 @@ import com.bootcamp.paymentdemo.order.entity.OrderItem;
 import com.bootcamp.paymentdemo.order.enums.OrderStatus;
 import com.bootcamp.paymentdemo.order.repository.OrderItemRepository;
 import com.bootcamp.paymentdemo.order.repository.OrderRepository;
+import com.bootcamp.paymentdemo.payment.entity.Payment;
+import com.bootcamp.paymentdemo.payment.respository.PaymentRepository;
+import com.bootcamp.paymentdemo.point.service.UserPointService;
 import com.bootcamp.paymentdemo.product.Product;
 import com.bootcamp.paymentdemo.product.ProductService;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +36,12 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final ProductService productService;
+
+    // PaymentService 대신 PaymentRepository 직접 주입
+    // -> OrderService ↔ PaymentService 순환 참조 방지
+    // -> confirmOrder() 에서 finalAmount 조회 시에만 사용
+    private final PaymentRepository paymentRepository;
+    private final UserPointService userPointService;   //  주문 확정 시 포인트 적립용
 
     // 주문 생성
     @Transactional
@@ -100,7 +109,18 @@ public class OrderService {
         return PageResponse.from(page);
     }
 
-    // 주문 단건 조회
+//
+//      주문 단건 조회
+//
+//      - 본인 주문인지 검증 후 상세 정보 반환
+//      - PAID 상태일 때만 paymentUid 조회하여 응답에 포함 (#103)
+//        -> 프론트에서 paymentUid 존재 여부로 결제 취소 버튼 노출 판단
+//        -> 새로고침해도 API 재호출로 paymentUid 유지됨
+//      - PAID 외 상태(PENDING, CONFIRMED 등)는 paymentUid null 반환
+//
+//      @param userId   로그인한 유저 ID
+//      @param orderUid 조회할 주문 UID
+
     public OrderDetailResponse getOrderDetail(Long userId, String orderUid) {
         Order order = orderRepository.findByOrderUid(orderUid)
                 .orElseThrow(() ->
@@ -110,7 +130,18 @@ public class OrderService {
         if (!order.getUserId().equals(userId)){
             throw new ServiceException(ErrorCode.ORDER_NOT_OWNED);
         }
-        return OrderDetailResponse.from(order);
+
+        // PAID 상태일 때만 paymentUid 조회 (#103)
+        // -> 결제 취소 버튼 노출 여부를 프론트에서 판단할 수 있도록 paymentUid 제공
+        // -> 다른 상태에서는 불필요하므로 null 반환
+        String paymentUid = null;
+        if (order.getStatus() == OrderStatus.PAID) {
+            paymentUid = paymentRepository.findByOrderId(order.getId())
+                    .map(Payment::getPaymentUid)
+                    .orElse(null);
+        }
+
+        return OrderDetailResponse.from(order, paymentUid);
     }
 
     // 주문 확정
@@ -127,10 +158,44 @@ public class OrderService {
 
         }
 
-        order.confirm(); //상태 전이 (PAID에서 CONFIRMED)
+        order.confirm(); // 상태 전이 (PAID → CONFIRMED)
 
-        // 추후 포인트팀 적립 트리거 (EDD 이벤트 발행하면 상호작 용 예정)
+
+        // 주문 확정 시 포인트 적립 (EDD 미사용, 직접 호출 방식)
+        // 적립 기준: 실제 PG 결제 금액 (포인트 차감 후 finalAmount)
+        // 전액 포인트 결제 시 finalAmount = 0 → earnPoint() 내부에서 적립 없음 처리
+        // PaymentService 대신 PaymentRepository 직접 사용 (OrderService ↔ PaymentService 순환 참조 방지)
+        Payment payment = paymentRepository.findByOrderId(order.getId())
+                .orElseThrow(() -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND));
+        userPointService.earnPoint(userId, order.getId(), payment.getFinalAmount());
+
         return OrderConfirmResponse.from(order);
+    }
+
+//
+//      주문 취소
+//
+//      - PENDING 상태인 주문만 취소 가능
+//        → 결제 전 단계이므로 사용자가 자유롭게 취소할 수 있음
+//      - 본인 주문인지 검증 후 Order.cancel() 호출
+//        → PAID, CONFIRMED 상태에서 호출 시 INVALID_ORDER_STATUS 예외 발생
+//      - 취소 후 별도 반환값 없음 (204 No Content 대신 200 OK + null 반환)
+//
+//      @param userId   로그인한 유저 ID
+//      @param orderUid 취소할 주문 UID
+
+    @Transactional
+    public void cancelOrder(Long userId, String orderUid) {
+        Order order = orderRepository.findByOrderUid(orderUid)
+                .orElseThrow(() -> new ServiceException(ErrorCode.ORDER_NOT_FOUND));
+
+        // 본인 주문인지 확인
+        if (!order.getUserId().equals(userId)) {
+            throw new ServiceException(ErrorCode.ORDER_NOT_OWNED);
+        }
+
+        // 상태 전이 (PENDING → CANCELLED), 다른 상태면 예외 발생
+        order.cancel();
     }
 
     // 소영 추가. Payment에서 사용하는 orderUid로 order 객체 검색하는 메서드
