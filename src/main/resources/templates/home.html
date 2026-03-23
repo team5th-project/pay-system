@@ -1,116 +1,464 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{}, ~{::.content-area})}">
 <head>
-    <title>홈 - 오조의마법사</title>
+    <title>홈 - 고양이 마법상점</title>
 </head>
 <body>
     <div class="content-area">
+        <style>
+            .product-grid-3cols {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1.5rem;
+                margin-top: 2rem;
+            }
+            @media (max-width: 1024px) {
+                .product-grid-3cols {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+            @media (max-width: 768px) {
+                .product-grid-3cols {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+
         <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">
-            🛍️ Commerce Payment & Subscription Demo
+            🛍️ 고양이 마법상점
         </h1>
         <p style="font-size: 1.25rem; color: var(--text-secondary); margin-bottom: 2rem;">
-            부트캠프용 결제/구독 UI 템플릿 - PortOne 연동 데모
+            오조의 마법사 상점에 오신 것을 환영합니다! 고양이 용품을 쉽게 둘러보고 주문해보세요.
         </p>
 
-        <div class="alert alert-info">
-            <strong>ℹ️ 프로젝트 안내</strong><br>
-            이 프로젝트는 <strong>UI 템플릿</strong>입니다. 비즈니스 로직 API는 구현되어 있지 않으며,
-            수강생이 직접 백엔드 API를 구현하고 <code>application.yml</code>의 엔드포인트 설정을 변경하여 연동합니다.
+        <!-- Product Grid -->
+        <div class="product-grid-3cols" id="product-list">
+            <!-- Products will be rendered here -->
         </div>
 
-        <div class="card-grid">
-            <!-- Shop Card -->
-            <div class="card">
-                <div class="card-header">🛒 상점</div>
-                <div class="card-subtitle">상품 목록 및 주문 생성</div>
-                <div class="card-body">
-                    <ul class="features-list">
-                        <li class="feature-item">상품 목록 조회</li>
-                        <li class="feature-item">주문 생성 API 호출</li>
-                    </ul>
-                    <a href="/pages/shop" class="btn btn-primary" style="margin-top: 1rem;">상품 보러가기</a>
-                </div>
-            </div>
-
-            <!-- Orders Card -->
-            <div class="card">
-                <div class="card-header">📦 주문</div>
-                <div class="card-subtitle">주문 조회 및 결제 처리</div>
-                <div class="card-body">
-                    <ul class="features-list">
-                        <li class="feature-item">PortOne 결제창 열기 (SDK)</li>
-                        <li class="feature-item">결제 확정 (Confirm)</li>
-                        <li class="feature-item">결제 취소(환불)</li>
-                    </ul>
-                    <a href="/pages/orders" class="btn btn-primary" style="margin-top: 1rem;">주문 관리하기</a>
-                </div>
-            </div>
-
-            <!-- Points Card -->
-            <div class="card">
-                <div class="card-header">💰 포인트</div>
-                <div class="card-subtitle">포인트 포함 결제 테스트</div>
-                <div class="card-body">
-                    <ul class="features-list">
-                        <li class="feature-item">포인트 입력 모달</li>
-                        <li class="feature-item">포인트 차감 후 결제</li>
-                        <li class="feature-item">독립적인 테스트 환경</li>
-                    </ul>
-                    <a href="/pages/points" class="btn btn-primary" style="margin-top: 1rem;">포인트 결제하기</a>
-                </div>
-            </div>
-
-            <!-- Plans Card -->
-            <div class="card">
-                <div class="card-header">⭐ 플랜</div>
-                <div class="card-subtitle">구독 플랜 목록</div>
-                <div class="card-body">
-                    <ul class="features-list">
-                        <li class="feature-item">베이직 / 프로 / 맥스</li>
-                        <li class="feature-item">월 단위 정기결제</li>
-                        <li class="feature-item">플랜별 혜택 표시</li>
-                    </ul>
-                    <a href="/pages/plans" class="btn btn-primary" style="margin-top: 1rem;">플랜 보러가기</a>
-                </div>
-            </div>
-
-            <!-- Subscribe Card -->
-            <div class="card">
-                <div class="card-header">💳 구독 신청</div>
-                <div class="card-subtitle">구독 신청 및 빌링키 발급</div>
-                <div class="card-body">
-                    <ul class="features-list">
-                        <li class="feature-item">빌링키 발급 (PortOne SDK)</li>
-                        <li class="feature-item">결제수단 저장</li>
-                        <li class="feature-item">구독 생성 API 호출</li>
-                    </ul>
-                    <a href="/pages/subscribe" class="btn btn-primary" style="margin-top: 1rem;">구독 신청하기</a>
-                </div>
-            </div>
-
-            <!-- Subscriptions Card -->
-            <div class="card">
-                <div class="card-header">🔄 구독 관리</div>
-                <div class="card-subtitle">구독 관리</div>
-                <div class="card-body">
-                    <ul class="features-list">
-                        <li class="feature-item">이번 주기 청구 실행</li>
-                        <li class="feature-item">구독 해지</li>
-                        <li class="feature-item">청구 내역 조회</li>
-                    </ul>
-                    <a href="/pages/subscriptions" class="btn btn-primary" style="margin-top: 1rem;">구독 관리하기</a>
-                </div>
-            </div>
+        <!-- Pagination -->
+        <div id="pagination" style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 2.5rem;">
+            <!-- Page numbers will be rendered here -->
         </div>
 
-        <div style="margin-top: 3rem; padding: 2rem; background: var(--bg-secondary); border-radius: var(--radius-lg);">
-            <h2 style="margin-bottom: 1rem;">🚀 시작하기</h2>
-            <ol style="margin-left: 1.5rem; line-height: 2;">
-                <li><strong>API 구현:</strong> 백엔드 API를 구현하고 <code>application.yml</code>의 <code>app.demo-api.base-url</code>을 수정하세요.</li>
-                <li><strong>엔드포인트 연결:</strong> 각 엔드포인트 경로를 실제 구현한 경로로 변경하세요.</li>
-                <li><strong>테스트:</strong> 각 페이지에서 버튼을 클릭하여 API 호출을 테스트하세요.</li>
-            </ol>
+        <!-- Cart Summary -->
+        <div class="cart-summary" style="margin-top: 3rem; background: var(--bg-secondary); padding: 2rem; border-radius: var(--radius-lg); box-shadow: 0 4px 20px var(--shadow);">
+            <h3 style="margin-bottom: 1rem; font-family: 'Jua', sans-serif; font-size: 1.8rem; color: var(--text-primary);">🛒 장바구니</h3>
+            <div id="cart-items">
+                <p style="color: var(--text-secondary); text-align: center; padding: 1rem 0;">장바구니가 비어 있습니다.</p>
+            </div>
+            
+            <div class="cart-total" style="display: flex; justify-content: space-between; font-size: 1.5rem; font-weight: 700; margin-top: 1.5rem; color: var(--primary);">
+                <span>총 주문 금액:</span>
+                <span id="cart-total">₩0</span>
+            </div>
+
+            <!-- Point Usage -->
+            <div class="point-usage" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed var(--border);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <label for="use-points" style="font-weight: bold; font-family: 'Jua', sans-serif; font-size: 1.2rem; color: var(--text-primary);">💎 포인트 사용 (현재 <span id="current-points">0</span>P)</label>
+                    <span style="font-size: 0.9rem; color: var(--text-secondary);">100P 단위로 사용 가능</span>
+                </div>
+                <input type="number" id="use-points" class="form-input" style="width: 100%; margin-bottom: 1.5rem; font-size: 1.1rem; padding: 0.75rem;" 
+                       placeholder="사용할 포인트를 입력하세요 (100 단위)" min="0" step="100" value="0">
+            </div>
+
+            <button class="btn btn-primary" onclick="createOrder()" style="width: 100%; font-size: 1.25rem; padding: 1rem; font-family: 'Jua', sans-serif;">
+                📦 주문 생성하기
+            </button>
         </div>
+
+        <script>
+            let products = [];
+            let productsCache = {};
+            const cart = {};
+            
+            let currentUser = null;
+            let currentPage = 1;
+            let totalPages = 1;
+            const pageSize = 9;
+            
+            function unwrapCommonResponse(response) {
+                if (!response || typeof response !== 'object' || Array.isArray(response)) return response;
+                const looksLikeCommonResponse =
+                    response.data !== undefined &&
+                    (response.success !== undefined || response.status !== undefined) &&
+                    'timestamp' in response;
+                if (!looksLikeCommonResponse) return response;
+                return response.data;
+            }
+
+            async function loadCurrentUser() {
+                try {
+                    const raw = await makeApiRequest('get-current-user', {});
+                    const data = unwrapCommonResponse(raw);
+                    
+                    if (data && data.content !== undefined) {
+                        currentUser = data.content;
+                    } else {
+                        currentUser = data || {};
+                    }
+
+                    // Attempt to fetch actual point balance from Point API
+                    try {
+                        const token = typeof getToken === 'function' ? getToken() : null;
+                        const headers = { 'Content-Type': 'application/json' };
+                        if (token) {
+                            headers['Authorization'] = `Bearer ${token}`;
+                        }
+                        
+                        const ptRes = await fetch('/api/points/me', {
+                            method: 'GET',
+                            headers: headers,
+                            credentials: 'omit' // use token auth
+                        });
+                        
+                        if (ptRes.ok) {
+                            const ptRaw = await ptRes.json();
+                            const ptData = unwrapCommonResponse(ptRaw);
+                            if (ptData && ptData.currentPoint !== undefined) {
+                                currentUser.points = ptData.currentPoint;
+                            }
+                        }
+                    } catch (e) {
+                         console.log('Failed to fetch point balance from /api/points/me', e);
+                    }
+
+                    if (currentUser && currentUser.points !== undefined) {
+                        document.getElementById('current-points').textContent = currentUser.points.toLocaleString();
+                    }
+                } catch (error) {
+                    console.error('Failed to load user info:', error);
+                    currentUser = null;
+                }
+            }
+
+            async function loadProductsFromApi(page = 1) {
+                try {
+                    const raw = await makeApiRequest('list-products', {
+                        query: { page: page, size: pageSize }
+                    });
+                    
+                    const result = unwrapCommonResponse(raw);
+                    if (!result) return false;
+
+                    if (result.content && Array.isArray(result.content)) {
+                        products = result.content;
+                        currentPage = result.page || page;
+                        totalPages = result.totalPages || Math.ceil((result.totalElements || products.length) / pageSize);
+                        
+                        products.forEach(p => productsCache[p.id] = p);
+                        renderProducts();
+                        renderPagination();
+                        return true;
+                    } else if (Array.isArray(result)) {
+                        products = result;
+                        currentPage = 1;
+                        totalPages = 1;
+                        
+                        products.forEach(p => productsCache[p.id] = p);
+                        renderProducts();
+                        renderPagination();
+                        return true;
+                    } else {
+                        console.error('상품 목록 형식이 올바르지 않습니다.', result);
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('API 미구현 혹은 에러:', error);
+                    let endpoint = '/api/products';
+                    if (window.APP_RUNTIME && window.APP_RUNTIME.config && window.APP_RUNTIME.config.demoApi) {
+                        endpoint = window.APP_RUNTIME.config.demoApi.endpoints['list-products']?.url || endpoint;
+                    }
+                    document.getElementById('product-list').innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; background: var(--bg-secondary); border-radius: var(--radius-md);">
+                            <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">상품 데이터를 불러올 수 없습니다.</h3>
+                            <p style="color: var(--text-secondary);">
+                                <strong>GET ${endpoint}</strong> API 구현과 서버 상태를 확인해주세요.
+                            </p>
+                        </div>
+                    `;
+                    return false;
+                }
+            }
+
+            function renderProducts() {
+                const productList = document.getElementById('product-list');
+
+                if (!products || products.length === 0) {
+                    productList.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; background: var(--bg-secondary); border-radius: var(--radius-md);">
+                            <h3 style="color: var(--text-secondary);">표시할 상품이 없습니다.</h3>
+                        </div>
+                    `;
+                    return;
+                }
+
+                productList.innerHTML = products.map(product => {
+                    const stockStatus = product.stock > 0
+                        ? `<span style="color: var(--success); font-weight: 600;">재고: ${product.stock}개</span>`
+                        : `<span style="color: var(--danger); font-weight: 600;">품절</span>`;
+                    
+                    const defaultPic = 'https://via.placeholder.com/400x300?text=No+Image';
+                    const picUrl = product.picture || defaultPic;
+                    const currentQty = cart[product.id] || 0;
+
+                    return `
+                        <div class="product-card" style="background: var(--bg-primary); padding: 1.25rem; border-radius: var(--radius-lg); border: 2px solid var(--border); box-shadow: 0 4px 10px var(--shadow); transition: all 0.2s; display: flex; flex-direction: column; overflow: hidden; height: 100%;">
+                            <div class="product-image" style="background: #fff; height: 180px; padding: 0; margin: -1.25rem -1.25rem 1rem -1.25rem; border-bottom: 1px solid var(--border);">
+                                <img src="${picUrl}" alt="${product.name}" style="width: 100%; height: 100%; object-fit: contain; border-radius: var(--radius-lg) var(--radius-lg) 0 0;">
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--primary); font-weight: bold; margin-bottom: 0.25rem;">
+                                ${product.category || '기타'}
+                            </div>
+                            <div class="card-header" style="font-size: 1.25rem; margin-bottom: 0.5rem; line-height: 1.3; font-family: 'Gowun Dodum', sans-serif; font-weight: bold;">
+                                ${product.name}
+                            </div>
+                            <div class="price" style="font-size: 1.5rem; font-weight: bold; color: var(--primary-dark); margin: 0.5rem 0; flex-grow: 1;">
+                                ₩${product.price.toLocaleString()}
+                            </div>
+                            <div style="margin: 0.5rem 0; font-size: 0.95rem;">
+                                ${stockStatus}
+                            </div>
+                            <div class="quantity-control" style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border);">
+                                <button class="quantity-btn" onclick="updateQuantity('${product.id}', -1)" ${product.stock === 0 ? 'disabled' : ''} style="width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; background: var(--bg-tertiary); border: none; cursor: pointer; color: var(--text-primary); transition: background 0.2s;">-</button>
+                                <input type="number" class="quantity-input" id="qty-${product.id}" value="${currentQty}" min="0" max="${product.stock}" readonly style="width: 60px; text-align: center; border: none; font-size: 1.1rem; font-weight: bold; background: transparent; color: var(--text-primary);">
+                                <button class="quantity-btn" onclick="updateQuantity('${product.id}', 1)" ${product.stock === 0 ? 'disabled' : ''} style="width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; background: var(--primary); color: #fff; border: none; cursor: pointer; transition: background 0.2s;">+</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            function renderPagination() {
+                const paginationDiv = document.getElementById('pagination');
+                if (totalPages <= 1) {
+                    paginationDiv.innerHTML = '';
+                    return;
+                }
+
+                let html = '';
+                html += `<button class="btn btn-outline" style="padding: 0.5rem 1rem;" onclick="changePage(${currentPage - 1})" ${currentPage <= 1 ? 'disabled' : ''}>이전</button>`;
+                
+                let startPage = Math.max(1, currentPage - 2);
+                let endPage = Math.min(totalPages, startPage + 4);
+                if (endPage - startPage < 4) {
+                    startPage = Math.max(1, endPage - 4);
+                }
+
+                for (let i = startPage; i <= endPage; i++) {
+                    const isActive = i === currentPage;
+                    html += `<button class="btn ${isActive ? 'btn-primary' : 'btn-outline'}" style="padding: 0.5rem 1rem; min-width: 40px;" onclick="changePage(${i})">${i}</button>`;
+                }
+                
+                html += `<button class="btn btn-outline" style="padding: 0.5rem 1rem;" onclick="changePage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''}>다음</button>`;
+                
+                paginationDiv.innerHTML = html;
+            }
+
+            window.changePage = function(page) {
+                if (page < 1 || page > totalPages) return;
+                loadProductsFromApi(page);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            window.updateQuantity = function(productId, delta) {
+                const product = productsCache[productId];
+                if (!product) return;
+
+                const input = document.getElementById(`qty-${productId}`);
+                let qty = (input ? parseInt(input.value) : (cart[productId] || 0)) + delta;
+
+                if (qty < 0) qty = 0;
+                if (qty > product.stock) {
+                    if (window.showNotification) {
+                        showNotification(`⚠️ 재고가 ${product.stock}개만 남았습니다`, 'warning');
+                    } else {
+                        alert(`재고가 ${product.stock}개만 남았습니다`);
+                    }
+                    qty = product.stock;
+                }
+
+                if (input) input.value = qty;
+                cart[productId] = qty;
+                updateCartSummary();
+                validatePoints();
+            };
+
+            function updateCartSummary() {
+                const cartItemsDiv = document.getElementById('cart-items');
+                const cartTotalSpan = document.getElementById('cart-total');
+
+                let total = 0;
+                let html = '';
+                let itemCount = 0;
+
+                Object.keys(cart).forEach(productId => {
+                    const qty = cart[productId];
+                    if (qty > 0 && productsCache[productId]) {
+                        const product = productsCache[productId];
+                        const subtotal = product.price * qty;
+                        total += subtotal;
+                        itemCount++;
+                        html += `
+                            <div class="cart-item" style="padding: 1rem 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <img src="${product.picture || 'https://via.placeholder.com/50'}" alt="${product.name}" style="width: 50px; height: 50px; object-fit: contain; background: #fff; border-radius: 8px; border: 1px solid var(--border);">
+                                    <div>
+                                        <div style="font-weight: bold; font-size: 1.1rem; color: var(--text-primary);">${product.name}</div>
+                                        <div style="font-size: 0.9rem; color: var(--text-secondary);">₩${product.price.toLocaleString()} x ${qty}개</div>
+                                    </div>
+                                </div>
+                                <div style="font-weight: bold; font-size: 1.2rem; color: var(--primary-dark);">
+                                    ₩${subtotal.toLocaleString()}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+
+                cartItemsDiv.innerHTML = itemCount > 0 
+                    ? html 
+                    : '<p style="color: var(--text-secondary); text-align: center; padding: 1rem 0;">장바구니가 비어 있습니다.</p>';
+                    
+                cartTotalSpan.textContent = `₩${total.toLocaleString()}`;
+            }
+
+            function validatePoints() {
+                const useP = document.getElementById('use-points');
+                if (!useP) return;
+                
+                let val = parseInt(useP.value) || 0;
+                let maxPoints = currentUser && currentUser.points !== undefined ? currentUser.points : 0;
+                
+                let cartTotal = 0;
+                Object.keys(cart).forEach(productId => {
+                    const qty = cart[productId];
+                    if (qty > 0 && productsCache[productId]) {
+                        cartTotal += productsCache[productId].price * qty;
+                    }
+                });
+
+                if (val < 0) val = 0;
+                
+                if (val > maxPoints) {
+                    val = Math.floor(maxPoints / 100) * 100;
+                    if (window.showNotification && maxPoints > 0) {
+                        showNotification(`포인트는 최대 ${val}P까지 사용 가능합니다.`, 'warning');
+                    }
+                }
+                
+                if (val > cartTotal) {
+                    val = Math.floor(cartTotal / 100) * 100;
+                }
+                
+                this.value = Math.floor(val / 100) * 100;
+            }
+
+            document.getElementById('use-points')?.addEventListener('change', function() {
+                let val = parseInt(this.value) || 0;
+                let maxPoints = currentUser && currentUser.points !== undefined ? currentUser.points : 0;
+                
+                let cartTotal = 0;
+                Object.keys(cart).forEach(productId => {
+                    const qty = cart[productId];
+                    if (qty > 0 && productsCache[productId]) {
+                        cartTotal += productsCache[productId].price * qty;
+                    }
+                });
+
+                if (val < 0) val = 0;
+                if (val > maxPoints) {
+                    val = Math.floor(maxPoints / 100) * 100;
+                    if (window.showNotification) showNotification(`포인트는 최대 ${maxPoints}P 범위 안에서 사용 가능합니다. (100단위 정렬)`, 'warning');
+                }
+                if (val > cartTotal) {
+                    val = Math.floor(cartTotal / 100) * 100;
+                }
+                
+                this.value = Math.floor(val / 100) * 100;
+            });
+
+            window.createOrder = async function() {
+                const items = [];
+
+                Object.keys(cart).forEach(productId => {
+                    const qty = cart[productId];
+                    if (qty > 0) {
+                        items.push({
+                            productId: productId,
+                            quantity: qty
+                        });
+                    }
+                });
+
+                if (items.length === 0) {
+                    if (window.showNotification) showNotification('⚠️ 장바구니가 비어있습니다.', 'warning');
+                    else alert('장바구니가 비어있습니다.');
+                    return;
+                }
+
+                if (!currentUser) {
+                    if (window.showNotification) showNotification('⚠️ 사용자 정보를 로딩 중이거나 로그인이 필요합니다.', 'warning');
+                    else alert('사용자 정보가 필요합니다.');
+                    return;
+                }
+
+                // 포인트 처리
+                const usePointsInput = document.getElementById('use-points');
+                const usedPoints = parseInt(usePointsInput.value) || 0;
+
+                const orderData = {
+                    items: items,
+                    usedPoint: usedPoints
+                };
+
+                try {
+                    const raw = await makeApiRequest('create-order', {
+                        body: orderData
+                    });
+
+                    const result = unwrapCommonResponse(raw);
+
+                    if (result && result.orderUid) {
+                        if (window.showNotification) showNotification('주문 생성 완료! 🛒', 'success');
+                        setTimeout(() => {
+                            window.location.href = `/pages/orders`;
+                        }, 1000);
+                    } else {
+                        if (window.showNotification) showNotification('주문이 완료되었으나 orderUid를 확인할 수 없습니다.', 'warning');
+                        else alert('주문이 완료되었습니다.');
+                    }
+                } catch (error) {
+                    console.error('Failed to create order:', error);
+                    let errMessage = '주문 생성 실패';
+                    if (error.response && error.response.data && error.response.data.error) {
+                         errMessage += ': ' + error.response.data.error.message;
+                    } else if (error.message) {
+                         errMessage += ': ' + error.message;
+                    }
+                    if (window.showNotification) showNotification(errMessage, 'error');
+                    else alert(errMessage);
+                }
+            };
+
+            async function initHomeShop() {
+                if (typeof makeApiRequest === 'undefined') {
+                    console.log('API functions not loaded yet. Waiting...');
+                    return;
+                }
+                await loadCurrentUser();
+                await loadProductsFromApi(1);
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                if (typeof makeApiRequest !== 'undefined') {
+                    initHomeShop();
+                } else {
+                    window.addEventListener('load', initHomeShop);
+                }
+            });
+        </script>
     </div>
 </body>
 </html>
