@@ -2,8 +2,8 @@ package com.bootcamp.paymentdemo.product;
 
 import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
-import com.bootcamp.paymentdemo.order.entity.Order;
 import com.bootcamp.paymentdemo.order.entity.OrderItem;
+import com.bootcamp.paymentdemo.order.entity.Order;
 import com.bootcamp.paymentdemo.product.dto.GetProductResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -41,14 +41,34 @@ public class ProductService {
         );
     }
 
+    public int getProductStockById(Long productId){
+        return getProductById(productId).getStock();
+    }
 
+    public void isOrderItemEnough(OrderItem orderItem){
+        // getProductId() → getProduct().getId() 변경 (#101 - OrderItem Product 연관관계 변경)
+        Product product = getProductById(orderItem.getProduct().getId());
+
+        if (orderItem.getQuantity() >= product.getStock()){
+            throw new ServiceException(ErrorCode.STOCK_NOT_ENOUGH);
+        }
+    }
+
+    // orderItemList 에 주문 가능한 상품(재고 충분)만 담겨있는지 확인하는 메서드
+    public boolean isOrderItemListValid(List<OrderItem> orderItemList) {
+        for (OrderItem orderItem : orderItemList) {
+            isOrderItemEnough(orderItem);
+        }
+        return true;
+    }
 
     // 소영 추가
     @Transactional
     public void decreaseStockByOrder(Order order) {
         for (OrderItem orderItem : order.getOrderItems()) {
-            // TODO : // 현재 order 엔티티쪽에서 productId가 String으로 되어 있습니다. 이부분은 Long으로 바꾸는게 좋아보입니다.
-            Product product = productRepository.findByIdForUpdate(Long.valueOf(orderItem.getProductId()));
+            // getProductId() -> getProduct().getId() 변경 (#101 - OrderItem Product 연관관계 변경)
+            // String -> Long 변환 불필요 (Product 객체에서 직접 ID 조회)
+            Product product = productRepository.findByIdForUpdate(orderItem.getProduct().getId());
             product.decreaseStock(orderItem.getQuantity());
         }
     }

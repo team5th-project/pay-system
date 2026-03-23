@@ -32,17 +32,16 @@
         <p class="creators">Team 오조의 마법사 : 권지원, 김예은, 박소영, 정민교, 신현민</p>
     </div>
 
-    <button id="theme-toggle" class="auth-theme-toggle" onclick="toggleTheme()">🌙</button>
 
     <div class="auth-page">
 
         <div class="scene hidden-scene" id="scene">
             <div class="auth-card-container" id="cardContainer">
-                
+
                 <!-- FRONT: 로그인 폼 -->
                 <div class="card-face card-front" id="loginCard">
                     <div class="form-title">로그인</div>
-                    
+
                     <div id="login-error" class="alert alert-danger" style="margin-bottom: 1rem; display: none;">
                         <strong>⚠️ 로그인 실패</strong><br>
                         <span id="login-error-text">이메일 또는 비밀번호가 올바르지 않습니다.</span>
@@ -77,7 +76,7 @@
                 <!-- BACK: 회원가입 폼 -->
                 <div class="card-face card-back" id="registerCard">
                     <div class="form-title">회원가입</div>
-                    
+
                     <div id="register-error" class="alert alert-danger" style="margin-bottom: 1rem; display: none;">
                         <strong>⚠️ 회원가입 실패</strong><br>
                         <span id="register-error-text">오류가 발생했습니다.</span>
@@ -136,8 +135,8 @@
                 activeIndex = (activeIndex + 1) % images.length;
                 images[activeIndex].classList.add('active');
             }, 6000);
-            
-            // Allow forms to render completely before measuring 
+
+            // Allow forms to render completely before measuring
             setTimeout(updateSceneHeight, 50);
 
             // 로고 클릭 이벤트
@@ -167,7 +166,7 @@
                 document.body.classList.add('is-auth-active');
                 scene.classList.remove('hidden-scene');
                 scene.classList.add('blooming');
-                
+
                 setTimeout(updateSceneHeight, 50);
             }
         }
@@ -215,7 +214,7 @@
                     if (authHeader && authHeader.startsWith('Bearer ')) {
                         const token = authHeader.substring(7);
                         saveToken(token);
-                        
+
                         // 마법 폴백 로딩
                         const loadingOverlay = document.getElementById('loadingOverlay');
                         loadingOverlay.classList.add('active');

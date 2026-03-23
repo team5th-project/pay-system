@@ -110,10 +110,38 @@ public class Order extends BaseEntity {
         this.status = OrderStatus.FAILED;
     }
 
+//
+//      주문 환불 상태 전이
+//
+//      - 기존: CONFIRMED 상태일 때만 환불 가능
+//        -> 문제: 주문 확정 이후에도 환불이 가능해지는 잘못된 흐름
+//      - 변경: PAID 상태일 때만 환불 가능
+//        -> 올바른 흐름: 결제 완료(PAID) 후 7일 이내에만 환불 가능
+//        -> CONFIRMED(주문 확정) 이후에는 환불 불가
+//      - 잘못된 상태에서 호출 시 INVALID_ORDER_STATUS 예외 발생
+//
+
     public void refund() {
-        if (this.status != OrderStatus.CONFIRMED) {
+        // CONFIRMED → PAID 로 변경 (주문 확정 전, 결제 완료 상태에서만 환불 가능)
+        if (this.status != OrderStatus.PAID) {
             throw new ServiceException(ErrorCode.INVALID_ORDER_STATUS);
         }
         this.status = OrderStatus.REFUNDED;
+    }
+
+//
+//      주문 취소
+//
+//      - PENDING 상태일 때만 취소 가능
+//        → 결제 전 단계이므로 사용자가 자유롭게 취소할 수 있음
+//      - PAID, CONFIRMED 상태에서는 취소 불가
+//        → 이미 결제가 완료된 주문은 환불 프로세스(PATCH /api/refunds)로 진행해야 함
+//      - 잘못된 상태에서 호출 시 INVALID_ORDER_STATUS 예외 발생
+
+    public void cancel() {
+        if (this.status != OrderStatus.PENDING) {
+            throw new ServiceException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+        this.status = OrderStatus.CANCELLED;
     }
 }
