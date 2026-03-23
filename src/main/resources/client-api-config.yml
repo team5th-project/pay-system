@@ -349,24 +349,7 @@ api:
     get-point-history:
       url: /api/points
       method: GET
-      description: 로그인한 사용자의 포인트 거래내역 목록 조회 (페이징)
-      request:
-        fields:
-          - name: page
-            type: number
-            required: false
-            description: 페이지 번호 (0부터 시작, 기본값 0)
-            example: "0"
-          - name: size
-            type: number
-            required: false
-            description: 페이지 크기 (기본값 10, 최대 50)
-            example: "10"
-          - name: sort
-            type: string
-            required: false
-            description: 정렬 기준 (기본값 createdAt,DESC)
-            example: "createdAt,DESC"
+      description: 로그인한 사용자의 포인트 거래내역 목록 조회
       response:
         headers:
           - name: Authorization
@@ -375,31 +358,11 @@ api:
         body:
           type: object
           fields:
-            - name: content
+            - name: pointHistories
               type: array
               required: true
               description: "포인트 거래내역 목록 (id:number, orderId:number, type:EARN/USE/REFUND/EXPIRE, points:number, createdAt:string, expiredAt:string(EARN 타입만 존재))"
               example: "[{id, orderId, type, points, createdAt, expiredAt}]"
-            - name: page
-              type: number
-              required: true
-              description: 현재 페이지 번호 (1부터 시작)
-              example: "1"
-            - name: size
-              type: number
-              required: true
-              description: 페이지 크기
-              example: "10"
-            - name: totalElements
-              type: number
-              required: true
-              description: 전체 데이터 수
-              example: "50"
-            - name: totalPages
-              type: number
-              required: true
-              description: 전체 페이지 수
-              example: "5"
 
     get-membership-policies:
       url: /api/points/grades
@@ -429,6 +392,7 @@ api:
               required: true
               description: 포인트 적립률 (%)
               example: "1"
+
 
     # ========================================
     # 구독 & 빌링키 (Subscription & Billing Key)
