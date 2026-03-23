@@ -46,7 +46,8 @@ public class ProductService {
     }
 
     public void isOrderItemEnough(OrderItem orderItem){
-        Product product = getProductById(Long.parseLong(orderItem.getProductId()));
+        // getProductId() → getProduct().getId() 변경 (#101 - OrderItem Product 연관관계 변경)
+        Product product = getProductById(orderItem.getProduct().getId());
 
         if (orderItem.getQuantity() >= product.getStock()){
             throw new ServiceException(ErrorCode.STOCK_NOT_ENOUGH);
@@ -65,8 +66,9 @@ public class ProductService {
     @Transactional
     public void decreaseStockByOrder(Order order) {
         for (OrderItem orderItem : order.getOrderItems()) {
-            // TODO : // 현재 order 엔티티쪽에서 productId가 String으로 되어 있습니다. 이부분은 Long으로 바꾸는게 좋아보입니다.
-            Product product = productRepository.findByIdForUpdate(Long.valueOf(orderItem.getProductId()));
+            // getProductId() -> getProduct().getId() 변경 (#101 - OrderItem Product 연관관계 변경)
+            // String -> Long 변환 불필요 (Product 객체에서 직접 ID 조회)
+            Product product = productRepository.findByIdForUpdate(orderItem.getProduct().getId());
             product.decreaseStock(orderItem.getQuantity());
         }
     }
