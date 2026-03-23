@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}">
-    <title th:replace="${title}">오조의마법사</title>
+    <title th:replace="${title}">오조의마법상점</title>
 
     <!-- Base Styles -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
@@ -21,62 +21,92 @@
     <script th:src="@{/js/portone-sdk.js}"></script>
     <script th:src="@{/js/auth-check.js}"></script>
 
-    <!-- Page Specific Scripts / PortOne SDK etc. -->
+    <!-- Page Specific Scripts -->
     <th:block th:replace="${scripts}"></th:block>
 </head>
 <body>
     <nav class="navbar">
         <div class="navbar-container">
-            <a href="/" class="navbar-brand">🐾 오조의마법사</a>
+            <a href="/" class="navbar-brand">🐾 오조의마법상점</a>
             <ul class="navbar-nav">
                 <li><a href="/" class="nav-link">홈</a></li>
-                <li><a href="/pages/orders" class="nav-link">주문</a></li>
-                <li><a href="/pages/points" class="nav-link">포인트</a></li>
-                <li><a href="/pages/plans" class="nav-link">플랜</a></li>
-                <li><a href="/pages/subscribe" class="nav-link">구독 신청</a></li>
-                <li><a href="/pages/subscriptions" class="nav-link">구독 관리</a></li>
+                <li><a href="/pages/orders" class="nav-link">주문내역</a></li>
+                <li><a href="/pages/plans" class="nav-link">정기구독</a></li>
+                <li><a href="/pages/subscriptions" class="nav-link">구독관리</a></li>
             </ul>
-            <div class="navbar-actions">
-                <div class="config-badge-container"></div>
-                <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            <div class="navbar-actions" id="user-navbar-section" style="display: flex; align-items: center; gap: 10px;">
+                 <span id="nav-user-info" style="font-weight: bold; color: var(--text-primary); font-size: 0.95rem; display: none;"></span>
+                 <button class="btn btn-outline" style="padding: 0.4rem 1rem; font-size: 0.85rem; border-radius: 20px; display: none;" onclick="handleLogout()" id="nav-logout-btn">로그아웃</button>
             </div>
         </div>
     </nav>
 
     <div class="main-container">
-        <!-- Content Area -->
+        <!-- Content Area ONLY -->
         <div class="content-area" th:replace="${content}">
             <!-- Page Specific Content -->
         </div>
-
-        <!-- API Panel -->
-        <div class="api-panel">
-            <div class="panel-section">
-                <h3 class="panel-title">📡 현재 엔드포인트</h3>
-                <div id="current-endpoint" class="endpoint-badge">아직 요청 없음</div>
-            </div>
-            <div class="panel-section">
-                <h3 class="panel-title">📤 요청</h3>
-                <textarea id="request-body" class="api-textarea"></textarea>
-            </div>
-            <div class="panel-section">
-                <h3 class="panel-title">📥 응답</h3>
-                <pre id="response-output" class="response-box">요청 대기 중...</pre>
-            </div>
-        </div>
     </div>
 
-    <!-- Active Navigation Link Setting for Thymeleaf 3.1+ -->
-    <!-- Since implicit #request object is suppressed, JS determines active current route -->
+    <!-- Active Navigation Link & Auth State Setting -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Set active navigation menu
             const currentPath = window.location.pathname;
             document.querySelectorAll('.navbar-nav .nav-link').forEach(link => {
-                if (link.getAttribute('href') === currentPath) {
-                    link.classList.add('active');
+                if (link.getAttribute('href') === currentPath || (currentPath === '/' && link.getAttribute('href') === '/')) {
+                    if (currentPath !== '/' || link.getAttribute('href') === '/') {
+                        link.classList.add('active');
+                    }
                 }
             });
+
+            // Fetch User for Header
+            const navUserInfo = document.getElementById('nav-user-info');
+            const navLoginBtn = document.getElementById('nav-login-btn');
+            const navLogoutBtn = document.getElementById('nav-logout-btn');
+
+            let token = null;
+            if (typeof getToken === 'function') {
+                token = getToken();
+            } else {
+                token = localStorage.getItem('accessToken');
+            }
+
+            if (token) {
+                try {
+                    const res = await fetch('/api/auth/me', {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + token
+                        }
+                    });
+                    if (res.ok) {
+                        const raw = await res.json();
+                        let user = raw;
+                        if (raw.data && raw.data.content) user = raw.data.content;
+                        else if (raw.data) user = raw.data;
+
+                        let displayName = user.nickname || user.email || '고객';
+                        navUserInfo.textContent = `반갑습니다, ${displayName}님! 🐈`;
+                        navUserInfo.style.display = 'inline-block';
+                        navLogoutBtn.style.display = 'inline-block';
+                    } else {
+                        throw new Error('Not logged in or token expired');
+                    }
+                } catch (e) {
+                    navLoginBtn.style.display = 'inline-block';
+                }
+            } else {
+                navLoginBtn.style.display = 'inline-block';
+            }
         });
+
+        function handleLogout() {
+            if (typeof removeToken === 'function') removeToken();
+            localStorage.removeItem('accessToken');
+            window.location.href = '/pages/login';
+        }
     </script>
 </body>
 </html>
