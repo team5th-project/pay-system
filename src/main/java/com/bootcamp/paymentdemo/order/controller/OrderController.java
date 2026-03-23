@@ -107,6 +107,6 @@ public class OrderController {
         Long userId = userDetails.getUserId();
         // PENDING 상태 검증 및 CANCELLED 상태 전이는 서비스 레이어에서 처리
         orderService.cancelOrder(userId, orderUid);
-        return CommonResponseHandler.success(HttpStatus.OK, null);
+        return CommonResponseHandler.success(HttpStatus.OK);
     }
 }
