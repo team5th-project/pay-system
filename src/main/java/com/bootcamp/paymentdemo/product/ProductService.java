@@ -19,7 +19,6 @@ import java.util.List;
 @Transactional
 public class ProductService {
     private final ProductRepository productRepository;
-    private final OrderService orderService;
 
     // 1. 상품 목록 조회
     public Page<GetProductResponse> getProducts(ProductCategory productCategory, Pageable pageable) {
