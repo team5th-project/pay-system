@@ -103,26 +103,14 @@
         let selectedOrder = null;
 
         // backend CommonResponse 래핑 제거 유틸
-        // function unwrapCommonResponse(response) {
-        //     if (!response || typeof response !== 'object' || Array.isArray(response)) return response;
-        //     const looksLikeCommonResponse =
-        //         response.data !== undefined &&
-        //         (response.success !== undefined || response.status !== undefined) &&
-        //         'timestamp' in response;
-        //     return looksLikeCommonResponse ? response.data : response;
-        // }
-        // backend CommonResponse 래핑 제거 유틸
         function unwrapCommonResponse(response) {
             if (!response || typeof response !== 'object' || Array.isArray(response)) return response;
             const looksLikeCommonResponse =
                 response.data !== undefined &&
                 (response.success !== undefined || response.status !== undefined) &&
                 'timestamp' in response;
-            if (!looksLikeCommonResponse) return response;
-            if (response.data && response.data.content !== undefined) return response.data.content;
-            return response.data;
+            return looksLikeCommonResponse ? response.data : response;
         }
-
 
         // points 화면 내부에서 쓰는 필드/값으로 정규화
         function normalizeOrderForPoints(order) {
@@ -249,21 +237,23 @@
                 const raw = await makeApiRequest('list-orders', {});
                 const result = unwrapCommonResponse(raw);
 
-                // data가 배열이거나, { orders: [...] } 형태일 수 있어 둘 다 대응
+                if (!validateApiResponse('list-orders', result)) {
+                    // 스키마 불일치가 있어도 화면이 안 보이는 것보다는 "최소 렌더링"을 우선
+                    console.warn('[points] list-orders schema validation failed, rendering anyway.');
+                }
+
+                // data가 배열이거나, { orders: [...] }, { content: [...] } 형태일 수 있어 모두 대응
                 let ordersArray = [];
                 if (Array.isArray(result)) {
                     ordersArray = result;
                 } else if (result && Array.isArray(result.content)) {
                     ordersArray = result.content;
+                } else if (result && Array.isArray(result.orders)) {
+                    ordersArray = result.orders;
                 }
 
                 // 화면/결제용으로 정규화
                 const normalized = ordersArray.map(normalizeOrderForPoints);
-
-                if (!validateApiResponse('list-orders', normalized)) {
-                    // 스키마 불일치가 있어도 화면이 안 보이는 것보다는 "최소 렌더링"을 우선
-                    console.warn('[points] list-orders schema validation failed, rendering anyway.');
-                }
 
                 orders = normalized;
                 renderOrders();
