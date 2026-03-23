@@ -5,7 +5,7 @@ import com.bootcamp.paymentdemo.common.global.CommonResponseHandler;
 import com.bootcamp.paymentdemo.point.dto.MembershipPolicyResponse;
 import com.bootcamp.paymentdemo.point.dto.MyPointResponse;
 import com.bootcamp.paymentdemo.point.dto.PointHistoryResponse;
-import com.bootcamp.paymentdemo.point.service.PointService;
+import com.bootcamp.paymentdemo.point.service.UserPointService;
 import com.bootcamp.paymentdemo.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,14 +22,14 @@ import java.util.List;
 @RequestMapping("/api/points")
 public class PointController {
 
-    private final PointService pointService;
+    private final UserPointService userPointService;
 
     // 현재 포인트 + 등급 조회
     @GetMapping("/me")
     public ResponseEntity<CommonResponse<MyPointResponse>> getMyPoint(
             @AuthenticationPrincipal CustomUserDetails userDetails
             ) {
-        MyPointResponse response = pointService.getMyPoints(userDetails.getUserId());
+        MyPointResponse response = userPointService.getMyPoints(userDetails.getUserId());
         return CommonResponseHandler.success(HttpStatus.OK, response);
     }
 
@@ -38,14 +38,14 @@ public class PointController {
     public ResponseEntity<CommonResponse<PointHistoryResponse>> getPointHistory(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        PointHistoryResponse response = pointService.getPointHistory(userDetails.getUserId());
+        PointHistoryResponse response = userPointService.getPointHistory(userDetails.getUserId());
         return CommonResponseHandler.success(HttpStatus.OK, response);
     }
 
     // 등급 정책 조회
     @GetMapping("/grades")
     public ResponseEntity<CommonResponse<List<MembershipPolicyResponse>>> getMembershipPolicies() {
-        List<MembershipPolicyResponse> response = pointService.getMembershipPolicies();
+        List<MembershipPolicyResponse> response = userPointService.getMembershipPolicies();
         return CommonResponseHandler.success(HttpStatus.OK, response);
     }
 }

@@ -1,6 +1,6 @@
 package com.bootcamp.paymentdemo.point.event;
 
-import com.bootcamp.paymentdemo.point.service.PointService;
+import com.bootcamp.paymentdemo.point.service.UserPointService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class PointEventHandler {
 
-    private final PointService pointService;
+    private final UserPointService userPointService;
 
     // 주문 확정 이벤트 수신 → 포인트 적립
     // @EventListener
