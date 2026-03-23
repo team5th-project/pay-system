@@ -109,7 +109,18 @@ public class OrderService {
         return PageResponse.from(page);
     }
 
-    // 주문 단건 조회
+//
+//      주문 단건 조회
+//
+//      - 본인 주문인지 검증 후 상세 정보 반환
+//      - PAID 상태일 때만 paymentUid 조회하여 응답에 포함 (#103)
+//        -> 프론트에서 paymentUid 존재 여부로 결제 취소 버튼 노출 판단
+//        -> 새로고침해도 API 재호출로 paymentUid 유지됨
+//      - PAID 외 상태(PENDING, CONFIRMED 등)는 paymentUid null 반환
+//
+//      @param userId   로그인한 유저 ID
+//      @param orderUid 조회할 주문 UID
+
     public OrderDetailResponse getOrderDetail(Long userId, String orderUid) {
         Order order = orderRepository.findByOrderUid(orderUid)
                 .orElseThrow(() ->
@@ -119,7 +130,18 @@ public class OrderService {
         if (!order.getUserId().equals(userId)){
             throw new ServiceException(ErrorCode.ORDER_NOT_OWNED);
         }
-        return OrderDetailResponse.from(order);
+
+        // PAID 상태일 때만 paymentUid 조회 (#103)
+        // -> 결제 취소 버튼 노출 여부를 프론트에서 판단할 수 있도록 paymentUid 제공
+        // -> 다른 상태에서는 불필요하므로 null 반환
+        String paymentUid = null;
+        if (order.getStatus() == OrderStatus.PAID) {
+            paymentUid = paymentRepository.findByOrderId(order.getId())
+                    .map(Payment::getPaymentUid)
+                    .orElse(null);
+        }
+
+        return OrderDetailResponse.from(order, paymentUid);
     }
 
     // 주문 확정
