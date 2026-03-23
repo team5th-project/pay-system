@@ -17,6 +17,7 @@ import com.bootcamp.paymentdemo.payment.enums.PaymentStatus;
 import com.bootcamp.paymentdemo.payment.respository.PaymentRepository;
 import com.bootcamp.paymentdemo.point.service.UserPointService;
 import com.bootcamp.paymentdemo.product.ProductService;
+import com.bootcamp.paymentdemo.refund.dto.response.PortOneCancellationDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -235,7 +236,8 @@ public class PaymentService {
     private PaymentStatus requestCancelAfterInternalFailure(Payment payment) {
         paymentStatusTxService.markCancelRequested(payment.getId());
         try {
-            portOneService.cancelPayment(payment.getPaymentUid());
+            // TODO
+            PortOneCancellationDto portOneCancellationDto = portOneService.cancelPayment(payment.getPaymentUid(), "내부 후처리 실패로 결제 취소");
             paymentStatusTxService.markRefunded(payment.getId());
         } catch (RuntimeException e) {
             log.warn("Payment cancel failed. paymentUid={}", payment.getPaymentUid(), e);
