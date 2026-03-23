@@ -65,9 +65,9 @@ public class OrderService {
 
             OrderItem orderItem = OrderItem.create(
                     order,
-                    orderItemRequest.getProductId(),
-                    product.getName(),   // 실제 상품명
-                    product.getPrice(),  // 실제 가격
+                    product,             // String productId 대신 Product 객체 직접 전달 (#101)
+                    product.getName(),   // 주문 시점 상품명 스냅샷
+                    product.getPrice(),  // 주문 시점 가격 스냅샷
                     orderItemRequest.getQuantity()
             );
             orderItemRepository.save(orderItem);
