@@ -3,6 +3,7 @@ package com.bootcamp.paymentdemo.common.config;
 import com.bootcamp.paymentdemo.point.entity.MembershipGrade;
 import com.bootcamp.paymentdemo.point.entity.MembershipPolicy;
 import com.bootcamp.paymentdemo.point.repository.MembershipPolicyRepository;
+import com.bootcamp.paymentdemo.user.UserRepository;
 import com.bootcamp.paymentdemo.user.UserService;
 
 import com.bootcamp.paymentdemo.user.dto.SignupRequest;
@@ -22,6 +23,10 @@ import java.util.List;
 public class DataInitializer implements ApplicationRunner {
 
     private final UserService userService;
+    // 민교가 수정함
+    // 이메일 중복 여부 확인을 위해 UserRepository 직접 주입
+    // → UserService에 existsByEmail 메서드가 없어 Repository에서 findByEmail로 체크
+    private final UserRepository userRepository;
     private final MembershipPolicyRepository membershipPolicyRepository;
 
     @Override
@@ -32,12 +37,18 @@ public class DataInitializer implements ApplicationRunner {
         String password = "admin";
 
 
-        userService.signup(SignupRequest.builder()
-                        .name(name)
-                        .email(email)
-                        .phone("01012341234")
-                        .password(password)
-                .build());
+        // 민교가 수정함
+        // 기존: 앱 시작 시 무조건 INSERT → DB에 이미 존재하면 unique 제약 위반으로 앱 실행 실패
+        // 변경: 이미 존재하는 이메일이면 삽입 건너뜀 (멱등성 보장)
+        // → 최초 실행 시에만 테스트 계정 생성, 이후 재시작 시에도 정상 동작
+        if (userRepository.findByEmail(email).isEmpty()) {
+            userService.signup(SignupRequest.builder()
+                            .name(name)
+                            .email(email)
+                            .phone("01012341234")
+                            .password(password)
+                    .build());
+        }
 
 
         // MembershipPolicy 초기 데이터 삽입
