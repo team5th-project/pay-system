@@ -49,6 +49,11 @@ public class WebhookEventService {
     private String webhookSecret;
 
     public void handleWebhook(String webhookId, String signature, String timestamp, String rawPayload) {
+        log.info("handleWebhook start");
+        log.info("webhookId = [{}]", webhookId);
+        log.info("timestamp = [{}]", timestamp);
+        log.info("rawPayload = [{}]", rawPayload);
+        log.info("received signature = [{}]", signature);
         // 헤더/바디 값 체크
         validateHeaders(webhookId, signature, timestamp, rawPayload);
         // 재전송 공격 방지 timestamp 검증
@@ -256,14 +261,13 @@ public class WebhookEventService {
     }
 
     private void verifyWebhook(String webhookId, String signature, String timestamp, String rawPayload) {
-        try { log.info("webhookSecret = [{}]", webhookSecret);
+        try {
             if (webhookSecret == null || webhookSecret.isBlank()) {
                 throw new ServiceException(ErrorCode.INVALID_WEBHOOK_SIGNATURE);
             }
 
             // 우리만 알고있는 비밀키 준비
             byte[] secretBytes = decodeWebhookSecret(webhookSecret);
-
             // 서명 메세지 만들기/portone도 이 문자열로 서명 작성
             String signedContent = webhookId + "." + timestamp + "." + rawPayload;
 
