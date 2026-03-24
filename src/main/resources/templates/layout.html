@@ -264,7 +264,7 @@
             const usePointsInput = document.getElementById('use-points');
             const usedPoints = parseInt(usePointsInput.value) || 0;
 
-            const orderData = { items: items, usedPoint: usedPoints };
+            const orderData = { items: items, usedPoint: pointsToUse };
 
             try {
                 if (typeof window.makeApiRequest !== 'function') throw new Error('API 클라이언트가 준비되지 않았습니다');
