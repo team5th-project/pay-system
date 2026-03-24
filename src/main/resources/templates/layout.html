@@ -68,7 +68,7 @@
             <div id="cart-items" style="min-height: 100px;">
                 <p style="color: var(--text-secondary); text-align: center; padding: 2rem 0;">장바구니가 비어 있습니다.</p>
             </div>
-            
+
             <div class="cart-total" style="display: flex; justify-content: space-between; font-size: 1.5rem; font-weight: 700; margin-top: 1.5rem; color: var(--primary-dark); border-top: 2px solid var(--border); padding-top: 1rem;">
                 <span>총 주문 금액:</span>
                 <span id="cart-total">₩0</span>
@@ -78,17 +78,28 @@
             <div class="point-usage" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed var(--border);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                     <label for="use-points" style="font-weight: bold; font-family: 'Gowun Dodum', sans-serif; font-size: 1.1rem; color: var(--text-primary);">💎 포인트 사용 (현재 <span id="current-points">0</span>P)</label>
-                    <span style="font-size: 0.85rem; color: var(--text-secondary); background: var(--bg-tertiary); padding: 2px 8px; border-radius: 10px;">100P 단위</span>
+                    <span style="font-size: 0.85rem; color: var(--text-secondary); background: var(--bg-tertiary); padding: 2px 8px; border-radius: 10px;">1000P 단위</span>
                 </div>
-                <input type="number" id="use-points" class="form-input" style="width: 100%; margin-bottom: 1.5rem; font-size: 1.1rem; padding: 0.75rem;" 
-                       placeholder="사용할 포인트를 입력 (100 단위)" min="0" step="100" value="0" onchange="validatePoints()">
+                <div style="display: flex; gap: 0.5rem; align-items: stretch; margin-bottom: 0.5rem;">
+                    <input type="number" id="use-points" class="form-input" style="flex: 1; min-width: 0; font-size: 1.1rem; padding: 0.75rem;"
+                           placeholder="사용할 포인트를 입력 (1000 단위)" min="0" step="1000" value="0"
+                           onchange="validatePoints()" oninput="validatePoints()">
+                    <button type="button" id="cart-full-points-btn" class="btn btn-outline" onclick="applyCartFullPointsToZero()"
+                            style="white-space: nowrap; padding: 0.75rem 1rem; font-size: 0.95rem; font-family: 'Gowun Dodum', sans-serif;"
+                            title="보유 포인트로 총 결제 금액을 0원으로 맞춥니다 (주문 금액이 1000원 단위일 때)">
+                        전액 사용
+                    </button>
+                </div>
+                <p id="cart-point-payment-hint" style="display: none; font-size: 0.85rem; color: var(--danger); margin-bottom: 1rem; line-height: 1.4;">
+                    최종 결제 금액이 1000원 미만이 되지 않도록 포인트를 조정해 주세요.
+                </p>
             </div>
 
             <div style="display: flex; gap: 1rem; margin-top: 1rem;">
                 <button class="btn btn-outline" onclick="toggleCartModal()" style="flex: 1; font-size: 1.1rem; padding: 1rem; font-family: 'Gowun Dodum', sans-serif;">
                     닫기
                 </button>
-                <button class="btn btn-primary" onclick="createOrder()" style="flex: 2; font-size: 1.15rem; padding: 1rem; font-family: 'Jua', sans-serif;">
+                <button type="button" id="cart-checkout-btn" class="btn btn-primary" onclick="createOrder()" style="flex: 2; font-size: 1.15rem; padding: 1rem; font-family: 'Jua', sans-serif;">
                     📦 주문 결제하기
                 </button>
             </div>
@@ -116,7 +127,7 @@
                     let ptData = ptRaw;
                     if (ptRaw.data && ptRaw.data.content) ptData = ptRaw.data.content;
                     else if (ptRaw.data) ptData = ptRaw.data;
-                    
+
                     if (ptData && ptData.currentPoint !== undefined) {
                         window.cartCurrentUser = { points: ptData.currentPoint };
                         const cp = document.getElementById('current-points');
@@ -124,6 +135,7 @@
                     }
                 }
             } catch (e) { console.error('Failed to load points', e); }
+            if (typeof validatePoints === 'function') validatePoints();
         }
 
         window.updateQuantity = function(productId, delta, productRef) {
@@ -144,7 +156,7 @@
             } else {
                 if (item) {
                     item.quantity = qty;
-                    if (productRef) item.stock = productRef.stock; 
+                    if (productRef) item.stock = productRef.stock;
                 } else if (productRef) {
                     window.globalCart[productId] = {
                         quantity: qty,
@@ -155,7 +167,7 @@
                     };
                 }
             }
-            
+
             localStorage.setItem('globalCart', JSON.stringify(window.globalCart));
             updateCartSummary();
             validatePoints();
@@ -168,7 +180,7 @@
                 const cartBtn = document.getElementById('nav-cart-btn');
                 if (cartBtn) {
                     cartBtn.classList.remove('cart-bounce');
-                    void cartBtn.offsetWidth; 
+                    void cartBtn.offsetWidth;
                     cartBtn.classList.add('cart-bounce');
                 }
             }
@@ -208,10 +220,10 @@
                 }
             });
 
-            cartItemsDiv.innerHTML = itemCount > 0 
-                ? html 
+            cartItemsDiv.innerHTML = itemCount > 0
+                ? html
                 : '<p style="color: var(--text-secondary); text-align: center; padding: 1rem 0;">장바구니가 비어 있습니다.</p>';
-                
+
             cartTotalSpan.textContent = `₩${total.toLocaleString()}`;
 
             const navCartCount = document.getElementById('nav-cart-count');
@@ -221,15 +233,106 @@
                 navCartCount.style.transform = 'scale(1.2)';
                 setTimeout(() => navCartCount.style.transform = 'scale(1)', 200);
             }
+
+            if (typeof updateCartCheckoutButtonState === 'function') updateCartCheckoutButtonState();
+        };
+
+        /** PG 최소(1,000원) 정책: 잔액이 0원이거나 1,000원 이상일 때만 결제 가능 */
+        window.isFinalAmountValidForPayment = function(orderTotal, usedPoints) {
+            const finalAmt = orderTotal - usedPoints;
+            if (finalAmt === 0) return true;
+            if (finalAmt >= 1000) return true;
+            return false;
+        };
+
+        window.updateCartCheckoutButtonState = function() {
+            const btn = document.getElementById('cart-checkout-btn');
+            const hint = document.getElementById('cart-point-payment-hint');
+            const fullBtn = document.getElementById('cart-full-points-btn');
+            if (!btn) return;
+
+            let cartTotal = 0;
+            let itemCount = 0;
+            Object.values(window.globalCart || {}).forEach(item => {
+                if (item.quantity > 0) {
+                    cartTotal += item.price * item.quantity;
+                    itemCount++;
+                }
+            });
+
+            const useP = document.getElementById('use-points');
+            const used = useP ? (parseInt(useP.value, 10) || 0) : 0;
+
+            const maxPoints = window.cartCurrentUser && window.cartCurrentUser.points !== undefined
+                ? window.cartCurrentUser.points
+                : 0;
+            const canFullToZero = itemCount > 0 && cartTotal > 0
+                && cartTotal % 1000 === 0
+                && maxPoints >= cartTotal;
+            if (fullBtn) {
+                fullBtn.disabled = !canFullToZero;
+                fullBtn.style.opacity = canFullToZero ? '1' : '0.45';
+            }
+
+            if (itemCount === 0 || cartTotal <= 0) {
+                btn.disabled = true;
+                if (hint) hint.style.display = 'none';
+                if (fullBtn) {
+                    fullBtn.disabled = true;
+                    fullBtn.style.opacity = '0.45';
+                }
+                return;
+            }
+
+            const ok = window.isFinalAmountValidForPayment(cartTotal, used);
+            btn.disabled = !ok;
+            if (hint) hint.style.display = ok ? 'none' : 'block';
+        };
+
+        /** 보유 포인트로 총 결제 금액을 0원으로 맞춤 (주문 금액이 1000원 단위이고 포인트가 충분할 때만) */
+        window.applyCartFullPointsToZero = function() {
+            const useP = document.getElementById('use-points');
+            if (!useP) return;
+
+            let cartTotal = 0;
+            Object.values(window.globalCart || {}).forEach(item => {
+                cartTotal += item.price * item.quantity;
+            });
+            const maxPoints = window.cartCurrentUser && window.cartCurrentUser.points !== undefined
+                ? window.cartCurrentUser.points
+                : 0;
+
+            if (cartTotal <= 0) {
+                if (window.showNotification) window.showNotification('장바구니가 비어 있습니다.', 'warning');
+                return;
+            }
+            if (maxPoints < cartTotal) {
+                if (window.showNotification) window.showNotification('보유 포인트가 주문 금액보다 적습니다.', 'warning');
+                return;
+            }
+            if (cartTotal % 1000 !== 0) {
+                if (window.showNotification) {
+                    window.showNotification('주문 금액이 1000원 단위일 때만 포인트로 0원까지 맞출 수 있습니다.', 'warning');
+                } else {
+                    alert('주문 금액이 1000원 단위일 때만 포인트로 0원까지 맞출 수 있습니다.');
+                }
+                return;
+            }
+
+            useP.value = cartTotal;
+            validatePoints();
+            if (window.showNotification) {
+                window.showNotification('포인트 전액 사용으로 최종 결제 금액을 0원으로 맞췄습니다.', 'success');
+            }
         };
 
         window.validatePoints = function() {
             const useP = document.getElementById('use-points');
             if (!useP) return;
-            
+
             let val = parseInt(useP.value) || 0;
             let maxPoints = window.cartCurrentUser && window.cartCurrentUser.points !== undefined ? window.cartCurrentUser.points : 0;
-            
+
             let cartTotal = 0;
             Object.values(window.globalCart).forEach(item => {
                 cartTotal += item.price * item.quantity;
@@ -237,13 +340,14 @@
 
             if (val < 0) val = 0;
             if (val > maxPoints) {
-                val = Math.floor(maxPoints / 100) * 100;
+                val = Math.floor(maxPoints / 1000) * 1000;
             }
             if (val > cartTotal) {
-                val = Math.floor(cartTotal / 100) * 100;
+                val = Math.floor(cartTotal / 1000) * 1000;
             }
-            
-            useP.value = Math.floor(val / 100) * 100;
+
+            useP.value = Math.floor(val / 1000) * 1000;
+            updateCartCheckoutButtonState();
         };
 
         window.createOrder = async function() {
@@ -264,6 +368,19 @@
             const usePointsInput = document.getElementById('use-points');
             const usedPoints = parseInt(usePointsInput.value) || 0;
 
+            let cartTotalForCheck = 0;
+            Object.values(window.globalCart).forEach(item => {
+                cartTotalForCheck += item.price * item.quantity;
+            });
+            if (!window.isFinalAmountValidForPayment(cartTotalForCheck, usedPoints)) {
+                if (window.showNotification) {
+                    window.showNotification('최종 결제 금액은 0원(포인트 전액)이거나 1,000원 이상이어야 합니다.', 'warning');
+                } else {
+                    alert('최종 결제 금액은 0원(포인트 전액)이거나 1,000원 이상이어야 합니다.');
+                }
+                return;
+            }
+
             const orderData = { items: items, usedPoint: usedPoints };
 
             try {
@@ -274,15 +391,15 @@
                      result = raw.data;
                      if(raw.data.content) result = raw.data.content;
                 }
-                
+
                 if (result && (result.orderUid || raw.success)) {
                     if (window.showNotification) window.showNotification('주문 생성 완료! 🛒', 'success');
-                    
+
                     window.globalCart = {};
                     localStorage.removeItem('globalCart');
                     updateCartSummary();
                     toggleCartModal();
-                    
+
                     setTimeout(() => { window.location.href = `/pages/orders`; }, 1000);
                 } else {
                     throw new Error('주문 생성 실패 응답');
