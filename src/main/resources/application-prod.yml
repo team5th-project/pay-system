@@ -2,9 +2,27 @@ api:
   base-url: https://ozmagical.store
 
 spring:
+  datasource:
+    # EC2 서버에 설치된 MySQL 연결 설정
+    url: jdbc:mysql://localhost:3306/paymentdb?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul
+    username: payuser
+    password: ${DB_PASSWORD}
+    # 비밀번호는 환경변수로 관리
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+      # update = 테이블 자동 생성/수정 (없으면 만들고, 있으면 유지)
+    properties:
+      hibernate:
+        # 민교가 수정함
+        # 기존: MySQLDialect → Hibernate 7이 FOR UPDATE OF 테이블alias 문법 생성
+        # MariaDB는 FOR UPDATE OF 문법 미지원 → SQLSyntaxErrorException 발생하여 앱 실행 실패
+        # 변경: MariaDBDialect → MariaDB 전용 FOR UPDATE 문법으로 쿼리 생성
+        # → UserPointRepository의 @Lock(PESSIMISTIC_WRITE) 정상 동작
+        dialect: org.hibernate.dialect.MariaDBDialect
+    defer-datasource-initialization: true
   sql:
     init:
-      mode: always
-      data-locations: classpath:data-xxx.sql
-  jpa:
-    defer-datasource-initialization: true
+      # MySQL에서는 H2 초기화 스크립트 실행 안 함
+      mode: never
