@@ -14,7 +14,7 @@ import com.bootcamp.paymentdemo.refund.entity.Refund;
 import com.bootcamp.paymentdemo.refund.enums.RefundStatus;
 import com.bootcamp.paymentdemo.refund.service.RefundService;
 import com.bootcamp.paymentdemo.webhook.dto.PortOneWebhookRequest;
-import com.bootcamp.paymentdemo.webhook.entity.PortOneEventType;
+import com.bootcamp.paymentdemo.webhook.enums.PortOneEventType;
 import com.bootcamp.paymentdemo.webhook.entity.WebhookEvent;
 import com.bootcamp.paymentdemo.webhook.repository.WebhookEventRepository;
 import lombok.RequiredArgsConstructor;
@@ -91,7 +91,7 @@ public class WebhookEventService {
             PortOnePaymentDto providerPayment = portOneService.getPayment(paymentUid);
 
             // 우리 DB의 외부식별자 조회
-            Payment payment = paymentService.getPaymentById(paymentUid);
+            Payment payment = paymentService.getPaymentByUid(paymentUid);
             Order order = payment.getOrder();
 
             // PortOne 정보와 우리 DB 결제정보가 맞는지 검증
@@ -161,6 +161,8 @@ public class WebhookEventService {
         // 5. 상태 전이
         payment.success();
         order.markAsPaid();
+        // TODO : 재고 상태전이 필요(차감했던 재고 원상복구)
+        // TODO : 포인트 상태전이 필요(사용했던 포인트가 있다면 그만큼 돌려주기)
     }
 
     private void handleCancelledEvent(PortOnePaymentDto providerPayment, Payment payment, Order order) {
@@ -209,6 +211,8 @@ public class WebhookEventService {
         payment.refund();
         refund.complete();
         order.refund();
+        // TODO : 재고 상태전이 필요(차감했던 재고 원상복구)
+        // TODO : 포인트 상태전이 필요(사용했던 포인트가 있다면 그만큼 돌려주기)
     }
 
     private void validateTimestampRange(String timestamp) {
@@ -229,7 +233,7 @@ public class WebhookEventService {
     private String resolveFailureReason(Exception e) {
         String reason;
         if (e instanceof ServiceException se) {
-            reason = se.getErrorCode().getMessage();
+            reason = se.getErrorCode().getMessage();    // TODO : 여기에 에러가 안난다고..?
         } else {
             return "예상치 못한 서버 오류";
         }
@@ -289,7 +293,7 @@ public class WebhookEventService {
                 String version = parts[0].trim();
                 String providedSignature = parts[1].trim();
 
-                // 대칭 서명만 처리 (문서 기준 v1 = HMAC-SHA256)
+                // 대칭 서명만 처리 (문서 기준 v1 = HMAC-SHA256) TODO : 여기서 말하는 V1이 포트원 v1 버전인가?
                 if (!"v1".equals(version)) {
                     continue;
                 }

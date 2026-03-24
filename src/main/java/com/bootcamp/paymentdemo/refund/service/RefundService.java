@@ -59,7 +59,7 @@ public class RefundService {
     @Transactional
     public CreateRefundResponse requestRefund(String paymentUid, CreateRefundRequest request, Long userId) {
         // 결제 조회(paymentService를 통해 호출)
-        Payment payment = paymentService.getPaymentById(paymentUid);
+        Payment payment = paymentService.getPaymentByUid(paymentUid);
 
         Order order = payment.getOrder();
 

@@ -8,6 +8,7 @@ import com.bootcamp.paymentdemo.order.service.OrderService;
 import com.bootcamp.paymentdemo.payment.dto.request.CreatePaymentRequest;
 import com.bootcamp.paymentdemo.payment.dto.response.ConfirmPaymentResponse;
 import com.bootcamp.paymentdemo.payment.dto.response.CreatePaymentResponse;
+import com.bootcamp.paymentdemo.payment.dto.response.PortOnePaymentDto;
 import com.bootcamp.paymentdemo.payment.entity.Payment;
 import com.bootcamp.paymentdemo.payment.enums.PaymentCancelResult;
 import com.bootcamp.paymentdemo.payment.enums.PaymentResult;
@@ -234,24 +235,97 @@ public class PaymentService {
         return "PAY-" + UUID.randomUUID();
     }
 
-    public Payment getPaymentById(String paymentUid) {
+    public Payment getPaymentByUid(String paymentUid) {
         return paymentRepository.findByPaymentUid(paymentUid)
                 .orElseThrow(() -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND));
     }
 
-    // 민교가 추가함
-//
-//      orderId로 결제 정보 조회
-//
-//      - 주문 확정 시 포인트 적립을 위해 finalAmount(실제 PG 결제 금액) 가져올 때 사용
-//      - confirmOrder() 및 OrderScheduler에서 호출
-//
-//      @param orderId 조회할 주문 ID
-//      @return 해당 주문의 Payment 객체
-
-
+        /* 민교님 추가
+           orderId로 결제 정보 조회
+          - 주문 확정 시 포인트 적립을 위해 finalAmount(실제 PG 결제 금액) 가져올 때 사용
+          - confirmOrder() 및 OrderScheduler에서 호출
+          @param orderId 조회할 주문 ID
+          @return 해당 주문의 Payment 객체
+         */
         public Payment getPaymentByOrderId(Long orderId) {
         return paymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND));
+    }
+
+    @Transactional
+    public void completePaymentFromWebhook(Payment payment, PortOnePaymentDto portOnePaymentDto) {
+        /*
+        결제 확정 요청이 오지 않아서 PENDING 상태였던 결제 건에 대하여
+        실제 결제가 성공했을 경우 검증 후 성공 처리
+         */
+        // 1. 이미 성공이면 멱등 처리
+        if (payment.getPaymentStatus() == PaymentStatus.SUCCESS) {
+            return;
+        }
+
+        // 2. PENDING 상태인 결제가 맞는지 상태 검증
+        if (payment.getPaymentStatus() != PaymentStatus.PENDING) {
+            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
+        }
+
+        // 3. paymentUid 검증
+        if (!payment.getPaymentUid().equals(portOnePaymentDto.paymentId())) {
+            throw new ServiceException(ErrorCode.PAYMENT_AMOUNT_NOT_EQUALS);
+        }
+
+        // 4. 금액 검증
+        if (!payment.getFinalAmount().equals(portOnePaymentDto.amount())) {
+            throw new ServiceException(ErrorCode.INVALID_PAYMENT_AMOUNT);
+        }
+
+        markPaymentSuccess(payment);
+    }
+
+    // 결제 취소 요청
+    // 1. 실제 결제가 되었는데 네트워크 오류로 payment는 실패 처리 되어있는 경우
+    // 2. 서버 내부 오류로 결제 취소 요청을 보냈는데, 취소가 되지 않은 경우
+    @Transactional
+    public void requestCancel(Payment payment, PortOnePaymentDto portOnePaymentDto) {
+            // 이미 취소된 경우 멱등 처리
+        if (payment.getPaymentStatus() == PaymentStatus.CANCELLED) {
+            return;
+        }
+        // 2. FAILED,CANCEL_REQUESTED,CANCEL_FAILED 상태인 결제가 맞는지 상태 검증
+        if (!(payment.getPaymentStatus() == PaymentStatus.FAILED
+                || payment.getPaymentStatus() == PaymentStatus.CANCEL_REQUESTED
+                || payment.getPaymentStatus() == PaymentStatus.CANCEL_FAILED)) {
+            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
+        }
+
+        // 3. paymentUid 검증
+        if (!payment.getPaymentUid().equals(portOnePaymentDto.paymentId())) {
+            throw new ServiceException(ErrorCode.PAYMENT_AMOUNT_NOT_EQUALS);
+        }
+        // 4. 금액 검증
+        if (!payment.getFinalAmount().equals(portOnePaymentDto.amount())) {
+            throw new ServiceException(ErrorCode.INVALID_PAYMENT_AMOUNT);
+        }
+        // 결제 취소 요청 메서드 호출 필요
+        try {
+            portOneService.cancelPayment(payment.getPaymentUid(), "-");
+        } catch (RuntimeException e) {
+            log.warn("Webhook 검증 후 결제 취소 요청 실패 - paymentId :{} ",payment.getPaymentUid());
+            throw e;
+        }
+        // 결제 취소 성공시 상태전이
+        payment.cancelled();
+        // 주문 상태 전이 할 것 없음
+        // 재고, 포인트 상태 전이 할 것 없음
+
+    }
+
+    @Transactional
+    public void completeCancelFromWebhook(Payment payment, PortOnePaymentDto portOnePayment) {
+        // TODO - 내일 아침에 하기..
+    }
+
+    @Transactional
+    public void failPendingPaymentFromWebhook(Payment payment, PortOnePaymentDto portOnePayment) {
+        // TODO - 내일 아침에 하기
     }
 }

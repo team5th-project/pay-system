@@ -36,14 +36,14 @@ public class PortOneService {
 
             if (response == null) {
                 log.error("PortOne cancel response is null. paymentUid={}", paymentUid);
-                throw new ServiceException(ErrorCode.REFUND_FAILED);
+                throw new ServiceException(ErrorCode.PAYMENT_CANCEL_FAILED);
             }
 
             PortOneCancellationDto cancellation = response.cancellation();
 
             if (cancellation == null || cancellation.status() == null) {
                 log.error("PortOne cancellation response is invalid. paymentUid={}", paymentUid);
-                throw new ServiceException(ErrorCode.REFUND_FAILED);
+                throw new ServiceException(ErrorCode.PAYMENT_CANCEL_FAILED);
             }
 
             return cancellation;
