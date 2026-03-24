@@ -12,7 +12,6 @@ import com.bootcamp.paymentdemo.payment.service.PaymentService;
 import com.bootcamp.paymentdemo.payment.service.PortOneService;
 import com.bootcamp.paymentdemo.refund.entity.Refund;
 import com.bootcamp.paymentdemo.refund.enums.RefundStatus;
-import com.bootcamp.paymentdemo.refund.service.PortOneRefundService;
 import com.bootcamp.paymentdemo.refund.service.RefundService;
 import com.bootcamp.paymentdemo.webhook.dto.PortOneWebhookRequest;
 import com.bootcamp.paymentdemo.webhook.entity.PortOneEventType;
@@ -20,13 +19,17 @@ import com.bootcamp.paymentdemo.webhook.entity.WebhookEvent;
 import com.bootcamp.paymentdemo.webhook.repository.WebhookEventRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
-import java.time.Duration;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeParseException;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.time.Instant;
+import java.util.Base64;
 import java.util.Objects;
 
 @Service
@@ -38,20 +41,29 @@ public class WebhookEventService {
     private final PortOneService portOneService;
     private final PaymentService paymentService;
     private final RefundService refundService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public void handleWebhook(String webhookId, String signature, String timestamp, PortOneWebhookRequest request) {
-        // 포트원에서 보낸 요청이 맞는지 검증
-        // 헤더 값이 비어있는지 확인
-        if (webhookId == null || webhookId.isBlank()) {
-            throw new ServiceException(ErrorCode.INVALID_WEBHOOK_WEBHOOKID);
-        }
-        if (signature == null || signature.isBlank()) {
-            throw new ServiceException(ErrorCode.INVALID_WEBHOOK_SIGNATURE);
-        }
-        if (timestamp == null || timestamp.isBlank()) {
-            throw new ServiceException(ErrorCode.INVALID_WEBHOOK_TIMESTAMP);
-        }
+    private static final long ALLOWED_TIMESTAMP_SKEW_SECONDS = 300L; // 허용할 시간 차이 = 300초(5분)
+    private static final String HMAC_SHA256 = "HmacSHA256";
+    @Value("${portone.webhook.secret}")
+    private String webhookSecret;
+
+    public void handleWebhook(String webhookId, String signature, String timestamp, String rawPayload) {
+        log.info("handleWebhook start");
+        log.info("webhookId = [{}]", webhookId);
+        log.info("timestamp = [{}]", timestamp);
+        log.info("rawPayload = [{}]", rawPayload);
+        log.info("received signature = [{}]", signature);
+        // 헤더/바디 값 체크
+        validateHeaders(webhookId, signature, timestamp, rawPayload);
+        // 재전송 공격 방지 timestamp 검증
         validateTimestampRange(timestamp);
+        // PortOne 서명 실검증
+        verifyWebhook(webhookId, signature, timestamp, rawPayload);
+        // 문자열 JSON을 DTO로 변환
+        PortOneWebhookRequest request = parsePayload(rawPayload);
+        // 변환된 DTO 필수값 검증
+        validateParsedRequest(request);
 
         // 웹훅 안에서 paymentId, eventType 추출
         String eventType = request.type();
@@ -65,14 +77,13 @@ public class WebhookEventService {
             return; // 이미 처리된 웹훅이면 종료
         }
 
-
         // 웹훅 기록 저장
         // 아직 처리 성공/실패는 모르고 일단 받은 상태
         WebhookEvent webhookEvent = WebhookEvent.createReceive(
                 webhookId,
                 paymentUid,
                 portOneEventType,
-                null
+                rawPayload
         );
         webhookEventRepository.save(webhookEvent);
         try {
@@ -104,7 +115,7 @@ public class WebhookEventService {
                 // TODO Transaction.Failed를 추가할까?
             } else {
                 //지금 처리 대상이 아닌 이벤트는 무시
-                log.info("웹훅 이벤트 무시됨 = {}, eventType={}", webhookId ,eventType);
+                log.info("웹훅 이벤트 무시됨 = {}, eventType={}", webhookId, eventType);
             }
             // 여기까지 문제없으면 웹훅 처리 성공으로 변경
             webhookEvent.markProcessed();
@@ -166,7 +177,6 @@ public class WebhookEventService {
         if (payment.getPaymentStatus() != PaymentStatus.SUCCESS) {
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
         }
-
         // 환불 엔티티 조회
         Refund refund = refundService.getRefundByPaymentUid(payment.getPaymentUid());
 
@@ -201,17 +211,14 @@ public class WebhookEventService {
 
     private void validateTimestampRange(String timestamp) {
         try {
-            // 문자열 timestamp를 시간 객체로 변환
-            OffsetDateTime webhookTime = OffsetDateTime.parse(timestamp);
-            // 현재 시간을 UTC 기준으로 가져옴
-            OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-            // 두 시간 차이를 계산 webhookTime -> now 사이 시간 차이
-            long diffMinutes = Math.abs(Duration.between(webhookTime, now).toMinutes());
-            // 5분 이내에 온거면 OK 5분 넘었으면 위험하니까 거부
-            if (diffMinutes > 5) {
+            long webhookEpochSeconds = Long.parseLong(timestamp); // 요청이 온 시간
+            long nowEpochSeconds = Instant.now().getEpochSecond(); // 지금 시간
+            long diffSeconds = Math.abs(nowEpochSeconds - webhookEpochSeconds); // 지금 시간 - 요청이 온 시간
+
+            if (diffSeconds > ALLOWED_TIMESTAMP_SKEW_SECONDS) { // diffseconds > 300초 넘으면 거부해버림
                 throw new ServiceException(ErrorCode.INVALID_WEBHOOK_TIMESTAMP);
             }
-        } catch (DateTimeParseException e) {
+        } catch (NumberFormatException e) {
             // timestamp 형식 자체가 이상하면 실패
             throw new ServiceException(ErrorCode.INVALID_WEBHOOK_TIMESTAMP);
         }
@@ -228,5 +235,121 @@ public class WebhookEventService {
             reason = "알 수 없는 오류";
         }
         return reason.length() > 255 ? reason.substring(0, 255) : reason;
+    }
+
+    private PortOneWebhookRequest parsePayload(String rawPayload) {
+        try {
+            return objectMapper.readValue(rawPayload, PortOneWebhookRequest.class);
+        } catch (Exception e) {
+            throw new ServiceException(ErrorCode.INVALID_WEBHOOK_PAYLOAD);
+        }
+    }
+
+    private void validateHeaders(String webhookId, String signature, String timestamp, String rawPayload) {
+        if (webhookId == null || webhookId.isBlank()) {
+            throw new ServiceException(ErrorCode.INVALID_WEBHOOK_WEBHOOKID);
+        }
+        if (signature == null || signature.isBlank()) {
+            throw new ServiceException(ErrorCode.INVALID_WEBHOOK_SIGNATURE);
+        }
+        if (timestamp == null || timestamp.isBlank()) {
+            throw new ServiceException(ErrorCode.INVALID_WEBHOOK_TIMESTAMP);
+        }
+        if (rawPayload == null || rawPayload.isBlank()) {
+            throw new ServiceException(ErrorCode.INVALID_WEBHOOK_PAYLOAD);
+        }
+    }
+
+    private void verifyWebhook(String webhookId, String signature, String timestamp, String rawPayload) {
+        try {
+            if (webhookSecret == null || webhookSecret.isBlank()) {
+                throw new ServiceException(ErrorCode.INVALID_WEBHOOK_SIGNATURE);
+            }
+
+            // 우리만 알고있는 비밀키 준비
+            byte[] secretBytes = decodeWebhookSecret(webhookSecret);
+            // 서명 메세지 만들기/portone도 이 문자열로 서명 작성
+            String signedContent = webhookId + "." + timestamp + "." + rawPayload;
+
+            // PortOne이 했던 방식 그대로 우리가 다시 계산 / HMAC-SHA256 계산 후 base64 인코딩
+            String expectedSignature = calculateHmacBase64(secretBytes, signedContent);
+
+            // 받은 서명 다시 꺼내기
+            String[] signatureEntries = signature.trim().split("\\s+");
+
+            boolean matched = false;
+            for (String entry : signatureEntries) {
+                String[] parts = entry.split(",", 2);
+                if (parts.length != 2) {
+                    continue;
+                }
+
+                String version = parts[0].trim();
+                String providedSignature = parts[1].trim();
+
+                // 대칭 서명만 처리 (문서 기준 v1 = HMAC-SHA256)
+                if (!"v1".equals(version)) {
+                    continue;
+                }
+
+                byte[] expectedBytes = expectedSignature.getBytes(StandardCharsets.UTF_8);
+                byte[] providedBytes = providedSignature.getBytes(StandardCharsets.UTF_8);
+
+                // 상수 시간 비교 / 내가 만든 사인이 받은 사인과 같은가?
+                if (MessageDigest.isEqual(expectedBytes, providedBytes)) {
+                    matched = true;
+                    break;
+                }
+            }
+            // 하나라도 맞으면 OK 하나도 없으면 차단!
+            if (!matched) {
+                throw new ServiceException(ErrorCode.INVALID_WEBHOOK_SIGNATURE);
+            }
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ServiceException(ErrorCode.INVALID_WEBHOOK_SIGNATURE);
+        }
+    }
+
+    private byte[] decodeWebhookSecret(String webhookSecret) {
+        String normalized = webhookSecret.trim();
+        if (normalized.startsWith("whsec_")) {
+            normalized = normalized.substring("whsec_".length());
+        }
+
+        try {
+            return Base64.getDecoder().decode(normalized); // 암호화된 문자열 -> 실제 키로 return
+        } catch (IllegalArgumentException e) {
+            throw new ServiceException(ErrorCode.INVALID_WEBHOOK_SIGNATURE);
+        }
+    }
+
+    private String calculateHmacBase64(byte[] secretBytes, String message) {
+        try {
+            Mac mac = Mac.getInstance(HMAC_SHA256); // 암호 계산기 준비
+            SecretKeySpec keySpec = new SecretKeySpec(secretBytes, HMAC_SHA256);
+            mac.init(keySpec); // 우리의 비밀키값 넣기
+
+            byte[] hmac = mac.doFinal(message.getBytes(StandardCharsets.UTF_8)); // 문자열에 사인 찍기
+            return Base64.getEncoder().encodeToString(hmac); // 사람이 비교할 수 있도록 문자열로 변환
+        } catch (Exception e) {
+            throw new ServiceException(ErrorCode.INVALID_WEBHOOK_SIGNATURE);
+        }
+    }
+
+    private void validateParsedRequest(PortOneWebhookRequest request) {
+        // 파싱은 됐지만 request 자체가 비어있을 수 있음
+        if (request == null) {
+            throw new ServiceException(ErrorCode.INVALID_WEBHOOK_PAYLOAD);
+        }
+        // 이벤트타입이 없으면 이후 enum 변환 자체가 불가능
+        if (request.type() == null || request.type().isBlank()) {
+            throw new ServiceException(ErrorCode.INVALID_WEBHOOK_PAYLOAD);
+        }
+        // data 객체가 없거나 paymentId 가 비어있으면 어떤 결제건인지 식별 불가능
+        if (request.data() == null || request.data().paymentId() == null || request.data().paymentId().isBlank()) {
+            throw new ServiceException(ErrorCode.INVALID_WEBHOOK_PAYLOAD);
+        }
     }
 }

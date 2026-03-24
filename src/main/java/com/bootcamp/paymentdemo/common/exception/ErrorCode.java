@@ -35,6 +35,7 @@ public enum ErrorCode {
     ORDER_NOT_OWNED(HttpStatus.FORBIDDEN, "O003", "본인의 주문이 아닙니다."),
 
 
+
     // 결제
     INVALID_PAYMENT_AMOUNT(HttpStatus.BAD_REQUEST, "PAY001", "유효하지 않은 결제 금액입니다."),
     INVALID_ORDER_UID(HttpStatus.BAD_REQUEST, "PAY002", "유효하지 않은 주문 아이디입니다."),
@@ -64,7 +65,7 @@ public enum ErrorCode {
     //환불
     INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, "R001", "현재 환불 상태에서는 요청한 작업을 수행할 수 없습니다."),
     INVALID_PAYMENT_STATUS(HttpStatus.BAD_REQUEST, "ROO2", "환불은 결제 완료 상태에서만 가능합니다."),
-    REFUND_FAILED(HttpStatus.BAD_REQUEST, "R003", "환불 처리 중 오류가 발생했습니다."),
+    REFUND_FAILED(HttpStatus.BAD_REQUEST,"R003", "환불 처리 중 오류가 발생했습니다."),
     REFUND_NOT_FOUND(HttpStatus.NOT_FOUND, "R004", "환불내역을 찾을 수 없습니다."),
     REFUND_PERIOD_EXPIRED(HttpStatus.BAD_REQUEST, "R005", "환불 가능 기간이 지났습니다."),
     INVALID_REFUND_AMOUNT(HttpStatus.BAD_REQUEST, "R006", "환불금액이 올바르지 않습니다."),
