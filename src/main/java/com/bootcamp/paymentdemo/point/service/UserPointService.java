@@ -9,7 +9,7 @@ import com.bootcamp.paymentdemo.point.entity.*;
 import com.bootcamp.paymentdemo.point.repository.MembershipPolicyRepository;
 import com.bootcamp.paymentdemo.point.repository.UserPointRepository;
 import com.bootcamp.paymentdemo.point.repository.PointTransactionRepository;
-import com.bootcamp.paymentdemo.user.UserRepository;
+import com.bootcamp.paymentdemo.user.UserService;
 import com.bootcamp.paymentdemo.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -34,7 +34,7 @@ public class UserPointService {
     private final UserPointRepository pointRepository;
     private final MembershipPolicyRepository membershipPolicyRepository;
     private final PointTransactionRepository pointTransactionRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     /**
      * 1
@@ -92,8 +92,7 @@ public class UserPointService {
     public void earnPoint(Long userId, Long orderId, Long paymentAmount) {
         // 사용자 조회
         UserPoint userPoint = pointRepository.findByUserIdForUpdate(userId);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
+        User user = userService.getUser(userId);
         // 멤버십 등급 조회
         MembershipPolicy policy = membershipPolicyRepository.findByGrade(user.getMembershipGrade());
         // 적립 포인트 계산
@@ -115,8 +114,7 @@ public class UserPointService {
     @Transactional
     public void refundPoint(Long userId, Long orderId, long refundAmount) {
         UserPoint userPoint = pointRepository.findByUserIdForUpdate(userId);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
+        User user = userService.getUser(userId);
         List<PointTransaction> usedTransactions = pointTransactionRepository.findByOrderIdAndType(orderId, PointType.USE);
         //사용한 포인트 있는 경우만 복구
         int refundPoints = 0;
@@ -126,7 +124,7 @@ public class UserPointService {
                     .mapToInt(tx -> Math.abs(tx.getPoints()))
                     .sum();
 
-            userPoint.deductPoint(refundPoints);
+            userPoint.restoreUsedPoint(refundPoints);
             // Refund 타입으로 거래내역 저장
             saveTransaction(PointTransaction.refund(userId, orderId, refundPoints));
         }
@@ -139,27 +137,27 @@ public class UserPointService {
 
     /**
      * 멤버십 등급 갱신
-     * 결제 완료 이벤트(PaymentCompletedEvent) 수신 시 호출 → 등급 업 가능
-     * 환불 완료 이벤트(RefundCompletedEvent) 수신 시 호출 → 등급 다운 가능
      * 기준: User.totalOrderAmount (누적 주문금액)
      * NORMAL(5만원 이하), VIP(10만원 이하), VVIP(10만원 초과)
      */
     @Transactional
     public void updateMembershipGrade(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));        // 전체 등급 정책 조회 후 누적금액에 맞는 등급 계산
-        MembershipGrade newGrade = membershipPolicyRepository.findAllByOrderByMinAmountAsc()
-                .stream()
+        User user = userService.getUser(userId);
+        List<MembershipPolicy> policies = membershipPolicyRepository.findAllByOrderByMinAmountAsc();
+        // 정책 데이터 없을 경우 에러 던짐
+        if (policies.isEmpty()) {
+            throw new ServiceException(ErrorCode.MEMBERSHIP_POLICY_NOT_FOUND);
+        }
+
+        // 전체 등급 정책 조회 후 누적금액에 맞는 등급 계산
+        MembershipGrade newGrade = policies.stream()
                 .filter(policy -> policy.getMaxAmount() == null ||
                         user.getTotalOrderAmount() <= policy.getMaxAmount())
                 .findFirst()
                 .map(MembershipPolicy::getGrade)
-                .orElse(MembershipGrade.VVIP);
-
+                .orElseThrow(() -> new ServiceException(ErrorCode.MEMBERSHIP_POLICY_NOT_FOUND));
         user.updateGrade(newGrade);
     }
-
-    // 포인트 소멸
 
     /** 포인트 소멸
      * 스케줄러(PointExpirationScheduler)에서 호출
@@ -208,8 +206,8 @@ public class UserPointService {
     // 현재 포인트+등급 조회 (GET /api/points/me)
     public MyPointResponse getMyPoints(Long userId) {
         UserPoint userPoint = pointRepository.findByUserId(userId);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));        return MyPointResponse.from(user, userPoint);
+        User user = userService.getUser(userId);
+        return MyPointResponse.from(user, userPoint);
     }
 
     // 등급 정책 조회 (GET /api/points/grades)
