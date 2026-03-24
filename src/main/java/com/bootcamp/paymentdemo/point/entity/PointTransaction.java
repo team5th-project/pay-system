@@ -98,4 +98,17 @@ public class PointTransaction extends BaseEntity {
                 .type(PointType.REFUND)
                 .build();
     }
+
+    // 관리자가 따로 포인트 지급한 경우 (order id == null, point type = grant)
+    public static PointTransaction grant(Long userId, int points) {
+        if (points <= 0) {
+            throw new ServiceException(ErrorCode.INVALID_POINT_AMOUNT);
+        }
+        return PointTransaction.builder()
+                .userId(userId)
+                .orderId(null)
+                .points(points)
+                .type(PointType.GRANT)
+                .build();
+    }
 }

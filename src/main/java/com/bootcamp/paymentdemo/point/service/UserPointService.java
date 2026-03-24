@@ -203,6 +203,19 @@ public class UserPointService {
         }
     }
 
+    /** 포인트 지급
+     *
+     * order 없이 직접 호출하여 포인트를 지급하는 경우
+     * orderId == null
+     */
+    @Transactional
+    public void grantPoint(Long userId, int points){
+        UserPoint userPoint = pointRepository.findByUserIdForUpdate(userId);
+        userPoint.addPoint(points);
+
+        pointTransactionRepository.save(PointTransaction.grant(userId, points));
+    }
+
     // 현재 포인트+등급 조회 (GET /api/points/me)
     public MyPointResponse getMyPoints(Long userId) {
         UserPoint userPoint = pointRepository.findByUserId(userId);

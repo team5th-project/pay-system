@@ -3,6 +3,7 @@ package com.bootcamp.paymentdemo.common.config;
 import com.bootcamp.paymentdemo.point.entity.MembershipGrade;
 import com.bootcamp.paymentdemo.point.entity.MembershipPolicy;
 import com.bootcamp.paymentdemo.point.repository.MembershipPolicyRepository;
+import com.bootcamp.paymentdemo.point.service.UserPointService;
 import com.bootcamp.paymentdemo.user.UserService;
 
 import com.bootcamp.paymentdemo.user.dto.SignupRequest;
@@ -22,6 +23,7 @@ import java.util.List;
 public class DataInitializer implements ApplicationRunner {
 
     private final UserService userService;
+    private final UserPointService userPointService;
     private final MembershipPolicyRepository membershipPolicyRepository;
 
     @Override
@@ -38,6 +40,9 @@ public class DataInitializer implements ApplicationRunner {
                         .phone("01012341234")
                         .password(password)
                 .build());
+
+        // 사용할 수 있는 포인트를 시작할 때 지급하는 로직을 추가했습니다.
+        userPointService.grantPoint(1L, 50000);
 
 
         // MembershipPolicy 초기 데이터 삽입
