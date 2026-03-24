@@ -46,16 +46,20 @@ public class Payment extends BaseEntity {
 
     private LocalDateTime paidAt;   // 결제 성공 시각
 
+    private LocalDateTime expiresAt;
+
     // 결제 시도 시각과 상태 변경 시각은 BaseEntity 필드값으로 관리
 
 
     @Builder
-    public Payment(String paymentUid, Order order, Long finalAmount, int pointToUse, PaymentStatus paymentStatus) {
+    public Payment(String paymentUid, Order order, Long finalAmount, int pointToUse, PaymentStatus paymentStatus, LocalDateTime expiresAt) {
+
         this.paymentUid = paymentUid;
         this.order = order;
         this.finalAmount = finalAmount;
         this.pointToUse = pointToUse;
         this.paymentStatus = paymentStatus;
+        this.expiresAt = expiresAt;
     }
 
     // 결제 완료로 전환하는 메서드
@@ -94,6 +98,13 @@ public class Payment extends BaseEntity {
 
     // 결제 취소 성공이랑 환불 상태 나눠야겠네요..
     public void cancelled(){
+        if (this.paymentStatus != PaymentStatus.CANCEL_REQUESTED) {
+            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
+        }
+        this.paymentStatus = PaymentStatus.CANCELLED;
+    }
+
+    public void cancelFailed() {
         if (this.paymentStatus != PaymentStatus.CANCEL_REQUESTED) {
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
         }

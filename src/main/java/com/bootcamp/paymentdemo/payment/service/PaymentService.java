@@ -54,12 +54,14 @@ public class PaymentService {
             throw new ServiceException(ErrorCode.ORDER_STATUS_NOT_PENDING);
         }
 
-        // 중복 결제 방지
-        // 같은 주문에 대해서 결제 요청 후 대기중(PENDING) 상태인 결제가 있는 경우 결제 생성 불가능
-        boolean existence = paymentRepository.existsByOrderAndPaymentStatus(order, PaymentStatus.PENDING);
+        // 중복 결제 생성 허용
+        // 같은 주문에 대해서 결제 요청 후 대기중(PENDING) 상태인 결제가 있어도 결제 생성 가능
+        // success 된 결제가 있으면 막기
+        boolean existence = paymentRepository.existsByOrderAndPaymentStatus(order, PaymentStatus.SUCCESS);
         if(existence){
-            throw new ServiceException(ErrorCode.ALREADY_PENDING_PAYMENT);
+            throw new ServiceException(ErrorCode.ALREADY_PROCESSED_PAYMENT);
         }
+
 
         // 주문 금액 null 검증
         if (totalAmount == null) {
@@ -93,6 +95,7 @@ public class PaymentService {
                 .finalAmount(finalAmount)
                 .pointToUse(pointToUse)
                 .paymentStatus(PaymentStatus.PENDING)
+                .expiresAt(LocalDateTime.now().plusMinutes(5))  // 스케쥴러에서 5분동안 결제가 안되면 failed 처리하기
                 .build();
 
         paymentRepository.save(payment);
@@ -118,7 +121,8 @@ public class PaymentService {
             throw new ServiceException(ErrorCode.ALREADY_PROCESSED_PAYMENT);
         }
 
-        // Order 상태 검증. 근데 이거 필요한가?? 결제 생성할때는 상태가 pending 이었다가 바뀌면 어떡함? 결제는 실제로 되었을 수도 있는거 아닌가?
+        // Order 상태 검증. 근데 이거 필요한가??
+        // 결제 생성할때는 상태가 pending 이었다가 바뀌면 어떡함? 결제는 실제로 되었을 수도 있는거 아닌가?
         Order order = payment.getOrder();
         if(!OrderStatus.PENDING.equals(order.getStatus())){
             throw new ServiceException(ErrorCode.INVALID_ORDER_STATUS);
@@ -131,16 +135,13 @@ public class PaymentService {
         } catch (InterruptedException e) { // 작업 중단, 결제 상태 미확정, PENDING 유지
             Thread.currentThread().interrupt();
             log.warn("PortOne confirm interrupted. paymentUid={}", paymentUid, e);
-            return ConfirmPaymentResponse.of(payment.getOrder().getOrderUid(), PaymentStatus.PENDING);
+            markPaymentFailed(payment);
+            return ConfirmPaymentResponse.of(payment.getOrder().getOrderUid(), PaymentStatus.FAILED);
         } catch (RestClientException e) {   // 결과 조회 불가, 결제 상태 미확정, PENDING 유지
             log.warn("PortOne network error. paymentUid={}", paymentUid, e);
-            return ConfirmPaymentResponse.of(payment.getOrder().getOrderUid(), PaymentStatus.PENDING);
-
+            markPaymentFailed(payment);
+            return ConfirmPaymentResponse.of(payment.getOrder().getOrderUid(), PaymentStatus.FAILED);
         } catch (PortOneException e) {
-            if (e.getErrorCode() == ErrorCode.PORTONE_PAYMENT_NOT_FOUND
-                    && shouldTreat404AsPending(payment)) {
-                return ConfirmPaymentResponse.of(payment.getOrder().getOrderUid(), PaymentStatus.PENDING);
-            }
             markPaymentFailed(payment);
             return ConfirmPaymentResponse.of(payment.getOrder().getOrderUid(), PaymentStatus.FAILED);
         } catch (RuntimeException e) { // 상태 변경 없이 롤백, 서버 에러 응답,나중에 운영 로그 확인
@@ -234,16 +235,16 @@ public class PaymentService {
 
     // 결제 성공했는데 재고 문제로 결제 취소 요청 보내야 하는 경우
     private PaymentStatus requestCancelAfterInternalFailure(Payment payment) {
-        paymentStatusTxService.markCancelRequested(payment.getId());
+        paymentStatusTxService.markCancelRequested(payment.getPaymentUid());
         try {
             // TODO
             PortOneCancellationDto portOneCancellationDto = portOneService.cancelPayment(payment.getPaymentUid(), "내부 후처리 실패로 결제 취소");
-            paymentStatusTxService.markRefunded(payment.getId());
+            paymentStatusTxService.markRefunded(payment.getPaymentUid());
         } catch (RuntimeException e) {
             log.warn("Payment cancel failed. paymentUid={}", payment.getPaymentUid(), e);
             return PaymentStatus.CANCEL_REQUESTED;
         }
-        paymentStatusTxService.markCancelled(payment.getId());
+        paymentStatusTxService.markCancelled(payment.getPaymentUid());
         return PaymentStatus.CANCELLED;
     }
 
@@ -258,11 +259,6 @@ public class PaymentService {
     // PENDING 처리
     private ConfirmPaymentResponse handlePending(Payment payment) {
         return ConfirmPaymentResponse.of(payment.getOrder().getOrderUid(), PaymentStatus.PENDING);
-    }
-
-    private boolean shouldTreat404AsPending(Payment payment) {
-        // 결제 생성 후 1분 동안 오는 404 에러는 pending 상태로 유지. PG -> 포트원 동기화 지연 가능성 때문
-        return payment.getCreatedAt().isAfter(LocalDateTime.now().minusMinutes(1));
     }
 
     // 결제 금액 일치 검증

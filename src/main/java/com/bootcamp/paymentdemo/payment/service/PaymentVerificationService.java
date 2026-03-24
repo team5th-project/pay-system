@@ -21,7 +21,6 @@ public class PaymentVerificationService {   // 포트원 결제 조회 결과만
     public PortOnePaymentDto getPaymentWithRetry(String paymentUid) throws InterruptedException {
 
         int retry = 0;
-        RestClientException lastException = null;
 
         while (retry < 3) { // 조회 총 3번 시도
             try {
@@ -37,7 +36,6 @@ public class PaymentVerificationService {   // 포트원 결제 조회 결과만
                 }
                 return payment;
             } catch (RestClientException e) {
-                lastException = e;
                 retry++;
                 Thread.sleep(1000); // ⭐ 추가
             } catch (PortOneException e) {
