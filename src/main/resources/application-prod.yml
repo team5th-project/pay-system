@@ -15,12 +15,7 @@ spring:
       # update = 테이블 자동 생성/수정 (없으면 만들고, 있으면 유지)
     properties:
       hibernate:
-        # 민교가 수정함
-        # 기존: MySQLDialect → Hibernate 7이 FOR UPDATE OF 테이블alias 문법 생성
-        # MariaDB는 FOR UPDATE OF 문법 미지원 → SQLSyntaxErrorException 발생하여 앱 실행 실패
-        # 변경: MariaDBDialect → MariaDB 전용 FOR UPDATE 문법으로 쿼리 생성
-        # → UserPointRepository의 @Lock(PESSIMISTIC_WRITE) 정상 동작
-        dialect: org.hibernate.dialect.MariaDBDialect
+        dialect: org.hibernate.dialect.MySQLDialect
     defer-datasource-initialization: true
   sql:
     init:
