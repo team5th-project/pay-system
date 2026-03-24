@@ -28,7 +28,6 @@ import java.time.LocalDateTime;
 public class RefundService {
     private final RefundRepository refundRepository;
     private final PaymentService paymentService;
-    private final ApplicationEventPublisher eventPublisher;
     private final PortOneRefundService portOneRefundService;
 
     private void validateRefundable(Payment payment, Order order) {
@@ -133,5 +132,10 @@ public class RefundService {
             throw new ServiceException(ErrorCode.ORDER_NOT_OWNED);
         }
         return GetRefundDetailResponse.from(refund);
+    }
+
+    public Refund getRefundByPaymentUid(String paymentUid) {
+        return refundRepository.findByPaymentPaymentUid(paymentUid)
+                .orElseThrow(() -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND));
     }
 }
