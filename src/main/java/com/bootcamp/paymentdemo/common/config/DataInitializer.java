@@ -3,6 +3,7 @@ package com.bootcamp.paymentdemo.common.config;
 import com.bootcamp.paymentdemo.point.entity.MembershipGrade;
 import com.bootcamp.paymentdemo.point.entity.MembershipPolicy;
 import com.bootcamp.paymentdemo.point.repository.MembershipPolicyRepository;
+import com.bootcamp.paymentdemo.point.service.UserPointService;
 import com.bootcamp.paymentdemo.user.UserRepository;
 import com.bootcamp.paymentdemo.user.UserService;
 
@@ -23,10 +24,14 @@ import java.util.List;
 public class DataInitializer implements ApplicationRunner {
 
     private final UserService userService;
+
+    private final UserPointService userPointService;
+
     // 민교가 수정함
     // 이메일 중복 여부 확인을 위해 UserRepository 직접 주입
     // → UserService에 existsByEmail 메서드가 없어 Repository에서 findByEmail로 체크
     private final UserRepository userRepository;
+
     private final MembershipPolicyRepository membershipPolicyRepository;
 
     @Override
@@ -35,7 +40,6 @@ public class DataInitializer implements ApplicationRunner {
         String name = "권지원";
         String email = "admin@test.com";
         String password = "admin";
-
 
         // 민교가 수정함
         // 기존: 앱 시작 시 무조건 INSERT → DB에 이미 존재하면 unique 제약 위반으로 앱 실행 실패
@@ -49,6 +53,9 @@ public class DataInitializer implements ApplicationRunner {
                             .password(password)
                     .build());
         }
+
+        // 사용할 수 있는 포인트를 시작할 때 지급하는 로직을 추가했습니다.
+        userPointService.grantPoint(1L, 50000);
 
 
         // MembershipPolicy 초기 데이터 삽입

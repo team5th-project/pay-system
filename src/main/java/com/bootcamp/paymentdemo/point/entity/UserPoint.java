@@ -43,6 +43,7 @@ public class UserPoint extends BaseEntity {
         return totalPoint - usedPoint - heldPoint;
     }
 
+    // 결제 시 포인트 가점유
     public void hold(int amount) {
         if (amount <=0) {
             throw new ServiceException(ErrorCode.INVALID_POINT_AMOUNT);
@@ -71,15 +72,7 @@ public class UserPoint extends BaseEntity {
         this.usedPoint += amount;
     }
 
-    // 포인트 차감
-    public void deductPoint(int amount) {
-        if (amount <= 0 || this.usedPoint < amount || this.totalPoint < amount) {
-            throw new ServiceException(ErrorCode.INVALID_POINT_AMOUNT);
-        }
-        this.totalPoint -= amount;
-        this.usedPoint -= amount;
-    }
-
+    // 포인트 소멸(만료)
     public void expire(int amount) {
         if (amount <= 0 || getAvailablePoint() < amount) {
             throw new ServiceException(ErrorCode.INVALID_POINT_AMOUNT);
@@ -97,6 +90,14 @@ public class UserPoint extends BaseEntity {
         this.totalPoint += amount;
     }
 
-
-
+    // 포인트 복구
+    // 환불 시 사용한 확정된 포인트를 다시 사용 가능 상태로
+    // usedPoint만 줄이면 됨.
+    // 예시: totalPoint=1000, usedPoint=500 -> 환불 후 totalPoint=1000, usedPoint=0
+    public void restoreUsedPoint(int amount) {
+        if (amount <= 0 || this.usedPoint < amount) {
+            throw new ServiceException(ErrorCode.INVALID_POINT_AMOUNT);
+        }
+        this.usedPoint -= amount;
+    }
 }
