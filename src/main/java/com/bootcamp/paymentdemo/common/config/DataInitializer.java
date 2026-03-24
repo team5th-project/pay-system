@@ -41,7 +41,6 @@ public class DataInitializer implements ApplicationRunner {
         String email = "admin@test.com";
         String password = "admin";
 
-
         // 민교가 수정함
         // 기존: 앱 시작 시 무조건 INSERT → DB에 이미 존재하면 unique 제약 위반으로 앱 실행 실패
         // 변경: 이미 존재하는 이메일이면 삽입 건너뜀 (멱등성 보장)
