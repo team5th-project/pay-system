@@ -68,6 +68,10 @@ public class PaymentWebhookProcessor {
             return; // 멱등 처리
         }
 
+        if (payment.getPaymentStatus() == PaymentStatus.CANCELLED) {
+            return;
+        }
+
         // ====================================
         /*
         TODO : 현민님 여기 밑에 환불쪽에서 필요한 부분 추가해서 사용하면 됩니다.
@@ -100,6 +104,11 @@ public class PaymentWebhookProcessor {
         if (payment.getPaymentStatus() == PaymentStatus.PENDING) {
             paymentService.failPendingPaymentFromWebhook(payment, portOnePayment);
             return;
+        }
+
+        if (payment.getPaymentStatus() == PaymentStatus.SUCCESS) {
+            return; // TODO 아마 현민님 여기다가 코드 추가해야 할 일이 있을 것 같습니다.
+            // 로직 검증해보고 수정해주세욥. 쓸 일 없으시면 그대로 두면 됩니다.
         }
         // ====================================
         /*

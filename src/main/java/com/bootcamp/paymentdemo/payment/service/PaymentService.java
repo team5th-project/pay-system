@@ -308,14 +308,15 @@ public class PaymentService {
         // 결제 취소 요청 메서드 호출 필요
         try {
             portOneService.cancelPayment(payment.getPaymentUid(), "-");
+            payment.cancelRequested();
+
         } catch (RuntimeException e) {
             log.warn("Webhook 검증 후 결제 취소 요청 실패 - paymentId :{} ",payment.getPaymentUid());
+            payment.cancelFailed();
+
             throw e;
         }
-        // 결제 취소 성공시 상태전이
-        payment.cancelled();
-        // 주문 상태 전이 할 것 없음
-        // 재고, 포인트 상태 전이 할 것 없음
+        // 취소 결과 조회가 되어야 함.. 웹훅으로 처리
 
     }
 
