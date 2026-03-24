@@ -20,10 +20,10 @@ public class WebhookEventController {
             @RequestHeader("webhook-id") String webhookId,
             @RequestHeader("webhook-signature") String signature,
             @RequestHeader("webhook-timestamp") String timestamp,
-           @Valid @RequestBody PortOneWebhookRequest request) {
-        webhookEventService.handleWebhook(webhookId, signature, timestamp, request);
+            @RequestBody String rawPayload) {
+        webhookEventService.handleWebhook(webhookId, signature, timestamp, rawPayload);
 
-        log.info("PortOne 웹훅 수신 - 데이터 : {}", request);
+        log.info("PortOne 웹훅 수신 - 데이터 : {}", rawPayload);
         return ResponseEntity.ok().build();
     }
 }
