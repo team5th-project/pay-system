@@ -1,29 +1,68 @@
 package com.bootcamp.paymentdemo.payment.service;
 
-import com.bootcamp.paymentdemo.common.config.PortOneProperties;
 import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.PortOneException;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
 import com.bootcamp.paymentdemo.payment.dto.response.PortOnePaymentDto;
 import com.bootcamp.paymentdemo.payment.dto.response.PortOneResponse;
+import com.bootcamp.paymentdemo.refund.dto.request.PortOneCancelRequest;
+import com.bootcamp.paymentdemo.refund.dto.response.PortOneCancelResponse;
+import com.bootcamp.paymentdemo.refund.dto.response.PortOneCancellationDto;
+import com.bootcamp.paymentdemo.refund.dto.response.PortOneErrorResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class PortOneService {
     private final RestClient portOneRestClient;
+    private final ObjectMapper objectMapper;
 
-    // TODO :
-    public  void cancelPayment(String paymentUid) {
+    public PortOneCancellationDto cancelPayment(String paymentUid, String reason) {
+        try {
+            PortOneCancelRequest request = PortOneCancelRequest.of(reason);
 
+            PortOneCancelResponse response = portOneRestClient.post()
+                    .uri("/payments/{paymentUid}/cancel", paymentUid)
+                    .body(request)
+                    .retrieve()
+                    .body(PortOneCancelResponse.class);
+
+            if (response == null) {
+                log.error("PortOne cancel response is null. paymentUid={}", paymentUid);
+                throw new ServiceException(ErrorCode.REFUND_FAILED);
+            }
+
+            PortOneCancellationDto cancellation = response.cancellation();
+
+            if (cancellation == null || cancellation.status() == null) {
+                log.error("PortOne cancellation response is invalid. paymentUid={}", paymentUid);
+                throw new ServiceException(ErrorCode.REFUND_FAILED);
+            }
+
+            return cancellation;
+
+        } catch (ServiceException e) {
+            throw e;
+
+        } catch (RestClientResponseException e) {
+            log.error("PortOne cancel failed. paymentUid={}, status={}, responseBody={}",
+                    paymentUid, e.getStatusCode(), e.getResponseBodyAsString(), e);
+            throw mapPortOneCancelError(e);
+
+        } catch (RestClientException e) {
+            log.error("PortOne cancel communication failed. paymentUid={}", paymentUid, e);
+            throw new ServiceException(ErrorCode.PORTONE_COMMUNICATION_ERROR);
+        }
     }
 
-    public PortOnePaymentDto getPayment(String paymentUid) throws RuntimeException{
+    public PortOnePaymentDto getPayment(String paymentUid){
         try {
             PortOneResponse portOneResponse = portOneRestClient.get()
                     .uri("/payments/{paymentUid}", paymentUid) // RestClientConfig에 설정해놓은 baseUrl 뒤에 붙을 경로
@@ -67,6 +106,52 @@ public class PortOneService {
         } catch (RestClientException | ServiceException  e) { // 네트워크 및 기타 예외
             log.error("PortOne 통신 실패 - {}", e.getMessage());
             throw e;
+        }
+    }
+
+    private RuntimeException mapPortOneCancelError(RestClientResponseException e) {
+        PortOneErrorResponse error = parseErrorBody(e.getResponseBodyAsString());
+        String type = error != null ? error.type() : null;
+        int status = e.getStatusCode().value();
+
+        if (status == 400) {
+            return new PortOneException(ErrorCode.INVALID_PAYMENT_VALIDATION_REQUEST);
+        }
+
+        if (status == 401 || status == 403) {
+            return new PortOneException(ErrorCode.UNAUTHORIZED_PAYMENT_VALIDATION_REQUEST);
+        }
+
+        if (status == 404) {
+            return new PortOneException(ErrorCode.PORTONE_PAYMENT_NOT_FOUND);
+        }
+
+        if (status == 409) {
+            if ("PAYMENT_NOT_PAID".equalsIgnoreCase(type)) {
+                return new PortOneException(ErrorCode.INVALID_PAYMENT_STATUS);
+            }
+            if ("PAYMENT_ALREADY_CANCELLED".equalsIgnoreCase(type)) {
+                return new PortOneException(ErrorCode.INVALID_REFUND_STATUS);
+            }
+            return new PortOneException(ErrorCode.REFUND_FAILED);
+        }
+        if (e.getStatusCode().is5xxServerError()) {
+            return new ServiceException(ErrorCode.PORTONE_SERVER_ERROR);
+        }
+
+        return new PortOneException(ErrorCode.PORTONE_UNKNOWN_ERROR);
+    }
+
+    private PortOneErrorResponse parseErrorBody(String responseBody) {
+        if (responseBody == null || responseBody.isBlank()) {
+            return null;
+        }
+
+        try {
+            return objectMapper.readValue(responseBody, PortOneErrorResponse.class);
+        } catch (Exception e) {
+            log.warn("Failed to parse PortOne error body. responseBody={}", responseBody, e);
+            return null;
         }
     }
 }
