@@ -41,45 +41,10 @@
             <!-- Page numbers will be rendered here -->
         </div>
 
-        <!-- Cart Modal Overlay -->
-        <div id="cart-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px);">
-            <div class="cart-summary" style="background: var(--bg-primary); padding: 2rem; border-radius: var(--radius-lg); box-shadow: 0 10px 40px rgba(0,0,0,0.2); width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; position: relative;">
-                <button onclick="toggleCartModal()" style="position: absolute; top: 1.5rem; right: 1.5rem; background: none; border: none; font-size: 2rem; cursor: pointer; color: var(--text-secondary); line-height: 1;">&times;</button>
-                <h3 style="margin-bottom: 1.5rem; font-family: 'Jua', sans-serif; font-size: 1.8rem; color: var(--text-primary); border-bottom: 2px solid var(--primary); padding-bottom: 0.5rem; display: inline-block;">🛒 내 장바구니</h3>
-                <div id="cart-items" style="min-height: 100px;">
-                    <p style="color: var(--text-secondary); text-align: center; padding: 2rem 0;">장바구니가 비어 있습니다.</p>
-                </div>
-                
-                <div class="cart-total" style="display: flex; justify-content: space-between; font-size: 1.5rem; font-weight: 700; margin-top: 1.5rem; color: var(--primary-dark); border-top: 2px solid var(--border); padding-top: 1rem;">
-                    <span>총 주문 금액:</span>
-                    <span id="cart-total">₩0</span>
-                </div>
-
-                <!-- Point Usage -->
-                <div class="point-usage" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed var(--border);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                        <label for="use-points" style="font-weight: bold; font-family: 'Gowun Dodum', sans-serif; font-size: 1.1rem; color: var(--text-primary);">💎 포인트 사용 (현재 <span id="current-points">0</span>P)</label>
-                        <span style="font-size: 0.85rem; color: var(--text-secondary); background: var(--bg-tertiary); padding: 2px 8px; border-radius: 10px;">100P 단위</span>
-                    </div>
-                    <input type="number" id="use-points" class="form-input" style="width: 100%; margin-bottom: 1.5rem; font-size: 1.1rem; padding: 0.75rem;" 
-                           placeholder="사용할 포인트를 입력 (100 단위)" min="0" step="100" value="0">
-                </div>
-
-                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-                    <button class="btn btn-outline" onclick="toggleCartModal()" style="flex: 1; font-size: 1.1rem; padding: 1rem; font-family: 'Gowun Dodum', sans-serif;">
-                        닫기
-                    </button>
-                    <button class="btn btn-primary" onclick="createOrder()" style="flex: 2; font-size: 1.15rem; padding: 1rem; font-family: 'Jua', sans-serif;">
-                        📦 주문 결제하기
-                    </button>
-                </div>
-            </div>
-        </div>
-
         <script>
             let products = [];
             let productsCache = {};
-            const cart = {};
+            // globalCart is managed by layout.html
             
             let currentUser = null;
             let currentPage = 1;
@@ -210,7 +175,7 @@
                     
                     const defaultPic = 'https://via.placeholder.com/400x300?text=No+Image';
                     const picUrl = product.picture || defaultPic;
-                    const currentQty = cart[product.id] || 0;
+                    const currentQty = window.globalCart && window.globalCart[product.id] ? window.globalCart[product.id].quantity : 0;
 
                     return `
                         <div class="product-card" style="background: var(--bg-primary); padding: 1.25rem; border-radius: var(--radius-lg); border: 2px solid var(--border); box-shadow: 0 4px 10px var(--shadow); transition: all 0.2s; display: flex; flex-direction: column; overflow: hidden; height: 100%;">
@@ -230,9 +195,9 @@
                                 ${stockStatus}
                             </div>
                             <div class="quantity-control" style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border);">
-                                <button class="quantity-btn" onclick="updateQuantity('${product.id}', -1)" ${product.stock === 0 ? 'disabled' : ''} style="width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; background: var(--bg-tertiary); border: none; cursor: pointer; color: var(--text-primary); transition: background 0.2s;">-</button>
+                                <button class="quantity-btn" onclick="updateQuantityLocal('${product.id}', -1)" ${product.stock === 0 ? 'disabled' : ''} style="width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; background: var(--bg-tertiary); border: none; cursor: pointer; color: var(--text-primary); transition: background 0.2s;">-</button>
                                 <input type="number" class="quantity-input" id="qty-${product.id}" value="${currentQty}" min="0" max="${product.stock}" readonly style="width: 60px; text-align: center; border: none; font-size: 1.1rem; font-weight: bold; background: transparent; color: var(--text-primary);">
-                                <button class="quantity-btn" onclick="updateQuantity('${product.id}', 1)" ${product.stock === 0 ? 'disabled' : ''} style="width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; background: var(--primary); color: #fff; border: none; cursor: pointer; transition: background 0.2s;">+</button>
+                                <button class="quantity-btn" onclick="updateQuantityLocal('${product.id}', 1)" ${product.stock === 0 ? 'disabled' : ''} style="width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; background: var(--primary); color: #fff; border: none; cursor: pointer; transition: background 0.2s;">+</button>
                             </div>
                         </div>
                     `;
@@ -271,209 +236,10 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             };
 
-            window.updateQuantity = function(productId, delta) {
+            window.updateQuantityLocal = function(productId, delta) {
                 const product = productsCache[productId];
                 if (!product) return;
-
-                const input = document.getElementById(`qty-${productId}`);
-                let qty = (input ? parseInt(input.value) : (cart[productId] || 0)) + delta;
-
-                if (qty < 0) qty = 0;
-                if (qty > product.stock) {
-                    if (window.showNotification) {
-                        showNotification(`⚠️ 재고가 ${product.stock}개만 남았습니다`, 'warning');
-                    } else {
-                        alert(`재고가 ${product.stock}개만 남았습니다`);
-                    }
-                    qty = product.stock;
-                }
-
-                if (input) input.value = qty;
-                cart[productId] = qty;
-                updateCartSummary();
-                validatePoints();
-                
-                // Add bounce animation to navbar cart icon if increasing quantity
-                if (delta > 0) {
-                    const cartBtn = document.getElementById('nav-cart-btn');
-                    if (cartBtn) {
-                        cartBtn.classList.remove('cart-bounce');
-                        void cartBtn.offsetWidth; // trigger reflow to reset animation
-                        cartBtn.classList.add('cart-bounce');
-                    }
-                }
-            };
-
-            function updateCartSummary() {
-                const cartItemsDiv = document.getElementById('cart-items');
-                const cartTotalSpan = document.getElementById('cart-total');
-
-                let total = 0;
-                let html = '';
-                let itemCount = 0;
-
-                Object.keys(cart).forEach(productId => {
-                    const qty = cart[productId];
-                    if (qty > 0 && productsCache[productId]) {
-                        const product = productsCache[productId];
-                        const subtotal = product.price * qty;
-                        total += subtotal;
-                        itemCount++;
-                        html += `
-                            <div class="cart-item" style="padding: 1rem 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-                                <div style="display: flex; align-items: center; gap: 1rem;">
-                                    <img src="${product.picture || 'https://via.placeholder.com/50'}" alt="${product.name}" style="width: 50px; height: 50px; object-fit: contain; background: #fff; border-radius: 8px; border: 1px solid var(--border);">
-                                    <div>
-                                        <div style="font-weight: bold; font-size: 1.1rem; color: var(--text-primary);">${product.name}</div>
-                                        <div style="font-size: 0.9rem; color: var(--text-secondary);">₩${product.price.toLocaleString()} x ${qty}개</div>
-                                    </div>
-                                </div>
-                                <div style="font-weight: bold; font-size: 1.2rem; color: var(--primary-dark);">
-                                    ₩${subtotal.toLocaleString()}
-                                </div>
-                            </div>
-                        `;
-                    }
-                });
-
-                cartItemsDiv.innerHTML = itemCount > 0 
-                    ? html 
-                    : '<p style="color: var(--text-secondary); text-align: center; padding: 1rem 0;">장바구니가 비어 있습니다.</p>';
-                    
-                cartTotalSpan.textContent = `₩${total.toLocaleString()}`;
-
-                // Update headers navigation badge count
-                const navCartCount = document.getElementById('nav-cart-count');
-                if (navCartCount) {
-                    let totalQty = 0;
-                    Object.values(cart).forEach(q => totalQty += q);
-                    navCartCount.textContent = totalQty;
-                    navCartCount.style.transition = 'transform 0.2s';
-                    navCartCount.style.transform = 'scale(1.2)';
-                    setTimeout(() => navCartCount.style.transform = 'scale(1)', 200);
-                }
-            }
-
-            function validatePoints() {
-                const useP = document.getElementById('use-points');
-                if (!useP) return;
-                
-                let val = parseInt(useP.value) || 0;
-                let maxPoints = currentUser && currentUser.points !== undefined ? currentUser.points : 0;
-                
-                let cartTotal = 0;
-                Object.keys(cart).forEach(productId => {
-                    const qty = cart[productId];
-                    if (qty > 0 && productsCache[productId]) {
-                        cartTotal += productsCache[productId].price * qty;
-                    }
-                });
-
-                if (val < 0) val = 0;
-                
-                if (val > maxPoints) {
-                    val = Math.floor(maxPoints / 100) * 100;
-                    if (window.showNotification && maxPoints > 0) {
-                        showNotification(`포인트는 최대 ${val}P까지 사용 가능합니다.`, 'warning');
-                    }
-                }
-                
-                if (val > cartTotal) {
-                    val = Math.floor(cartTotal / 100) * 100;
-                }
-                
-                this.value = Math.floor(val / 100) * 100;
-            }
-
-            document.getElementById('use-points')?.addEventListener('change', function() {
-                let val = parseInt(this.value) || 0;
-                let maxPoints = currentUser && currentUser.points !== undefined ? currentUser.points : 0;
-                
-                let cartTotal = 0;
-                Object.keys(cart).forEach(productId => {
-                    const qty = cart[productId];
-                    if (qty > 0 && productsCache[productId]) {
-                        cartTotal += productsCache[productId].price * qty;
-                    }
-                });
-
-                if (val < 0) val = 0;
-                if (val > maxPoints) {
-                    val = Math.floor(maxPoints / 100) * 100;
-                    if (window.showNotification) showNotification(`포인트는 최대 ${maxPoints}P 범위 안에서 사용 가능합니다. (100단위 정렬)`, 'warning');
-                }
-                if (val > cartTotal) {
-                    val = Math.floor(cartTotal / 100) * 100;
-                }
-                
-                this.value = Math.floor(val / 100) * 100;
-            });
-
-            window.createOrder = async function() {
-                const items = [];
-
-                Object.keys(cart).forEach(productId => {
-                    const qty = cart[productId];
-                    if (qty > 0) {
-                        items.push({
-                            productId: productId,
-                            quantity: qty
-                        });
-                    }
-                });
-
-                if (items.length === 0) {
-                    if (window.showNotification) showNotification('⚠️ 장바구니가 비어있습니다.', 'warning');
-                    else alert('장바구니가 비어있습니다.');
-                    return;
-                }
-
-                if (!currentUser) {
-                    if (window.showNotification) showNotification('⚠️ 사용자 정보를 로딩 중이거나 로그인이 필요합니다.', 'warning');
-                    else alert('사용자 정보가 필요합니다.');
-                    return;
-                }
-
-                // 포인트 처리
-                const usePointsInput = document.getElementById('use-points');
-                const usedPoints = parseInt(usePointsInput.value) || 0;
-
-                const orderData = {
-                    items: items,
-                    usedPoint: usedPoints
-                };
-
-                try {
-                    const raw = await makeApiRequest('create-order', {
-                        body: orderData
-                    });
-
-                    const result = unwrapCommonResponse(raw);
-
-                    if (result && result.orderUid) {
-                        if (window.showNotification) showNotification('주문 생성 완료! 🛒', 'success');
-                        
-                        // 주문 완료 시 장바구니 모달 닫기
-                        toggleCartModal();
-                        
-                        setTimeout(() => {
-                            window.location.href = `/pages/orders`;
-                        }, 1000);
-                    } else {
-                        if (window.showNotification) showNotification('주문이 완료되었으나 orderUid를 확인할 수 없습니다.', 'warning');
-                        else alert('주문이 완료되었습니다.');
-                    }
-                } catch (error) {
-                    console.error('Failed to create order:', error);
-                    let errMessage = '주문 생성 실패';
-                    if (error.response && error.response.data && error.response.data.error) {
-                         errMessage += ': ' + error.response.data.error.message;
-                    } else if (error.message) {
-                         errMessage += ': ' + error.message;
-                    }
-                    if (window.showNotification) showNotification(errMessage, 'error');
-                    else alert(errMessage);
-                }
+                window.updateQuantity(productId, delta, product);
             };
 
             async function initHomeShop() {

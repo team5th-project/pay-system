@@ -1,0 +1,10 @@
+api:
+  base-url: https://ozmagical.store
+
+spring:
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:data-xxx.sql
+  jpa:
+    defer-datasource-initialization: true
