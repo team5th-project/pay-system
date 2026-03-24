@@ -40,7 +40,7 @@
         </div>
 
         <!-- 주문 상세 모달 -->
-        <div id="order-detail-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div id="order-detail-modal" onclick="if(event.target === this) closeOrderDetailModal()" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
             <div class="card" style="background: white; padding: 2rem; border-radius: 8px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                     <h2 style="margin: 0;">주문 상세 정보</h2>
@@ -297,7 +297,7 @@
                     throw new Error('결제 결과에 paymentId가 없습니다.');
                 }
 
-        
+                
 
                 // 결제창 성공 직후 서버 결제 검증 호출
                 const confirmRaw = await makeApiRequest('confirm-payment', {
