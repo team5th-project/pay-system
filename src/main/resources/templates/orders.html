@@ -39,8 +39,19 @@
             </div>
         </div>
 
-
-
+        <!-- 주문 상세 모달 -->
+        <div id="order-detail-modal" onclick="if(event.target === this) closeOrderDetailModal()" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+            <div class="card" style="background: white; padding: 2rem; border-radius: 8px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2 style="margin: 0;">주문 상세 정보</h2>
+                    <button onclick="closeOrderDetailModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+                </div>
+                <div id="order-detail-loading" style="text-align: center; padding: 2rem;">로딩 중...</div>
+                <div id="order-detail-content" style="display: none;">
+                    <!-- 상세 정보 표시 영역 -->
+                </div>
+            </div>
+        </div>
 
         <script>
             // 현재 사용자 정보
@@ -96,7 +107,7 @@
                     }
 
                     // orders.html에 필요한 API들
-                const requiredApis = ['list-orders', 'create-payment', 'confirm-payment', 'confirm-order', 'cancel-payment'];
+                const requiredApis = ['list-orders', 'get-order-detail', 'create-payment', 'confirm-payment', 'confirm-order', 'cancel-order', 'cancel-payment'];
                     const apiItems = [];
 
                     requiredApis.forEach(apiKey => {
@@ -211,31 +222,27 @@
                     const statusStyle = getStatusStyle(order.status);
 
                     // 포인트 정보 구성
-                    const usedPoints = Number(order.usedPoints || 0) || 0;
-                    const earnedPoints = Number(order.earnedPoints || 0) || 0;
+                    const usedPoint = Number(order.usedPoint || 0) || 0;
                     const totalAmountNum = Number(order.totalAmount || 0) || 0;
-                    const finalAmountNum = Number(order.finalAmount ?? order.totalAmount) || totalAmountNum;
+                    const finalAmountNum = totalAmountNum - usedPoint;
 
                     let pointsDisplay = '';
-                    if (usedPoints > 0 || earnedPoints > 0) {
-                        pointsDisplay = '<div style="font-size: 0.875rem;">';
-                        if (usedPoints > 0) {
-                            pointsDisplay += `<div style="color: var(--danger);">-${usedPoints.toLocaleString()}P</div>`;
-                        }
-                        if (earnedPoints > 0) {
-                            pointsDisplay += `<div style="color: var(--success);">+${earnedPoints.toLocaleString()}P</div>`;
-                        }
-                        pointsDisplay += '</div>';
+                    if (usedPoint > 0) {
+                        pointsDisplay = `<div style="font-size: 0.875rem; color: var(--danger);">- ${usedPoint.toLocaleString()}P</div>`;
                     } else {
                         pointsDisplay = '<span style="color: var(--text-secondary); font-size: 0.875rem;">-</span>';
                     }
 
                     tr.innerHTML = `
-                        <td style="padding: 0.75rem; font-weight: 600;">${order.orderNumber}</td>
+                        <td style="padding: 0.75rem; font-weight: 600;">
+                            <a href="#" onclick="openOrderDetailModal('${order.orderUid}'); return false;" style="color: var(--primary); text-decoration: underline;">
+                                ${order.orderNumber}
+                            </a>
+                        </td>
                         <td style="padding: 0.75rem; font-family: monospace; font-size: 0.875rem; color: var(--text-secondary);">${order.orderUid}</td>
                         <td style="padding: 0.75rem;">
                             <div style="font-weight: 600;">${totalAmountNum.toLocaleString()}원</div>
-                            ${usedPoints > 0 ? `<div style="font-size: 0.75rem; color: var(--text-secondary);">실결제: ${finalAmountNum.toLocaleString()}원</div>` : ''}
+                            ${usedPoint > 0 ? `<div style="font-size: 0.75rem; color: var(--text-secondary);">실결제: ${finalAmountNum.toLocaleString()}원</div>` : ''}
                         </td>
                         <td style="padding: 0.75rem;">
                             ${pointsDisplay}
@@ -290,8 +297,7 @@
                     throw new Error('결제 결과에 paymentId가 없습니다.');
                 }
 
-                // 결제 완료 후 모드 B에 자동 입력
-                document.getElementById('manual-payment-id').value = result.paymentId;
+                
 
                 // 결제창 성공 직후 서버 결제 검증 호출
                 const confirmRaw = await makeApiRequest('confirm-payment', {
@@ -330,9 +336,9 @@
             }
 
             if (order.status === 'CONFIRMED') {
-                return `<button class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="cancelOrderPayment('${order.orderUid}')">
-                            ❌ 결제취소
-                        </button>`;
+                return `<span style="display: inline-block; padding: 0.5rem 1rem; color: var(--success); font-weight: 600; font-size: 0.875rem;">
+                            ✅ 결제완료
+                        </span>`;
             }
 
             return `<span style="color: var(--text-secondary); font-size: 0.875rem;">-</span>`;
@@ -478,6 +484,116 @@
                 'FAILED': '결제 실패'
                 };
                 return texts[status] || status;
+            }
+
+            // 주문 상세 모달 열기
+            async function openOrderDetailModal(orderUid) {
+                document.getElementById('order-detail-modal').style.display = 'flex';
+                document.getElementById('order-detail-loading').style.display = 'block';
+                document.getElementById('order-detail-content').style.display = 'none';
+
+                try {
+                    const raw = await makeApiRequest('get-order-detail', { pathParams: orderUid });
+                    const data = unwrapCommonResponse(raw);
+                    
+                    if (!data) throw new Error('조회된 데이터가 없습니다.');
+                    
+                    const contentEl = document.getElementById('order-detail-content');
+                    
+                    // 주문 상품 목록 렌더링
+                    let itemsHtml = '';
+                    if (data.items && data.items.length > 0) {
+                        itemsHtml = `
+                            <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem; font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">주문 상품</h3>
+                            <table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem;">
+                                <thead>
+                                    <tr style="text-align: left; background: var(--bg-secondary);">
+                                        <th style="padding: 0.5rem; border-bottom: 1px solid var(--border);">상품명</th>
+                                        <th style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;">단가</th>
+                                        <th style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;">수량</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+                        data.items.forEach(item => {
+                            itemsHtml += `
+                                <tr>
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid var(--border);">${item.productName || item.productId}</td>
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;">${Number(item.price).toLocaleString()}원</td>
+                                    <td style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;">${item.quantity}개</td>
+                                </tr>
+                            `;
+                        });
+                        itemsHtml += `</tbody></table>`;
+                    }
+                    
+                    const paymentInfo = data.paymentUid ? `<strong>결제 UID:</strong> ${data.paymentUid}<br>` : '';
+                    
+                    let actionHtml = '';
+                    if (!data.paymentUid) {
+                        actionHtml = `<div style="text-align: right; margin-top: 1rem;"><button class="btn btn-warning" onclick="cancelOrderFromModal('${data.orderUid}')">주문취소</button></div>`;
+                    } else if (data.paymentUid) {
+                        actionHtml = `<div style="text-align: right; margin-top: 1rem;"><button class="btn btn-danger" onclick="cancelPaymentFromModal('${data.paymentUid}')">결제취소</button></div>`;
+                    }
+                    
+                    contentEl.innerHTML = `
+                        <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 4px; margin-bottom: 1rem; line-height: 1.6;">
+                            <strong>주문 번호:</strong> ${data.orderNumber}<br>
+                            <strong>주문 UID:</strong> ${data.orderUid}<br>
+                            <strong>상태:</strong> <span style="display: inline-block; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.875rem; font-weight: 500; ${getStatusStyle(data.status)}">${getStatusText(data.status)}</span><br>
+                            <strong>주문 일시:</strong> ${new Date(data.createdAt).toLocaleString()}<br>
+                            ${paymentInfo}
+                        </div>
+                        ${itemsHtml}
+                        <div style="text-align: right; font-size: 1.1rem; margin-top: 1rem; padding-top: 1rem; border-top: 2px solid var(--border);">
+                            <strong>총 주문 금액:</strong> ${Number(data.totalAmount).toLocaleString()}원
+                        </div>
+                        ${actionHtml}
+                    `;
+                    
+                    document.getElementById('order-detail-loading').style.display = 'none';
+                    contentEl.style.display = 'block';
+                    
+                } catch (error) {
+                    console.error('Failed to load order details:', error);
+                    document.getElementById('order-detail-loading').innerHTML = '<span style="color: var(--danger);">주문 상세 정보를 불러오는데 실패했습니다.</span>';
+                }
+            }
+            
+            // 주문 상세 모달 닫기
+            function closeOrderDetailModal() {
+                document.getElementById('order-detail-modal').style.display = 'none';
+            }
+
+            // 모달 내 주문 취소
+            async function cancelOrderFromModal(orderUid) {
+                if (!confirm('정말 이 주문을 취소하시겠습니까?')) return;
+                try {
+                    const raw = await makeApiRequest('cancel-order', { pathParams: orderUid });
+                    showNotification('주문 취소 성공!', 'success');
+                    closeOrderDetailModal();
+                    await loadOrders();
+                } catch (error) {
+                    console.error('Failed to cancel order:', error);
+                    showNotification('주문 취소 실패', 'error');
+                }
+            }
+            
+            // 모달 내 결제 취소
+            async function cancelPaymentFromModal(paymentUid) {
+                if (!confirm('정말 이 결제를 취소하시겠습니까?')) return;
+                try {
+                    const raw = await makeApiRequest('cancel-payment', {
+                        pathParams: paymentUid,
+                        body: { reason: 'Customer request' }
+                    });
+                    showNotification('결제 취소 성공!', 'success');
+                    closeOrderDetailModal();
+                    await loadOrders();
+                } catch (error) {
+                    console.error('Failed to cancel payment:', error);
+                    showNotification('결제 취소 실패', 'error');
+                }
             }
         </script>
     </div>
