@@ -50,29 +50,29 @@ public class SecurityConfig {
 
                 // 요청 권한 설정
                 .authorizeHttpRequests(authorize -> authorize
-                        // 정적 리소스 (css, js, images 등) 허용
-                        .requestMatchers(toStaticResources().atCommonLocations()).permitAll()
-                        // H2 Console 허용
-                        .requestMatchers(toH2Console()).permitAll()
+                                // 정적 리소스 (css, js, images 등) 허용
+                                .requestMatchers(toStaticResources().atCommonLocations()).permitAll()
+                                // H2 Console 허용
+                                .requestMatchers(toH2Console()).permitAll()
 
-                        // 템플릿 페이지 렌더링 허용 (html 파일)
-                        .requestMatchers(HttpMethod.GET, "/").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/pages/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/signup").permitAll()
+                                // 템플릿 페이지 렌더링 허용 (html 파일)
+                                .requestMatchers(HttpMethod.GET, "/").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/pages/**").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/signup").permitAll()
 
-                        // 예상치 못한 오류 등이 발생했는데 LOGIN_ERROR 가 뜨지 않도록 함
-                        .requestMatchers(HttpMethod.GET, "/error").permitAll()
+                                // 예상치 못한 오류 등이 발생했는데 LOGIN_ERROR 가 뜨지 않도록 함
+                                .requestMatchers(HttpMethod.GET, "/error").permitAll()
 
-                        // Public API 엔드포인트 허용
-                        .requestMatchers("/api/public/**").permitAll()
-
-                        // 나머지 전부 인증 필요
-                        .requestMatchers("/api/**").authenticated()
-                        .anyRequest().authenticated()
+                                // Public API 엔드포인트 허용
+                                .requestMatchers("/api/public/**").permitAll()
+                                .requestMatchers("/api/webhooks/portone").permitAll()
+                                // 나머지 전부 인증 필요
+                                .requestMatchers("/api/**").authenticated()
+                                .anyRequest().authenticated()
                         // .anyRequest().authenticated()
                 ).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex
-                    ->ex.authenticationEntryPoint(customAuthenticationEntryPoint));
+                        -> ex.authenticationEntryPoint(customAuthenticationEntryPoint));
         return http.build();
     }
 
