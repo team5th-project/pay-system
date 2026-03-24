@@ -32,12 +32,12 @@ public class PaymentStatusTxService {
         payment.cancelled();
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void markRefunded(String paymentUid){
-        Payment payment = paymentRepository.findByPaymentUidForUpdate(paymentUid)
-                .orElseThrow(() -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND));
-        payment.refund();
-    }
+//    @Transactional(propagation = Propagation.REQUIRES_NEW)
+//    public void markRefunded(String paymentUid){
+//        Payment payment = paymentRepository.findByPaymentUidForUpdate(paymentUid)
+//                .orElseThrow(() -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND));
+//        payment.refund();
+//    }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void markCancelFailed(String paymentUid) {
