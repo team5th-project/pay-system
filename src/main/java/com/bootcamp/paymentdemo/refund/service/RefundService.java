@@ -4,9 +4,13 @@ import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
 import com.bootcamp.paymentdemo.order.entity.Order;
 import com.bootcamp.paymentdemo.order.enums.OrderStatus;
+import com.bootcamp.paymentdemo.order.service.OrderService;
 import com.bootcamp.paymentdemo.payment.entity.Payment;
 import com.bootcamp.paymentdemo.payment.enums.PaymentStatus;
 import com.bootcamp.paymentdemo.payment.service.PaymentService;
+import com.bootcamp.paymentdemo.point.entity.*;
+import com.bootcamp.paymentdemo.point.service.UserPointService;
+import com.bootcamp.paymentdemo.product.ProductService;
 import com.bootcamp.paymentdemo.refund.dto.request.CreateRefundRequest;
 import com.bootcamp.paymentdemo.refund.dto.response.CreateRefundResponse;
 import com.bootcamp.paymentdemo.refund.dto.response.GetRefundDetailResponse;
@@ -15,12 +19,16 @@ import com.bootcamp.paymentdemo.refund.entity.Refund;
 import com.bootcamp.paymentdemo.refund.enums.PortOneRefundStatus;
 import com.bootcamp.paymentdemo.refund.enums.RefundStatus;
 import com.bootcamp.paymentdemo.refund.repository.RefundRepository;
+import com.bootcamp.paymentdemo.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
+
+import static aQute.bnd.annotation.headers.Category.payment;
 
 @Transactional(readOnly = true)
 @Service
@@ -28,8 +36,9 @@ import java.time.LocalDateTime;
 public class RefundService {
     private final RefundRepository refundRepository;
     private final PaymentService paymentService;
-    private final ApplicationEventPublisher eventPublisher;
     private final PortOneRefundService portOneRefundService;
+    private final UserPointService userPointService;
+    private final ProductService productService;
 
     private void validateRefundable(Payment payment, Order order) {
         // 결제 상태 검증
@@ -95,21 +104,7 @@ public class RefundService {
                     portOneRefundService.cancelPayment(payment.getPaymentUid(), request.getReason());
             PortOneRefundStatus status = cancellationDto.status();
 
-            switch (status) {
-                case SUCCEEDED -> {
-                    refund.complete(); // 환불 완료시 상태 전이
-                    payment.refund(); // 결제상태
-                    order.refund(); // 주문상태
-                }
-                // TODO: 환불 완료 후 포인트 복구 / 재고 복구 / 멤버십 갱신 : RefundCompletedEvent 발행하여 리스너를 통해
-                case REQUESTED -> {
-                    // 요청 상태 유지
-                }
-                case FAILED, UNKNOWN -> {
-                    refund.fail();
-                    throw new ServiceException(ErrorCode.REFUND_FAILED);
-                }
-            }
+            processRefundCallback(refund.getId(), status);
         } catch (ServiceException e) {
             throw e;
         }
@@ -137,7 +132,45 @@ public class RefundService {
 
     public Refund getRefundByPaymentUid(String paymentUid) {
         return refundRepository.findByPaymentId(Long.parseLong(paymentUid)).orElseThrow(
-                ()-> new ServiceException(ErrorCode.REFUND_NOT_FOUND)
+                () -> new ServiceException(ErrorCode.REFUND_NOT_FOUND)
         );
+    }
+
+    @Transactional
+    public void handleRefundSucceeded(Refund refund, Payment payment, Order order) {
+        // 중복처리 방지
+        if (refund.getRefundStatus() == RefundStatus.COMPLETED) {
+            return;
+        }
+        if (payment.getPaymentStatus() != PaymentStatus.SUCCESS) {
+            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
+        }
+        if (order.getStatus() != OrderStatus.PAID) {
+            throw new ServiceException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+        // 후속 처리
+        userPointService.refundPoint(order.getUserId(), order.getId(), refund.getPayment().getFinalAmount());
+        productService.restoreStockByOrder(order);
+        // 상태전이
+        refund.complete();
+        payment.refund();
+        order.refund();
+    }
+
+    public void processRefundCallback(Long refundId, PortOneRefundStatus status) {
+        Refund refund = refundRepository.findById(refundId)
+                .orElseThrow(() -> new ServiceException(ErrorCode.REFUND_NOT_FOUND));
+        Payment payment = refund.getPayment();
+        Order order = payment.getOrder();
+
+        switch (status) {
+            case SUCCEEDED -> handleRefundSucceeded(refund, payment, order);
+            case REQUESTED -> { // 요청 상태는 일단 유지
+            }
+            case FAILED, UNKNOWN -> {
+                refund.fail();
+                throw new ServiceException(ErrorCode.REFUND_FAILED);
+            }
+        }
     }
 }
