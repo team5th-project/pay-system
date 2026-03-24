@@ -4,12 +4,14 @@ import com.bootcamp.paymentdemo.webhook.dto.PortOneWebhookRequest;
 import com.bootcamp.paymentdemo.webhook.service.WebhookEventService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/webhooks/portone")
 @RequiredArgsConstructor
+@Slf4j
 public class WebhookEventController {
     private final WebhookEventService webhookEventService;
 
@@ -20,6 +22,8 @@ public class WebhookEventController {
             @RequestHeader("webhook-timestamp") String timestamp,
            @Valid @RequestBody PortOneWebhookRequest request) {
         webhookEventService.handleWebhook(webhookId, signature, timestamp, request);
+
+        log.info("PortOne 웹훅 수신 - 데이터 : {}", request);
         return ResponseEntity.ok().build();
     }
 }

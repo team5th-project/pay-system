@@ -134,4 +134,10 @@ public class RefundService {
         }
         return GetRefundDetailResponse.from(refund);
     }
+
+    public Refund getRefundByPaymentUid(String paymentUid) {
+        return refundRepository.findByPaymentId(Long.parseLong(paymentUid)).orElseThrow(
+                ()-> new ServiceException(ErrorCode.REFUND_NOT_FOUND)
+        );
+    }
 }
