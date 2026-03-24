@@ -4,6 +4,7 @@ import com.bootcamp.paymentdemo.common.BaseEntity;
 import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
 import com.bootcamp.paymentdemo.payment.entity.Payment;
+import com.bootcamp.paymentdemo.refund.enums.RefundFailureCode;
 import com.bootcamp.paymentdemo.refund.enums.RefundStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -35,6 +36,17 @@ public class Refund extends BaseEntity {
 
     // 환불 처리시각
     private LocalDateTime refundedAt;
+
+    @Enumerated(EnumType.STRING)
+    private RefundFailureCode failureCode;
+
+    @Column(length = 500)
+    private String failureReason;
+
+    @Column(nullable = false)
+    private int retryCount = 0;
+
+    private LocalDateTime lastFailedAt;
 
     @Builder
     private Refund(Payment payment,
@@ -88,5 +100,24 @@ public class Refund extends BaseEntity {
         this.reason = reason;
         this.refundStatus = RefundStatus.REQUESTED; // 요청 상태로 다시 변환
         this.refundedAt = null;
+    }
+
+    // 실패 시 스케줄러 재시도 메서드
+    public void markFailed(RefundFailureCode failureCode, String failureReason) {
+        this.refundStatus = RefundStatus.FAILED;
+        this.failureCode = failureCode;
+        this.failureReason = failureReason;
+        this.retryCount += 1;
+        this.lastFailedAt = LocalDateTime.now();
+    }
+    // 환불 재시도 가능여부 체크메서드
+    public boolean canRetry(int maxRetryCount) {
+        return this.refundStatus == RefundStatus.FAILED
+                && this.failureCode != null
+                && this.failureCode.isRetryable() // 재시도 가능한 종류인지 체크
+                && this.retryCount < maxRetryCount;
+    }
+    public void markRetryRequested() {
+        this.refundStatus = RefundStatus.REQUESTED;
     }
 }

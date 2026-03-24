@@ -17,6 +17,7 @@ import com.bootcamp.paymentdemo.refund.dto.response.GetRefundDetailResponse;
 import com.bootcamp.paymentdemo.refund.dto.response.PortOneCancellationDto;
 import com.bootcamp.paymentdemo.refund.entity.Refund;
 import com.bootcamp.paymentdemo.refund.enums.PortOneRefundStatus;
+import com.bootcamp.paymentdemo.refund.enums.RefundFailureCode;
 import com.bootcamp.paymentdemo.refund.enums.RefundStatus;
 import com.bootcamp.paymentdemo.refund.repository.RefundRepository;
 import com.bootcamp.paymentdemo.user.entity.User;
@@ -131,8 +132,8 @@ public class RefundService {
     }
 
     public Refund getRefundByPaymentUid(String paymentUid) {
-        return refundRepository.findByPaymentId(Long.parseLong(paymentUid)).orElseThrow(
-                () -> new ServiceException(ErrorCode.REFUND_NOT_FOUND)
+        return refundRepository.findByPaymentPaymentUid(paymentUid).orElseThrow(
+                () -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND)
         );
     }
 
@@ -173,4 +174,53 @@ public class RefundService {
             }
         }
     }
-}
+
+    public void retryFailedRefund(Long id) {
+
+        // 재시도 대상 환불 조회
+        Refund refund = refundRepository.findById(id)
+                .orElseThrow(() -> new ServiceException(ErrorCode.REFUND_NOT_FOUND));
+        // 재시도 가능한지 체크(상태, 실패코드, 횟수)
+        if (!refund.canRetry(3)) {
+            return;
+        }
+        // 포트원 호출직전 REQUESTED 상태변환
+        refund.markRetryRequested();
+
+        // 포트원 호출에 사용할 결제 정보 가져오기
+        Payment payment = refund.getPayment();
+
+        try { // 포트원 환불 API 다시 호출
+            PortOneCancellationDto cancellationDto =
+                    portOneRefundService.cancelPayment(payment.getPaymentUid(), refund.getReason());
+
+            // 포트원 응답에서 상태값 가져옴
+            PortOneRefundStatus status = cancellationDto.status();
+            // 기존 성공처리 로직 사용
+            processRefundCallback(refund.getId(), status);
+
+        } catch (ServiceException e) {
+            // 우리가 의도적으로 던진 예외(비즈니스나 포트원 에러 매핑)
+            RefundFailureCode failureCode = mapFailureCode(e.getErrorCode()); // Errorcode 기반으로 failureCode로 변환
+            // 실패 상태 + 실패코드 + 메시지 저장
+            refund.markFailed(failureCode, e.getMessage());
+        } catch (Exception e) {
+            // 그 외의 모든 예외
+            refund.markFailed(RefundFailureCode.PORTONE_COMMUNICATION_ERROR, e.getMessage());
+        }
+    }
+
+    // 공통에러 코드를 환불 도메인에서 사용하는 실패 코드로 변환
+    private RefundFailureCode mapFailureCode(ErrorCode errorCode) {
+        return switch (errorCode) {
+            case PORTONE_SERVER_ERROR -> RefundFailureCode.PORTONE_SERVER_ERROR;
+            case PORTONE_COMMUNICATION_ERROR -> RefundFailureCode.PORTONE_COMMUNICATION_ERROR;
+            case PORTONE_UNKNOWN_ERROR -> RefundFailureCode.PORTONE_UNKNOWN_ERROR;
+            case INVALID_PAYMENT_STATUS -> RefundFailureCode.INVALID_PAYMENT_STATUS;
+            case INVALID_REFUND_STATUS -> RefundFailureCode.INVALID_REFUND_STATUS;
+            case PORTONE_PAYMENT_NOT_FOUND -> RefundFailureCode.PORTONE_PAYMENT_NOT_FOUND;
+            case UNAUTHORIZED_PAYMENT_VALIDATION_REQUEST -> RefundFailureCode.UNAUTHORIZED_PAYMENT_VALIDATION_REQUEST;
+            default -> RefundFailureCode.PORTONE_UNKNOWN_ERROR;
+        };
+    }
+    }
