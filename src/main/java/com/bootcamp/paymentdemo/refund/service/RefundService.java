@@ -133,7 +133,7 @@ public class RefundService {
 
     public Refund getRefundByPaymentUid(String paymentUid) {
         return refundRepository.findByPaymentPaymentUid(paymentUid).orElseThrow(
-                () -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND)
+                () -> new ServiceException(ErrorCode.REFUND_NOT_FOUND)
         );
     }
 
