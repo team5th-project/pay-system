@@ -29,6 +29,7 @@ public class UserService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final BlacklistRepository blacklistRepository;
+    private final UserPointRepository userPointRepository;
 //    private final MembershipService membershipService;
 
     // 1. login
@@ -121,8 +122,10 @@ public class UserService {
     // 현재 로그인 한 사용자의 정보 출력
     public GetMyInfoResponse getMyInfo(Long userId) {
         User user = getUser(userId);
+        UserPoint userPoint = userPointRepository.findByUserId(user.getId());
+        int availablePoint = userPoint.getAvailablePoint();
 
-        return GetMyInfoResponse.of(user);
+        return GetMyInfoResponse.of(user, availablePoint);
 
     }
 
