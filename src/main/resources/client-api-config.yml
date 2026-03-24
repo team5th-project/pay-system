@@ -223,6 +223,39 @@ api:
               required: true
               description: 전체 페이지 수
 
+    get-order-detail:
+      url: /api/orders/{orderUid}
+      method: GET
+      description: 주문 단건 조회
+      pathParams:
+        - name: orderUid
+          description: 주문 UID
+      response:
+        body:
+          fields:
+            - name: orderUid
+              type: string
+              required: true
+            - name: orderNumber
+              type: string
+              required: true
+            - name: totalAmount
+              type: number
+              required: true
+            - name: status
+              type: string
+              required: true
+            - name: items
+              type: array
+              required: true
+              description: "주문 항목 [{ productId, productName, price, quantity }]"
+            - name: createdAt
+              type: string
+              required: true
+            - name: paymentUid
+              type: string
+              required: false
+
     # ========================================
     # 결제 (Payment)
     # ========================================
@@ -296,6 +329,17 @@ api:
               type: string
               required: true
               description: 주문 상태 (CONFIRMED)
+
+    cancel-order:
+      url: /api/orders/{orderUid}/cancel
+      method: PATCH
+      description: 주문 취소 (PENDING 상태 주문 취소)
+      pathParams:
+        - name: orderUid
+          description: 주문 UID
+      response:
+        body:
+          fields: []
 
     cancel-payment:
       url: /api/refunds/{paymentUid}

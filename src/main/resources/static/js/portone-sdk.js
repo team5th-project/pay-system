@@ -126,17 +126,7 @@ async function openPortOnePayment(paymentData) {
  */
 async function openPortOnePaymentWithPoints(paymentData) {
     try {
-        const portoneConfig = await initPortOne();
-
-        // 일반결제: KG 이니시스 채널 키 사용 (고정)
-        const channelKeys = portoneConfig.channelKeys || {};
-        const channelKey = channelKeys['kg-inicis'];
-
-        if (!channelKey) {
-            throw new Error('kg-inicis 채널키가 설정되지 않았습니다.');
-        }
-
-        // 포인트 검증
+        // 포인트 검증 (PortOne 초기화보다 먼저: 0원 전액이면 SDK·채널키 불필요)
         const pointsToUse = paymentData.pointsToUse || 0;
         if (pointsToUse < 0) {
             throw new Error('포인트는 0 이상이어야 합니다.');
@@ -144,11 +134,13 @@ async function openPortOnePaymentWithPoints(paymentData) {
 
         // 1단계: 서버에 결제 시작 요청 (PENDING 상태로 DB 저장, 포인트 포함)
         console.log('1단계: 서버에 결제 시작 요청 (포인트 포함)...');
+        const createBody = { totalAmount: paymentData.totalAmount };
+        if (pointsToUse > 0) {
+            createBody.pointToUse = pointsToUse;
+        }
         const createPaymentResult = await makeApiRequest('create-payment', {
             pathParams: paymentData.orderId,
-            body: {
-                totalAmount: paymentData.totalAmount
-            }
+            body: createBody
         });
 
         // 서버 응답 검증
@@ -170,6 +162,31 @@ async function openPortOnePaymentWithPoints(paymentData) {
         // 포인트 차감 후 최종 금액 계산
         const finalAmount = Math.max(0, paymentData.totalAmount - pointsToUse);
         console.log(`포인트 차감: ${paymentData.totalAmount}원 - ${pointsToUse}P = ${finalAmount}원`);
+
+        // PG 청구 금액이 0원이면 PortOne 결제창을 열지 않음 (포인트 전액 결제)
+        if (finalAmount === 0) {
+            console.log('2단계: 최종 금액 0원 — PortOne SDK 생략, 서버 확정만 진행');
+            updateRequestDisplay({
+                paymentId: serverPaymentId,
+                totalAmount: 0,
+                note: '포인트 전액 결제 — PG 미사용'
+            });
+            updateEndpointDisplay('SKIP', 'PortOne.requestPayment() 생략 (finalAmount=0)');
+            displaySuccess({
+                paymentId: serverPaymentId,
+                pointsUsed: pointsToUse,
+                message: '포인트 전액 결제. 서버에서 확정하세요.'
+            });
+            return { paymentId: serverPaymentId, txId: null };
+        }
+
+        const portoneConfig = await initPortOne();
+        const channelKeys = portoneConfig.channelKeys || {};
+        const channelKey = channelKeys['kg-inicis'];
+
+        if (!channelKey) {
+            throw new Error('kg-inicis 채널키가 설정되지 않았습니다.');
+        }
 
         // 2단계: PortOne 결제창 열기
         console.log('2단계: PortOne 결제창 열기...');

@@ -30,11 +30,11 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
-    // h2 database
+    // h2 database (로컬 개발용)
     implementation 'org.springframework.boot:spring-boot-h2console'
     runtimeOnly 'com.h2database:h2'
 
-    // MySQL database
+    // MySQL database (prod 환경)
     runtimeOnly 'com.mysql:mysql-connector-j'
 
     // Configuration Properties

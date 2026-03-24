@@ -79,7 +79,12 @@ public enum ErrorCode {
     //포인트
     INSUFFICIENT_POINT(HttpStatus.BAD_REQUEST, "PT001", "포인트 잔액이 부족합니다."),
     INVALID_POINT_AMOUNT(HttpStatus.BAD_REQUEST, "PT002", "포인트는 양수여야 합니다."),
-    ;
+
+    // 멤버십
+    MEMBERSHIP_POLICY_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "MS001", "멤버십 등급 정책을 찾을 수 없습니다."),
+    INVALID_MEMBERSHIP_GRADE(HttpStatus.BAD_REQUEST, "MS002", "유효하지 않은 멤버십 등급입니다."),
+    MEMBERSHIP_UPDATE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "MS003", "멤버십 등급 갱신에 실패했습니다.")
+;
     private final HttpStatus status;
     private final String code;
     private final String message;
