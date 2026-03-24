@@ -119,6 +119,8 @@ public class WebhookEventService {
             }
             // 여기까지 문제없으면 웹훅 처리 성공으로 변경
             webhookEvent.markProcessed();
+            log.info("[WEBHOOK_PROCESSED] webhookId={}, paymentUid={}, eventType={}, processedAt={}",
+                    webhookId, paymentUid, eventType, Instant.now());
 
         } catch (ServiceException e) {
             log.warn("웹훅 비즈니스 처리 실패 webhookId={}, paymentUid={}, eventType={}, reason={}",

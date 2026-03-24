@@ -1,8 +1,7 @@
 package com.bootcamp.paymentdemo.webhook.controller;
 
-import com.bootcamp.paymentdemo.webhook.dto.PortOneWebhookRequest;
+
 import com.bootcamp.paymentdemo.webhook.service.WebhookEventService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +20,7 @@ public class WebhookEventController {
             @RequestHeader("webhook-signature") String signature,
             @RequestHeader("webhook-timestamp") String timestamp,
             @RequestBody String rawPayload) {
+        log.info("id = {}, signature = {}, timestamp = {}", webhookId, signature, timestamp);
         webhookEventService.handleWebhook(webhookId, signature, timestamp, rawPayload);
 
         log.info("PortOne 웹훅 수신 - 데이터 : {}", rawPayload);
