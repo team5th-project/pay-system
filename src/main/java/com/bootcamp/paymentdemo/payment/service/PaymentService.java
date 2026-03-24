@@ -77,13 +77,6 @@ public class PaymentService {
         if (0< finalAmount && finalAmount < 1000) {
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_AMOUNT);
         }
-        // 사용하려는 포인트가 있을때에만 포인트 락 걸기
-        if (pointsToUse > 0) {
-
-            // 포인트 가점유. 포인트 쪽에서 포인트 사용 가능 여부 확인
-            // userId, orderId, point
-            userPointService.holdPoint(order.getUserId(), order.getId(), pointsToUse);
-        }
         // 결제 생성
         Payment payment = Payment.builder()
                 .paymentUid(createPaymentId())
@@ -94,6 +87,13 @@ public class PaymentService {
                 .expiresAt(LocalDateTime.now().plusMinutes(5))  // 스케쥴러에서 5분동안 결제가 안되면 failed 처리하기
                 .build();
 
+        // 사용하려는 포인트가 있을때에만 포인트 락 걸기
+        if (pointsToUse > 0) {
+
+            // 포인트 가점유. 포인트 쪽에서 포인트 사용 가능 여부 확인
+            // userId, orderId, point
+            userPointService.holdPoint(order.getUserId(), order.getId(), pointsToUse);
+        }
         paymentRepository.save(payment);
 
         return CreatePaymentResponse.from(payment);
@@ -113,14 +113,14 @@ public class PaymentService {
         );
 
         // Payment 상태 검증. 결제 대기 상태가 아니면 이미 처리 된 결제 요청으로 판단. 어떤 상태인지 모르니 실제 상태 반환.
-        if (!payment.getPaymentStatus().equals(PaymentStatus.PENDING)) {
+        if (PaymentStatus.PENDING != payment.getPaymentStatus()) {
             return ConfirmPaymentResponse.of(payment.getOrder().getOrderUid(), payment.getPaymentStatus());
         }
 
         // Order 상태 검증.
         // 결제 생성할때는 주문 상태가 pending 이었다가 결제 확정 요청 시에는 이미 다른 결제 시도/스케쥴러/웹훅에서 처리되어서 주문 성공 상태일 수 있으니 검증
         Order order = payment.getOrder();
-        if(!OrderStatus.PENDING.equals(order.getStatus())){
+        if(OrderStatus.PENDING != order.getStatus()){
             throw new ServiceException(ErrorCode.INVALID_ORDER_STATUS);
         }
 

@@ -27,26 +27,24 @@ public class PaymentVerificationService {   // 포트원 결제 조회 결과만
     // 포트원 조회 (재시도 포함 3회)
     public PaymentResult checkPayment(Payment payment) {
         String paymentUid = payment.getPaymentUid();
-        PaymentResult paymentResult;
         try {
             PortOnePaymentDto portOnePaymentDto = getPaymentWithRetry(payment.getPaymentUid());
-            paymentResult = getPaymentResult(payment, portOnePaymentDto);
-            return paymentResult;
+            return getPaymentResult(payment, portOnePaymentDto);
+
         }catch (InterruptedException e) { // 포트원 재조회 과정 중 작업 중단, 결제 실패 처리 후 웹훅 확인해서 결제 되었으면 취소 처리
             Thread.currentThread().interrupt();
             log.warn("PortOne confirm interrupted. paymentUid={}", paymentUid, e);
-            paymentResult = PaymentResult.FAIL;
+            return PaymentResult.FAIL;
         } catch (RestClientException e) {   // 네트워크 이슈로 결과 조회 불가, 결제 실패 처리 후 웹훅 확인해서 결제 되었으면 취소 처리
             log.warn("PortOne network error. paymentUid={}", paymentUid, e);
-            paymentResult = PaymentResult.FAIL;
+            return PaymentResult.FAIL;
         } catch (PortOneException e) { // 네트워크 이슈로 결과 조회 불가, 결제 실패 처리 후 웹훅 확인해서 결제 되었으면 취소 처리
             log.warn("PortOne error. paymentUid={}", paymentUid, e);
-            paymentResult = PaymentResult.FAIL;
+            return PaymentResult.FAIL;
         } catch (RuntimeException e) { // 상태 변경 없이 롤백, 서버 에러 응답, 나중에 운영 로그 확인,
             log.error("Unexpected confirmPayment error. paymentUid={}", paymentUid, e);
             throw e;
         }
-        return paymentResult;
     }
 
     public PortOnePaymentDto getPaymentWithRetry(String paymentUid) throws InterruptedException {

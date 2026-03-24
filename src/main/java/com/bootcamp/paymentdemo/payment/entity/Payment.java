@@ -108,6 +108,6 @@ public class Payment extends BaseEntity {
         if (this.paymentStatus != PaymentStatus.CANCEL_REQUESTED) {
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
         }
-        this.paymentStatus = PaymentStatus.CANCELLED;
+        this.paymentStatus = PaymentStatus.CANCEL_FAILED;
     }
 }
