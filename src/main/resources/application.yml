@@ -12,6 +12,13 @@ server:
   port: 8080
   servlet:
     context-path: /
+---
+# 배포 환경 (EC2 서버용)
+spring:
+  config:
+    activate:
+      on-profile: prod
+    import: optional:classpath:prod.yml
 
 # PortOne Configuration
 portone:
