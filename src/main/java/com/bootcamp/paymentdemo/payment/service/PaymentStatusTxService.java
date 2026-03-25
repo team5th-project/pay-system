@@ -64,6 +64,13 @@ public class PaymentStatusTxService {
         log.info("order id={}", order.getId());
         log.info("order status={}", order.getStatus());
         log.info("order userId={}", order.getUserId());
+
+
+        if (payment.getPaymentStatus() == PaymentStatus.SUCCESS
+                || order.getStatus() == OrderStatus.PAID) {
+            return; // 이미 처리된 Paid 웹훅
+        }
+
         if (payment.getPaymentStatus() != PaymentStatus.PENDING) {
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
         }

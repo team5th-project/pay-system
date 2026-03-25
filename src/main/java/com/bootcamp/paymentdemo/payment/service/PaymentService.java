@@ -184,6 +184,40 @@ public class PaymentService {
 //
 //    }
 
+    /*
+    private void markPaymentSuccess(Payment payment) {
+    Order order = payment.getOrder();
+
+    // 이미 둘 다 성공 처리된 경우 -> 멱등 처리
+    if (payment.getPaymentStatus() == PaymentStatus.SUCCESS
+            && order.getStatus() == OrderStatus.PAID) {
+        log.info("이미 성공 처리된 결제입니다. paymentId={}, orderId={}",
+                payment.getId(), order.getId());
+        return;
+    }
+
+    // 결제가 아직 성공 전이면 성공 처리
+    if (payment.getPaymentStatus() == PaymentStatus.PENDING) {
+        payment.success();
+    }
+
+    // 주문이 아직 결제완료 전이면 상태 변경
+    if (order.getStatus() == OrderStatus.PENDING) {
+        order.markAsPaid();
+    }
+
+    // 여기 아래는 "최초 성공 흐름에서만" 타야 더 안전하지만
+    // 현재 구조 최소 수정 기준으로는 우선 유지
+    productService.decreaseStockByOrder(order);
+
+    if (payment.getPointToUse() > 0) {
+        userPointService.usePoint(order.getUserId(), order.getId(), payment.getPointToUse());
+    }
+
+    log.info("결제 성공 처리 완료. paymentId={}, orderId={}", payment.getId(), order.getId());
+}
+     */
+
 
     // FAIL 처리
     private ConfirmPaymentResponse handleFail(Payment payment) {
