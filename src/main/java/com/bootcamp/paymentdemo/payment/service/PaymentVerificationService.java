@@ -3,19 +3,14 @@ package com.bootcamp.paymentdemo.payment.service;
 import com.bootcamp.paymentdemo.common.exception.ErrorCode;
 import com.bootcamp.paymentdemo.common.exception.PortOneException;
 import com.bootcamp.paymentdemo.common.exception.ServiceException;
-import com.bootcamp.paymentdemo.payment.dto.response.ConfirmPaymentResponse;
 import com.bootcamp.paymentdemo.payment.dto.response.PortOnePaymentDto;
 import com.bootcamp.paymentdemo.payment.entity.Payment;
-import com.bootcamp.paymentdemo.payment.enums.PaymentCheckResult;
 import com.bootcamp.paymentdemo.payment.enums.PaymentResult;
-import com.bootcamp.paymentdemo.payment.enums.PaymentStatus;
 import com.bootcamp.paymentdemo.payment.enums.PortOnePaymentStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
-
-import static aQute.bnd.annotation.headers.Category.payment;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +21,8 @@ public class PaymentVerificationService {   // 포트원 결제 조회 결과만
 
     // 포트원 조회 (재시도 포함 3회)
     public PaymentResult checkPayment(Payment payment) {
+        System.out.println("PaymentVerificationService.checkPayment");
+
         String paymentUid = payment.getPaymentUid();
         try {
             PortOnePaymentDto portOnePaymentDto = getPaymentWithRetry(payment.getPaymentUid());
@@ -74,6 +71,7 @@ public class PaymentVerificationService {   // 포트원 결제 조회 결과만
         // 네트워크 에러로 조회 재시도에도 불구하고 조회 실패 시 ServiceException 던지기
         throw new ServiceException(ErrorCode.PORTONE_UNAVAILABLE);
     }
+
     // 포트원 조회 성공 시 상태 검증
     public PaymentResult getPaymentResult(Payment payment, PortOnePaymentDto portOnePaymentDto) {
         PortOnePaymentStatus status = portOnePaymentDto.status();
@@ -102,7 +100,6 @@ public class PaymentVerificationService {   // 포트원 결제 조회 결과만
         }
     }
     // 결제 금액 일치 검증
-
     private boolean isPaidAmountMatched(Payment payment, PortOnePaymentDto paymentDto) {
         return payment.getFinalAmount().equals(paymentDto.amount());
     }
