@@ -42,6 +42,7 @@ public class WebhookEventService {
     private final PaymentService paymentService;
     private final RefundService refundService;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final WebhookEventRecorder webhookEventRecorder;
 
     private static final long ALLOWED_TIMESTAMP_SKEW_SECONDS = 300L; // 허용할 시간 차이 = 300초(5분)
     private static final String HMAC_SHA256 = "HmacSHA256";
@@ -86,6 +87,13 @@ public class WebhookEventService {
                 rawPayload
         );
         webhookEventRepository.save(webhookEvent);
+
+        if (portOneEventType == PortOneEventType.UNKNOWN) {
+            log.info("지원하지 않는 이벤트 - {}", request.type());
+
+            webhookEventRecorder.markIgnored(webhookEvent, "지원하지 않는 이벤트");
+            return;
+        }
         try {
             // 3. paymentId로 포트원 실제 결제/취소 정보 재조회
             PortOnePaymentDto providerPayment = portOneService.getPayment(paymentUid);
@@ -112,7 +120,6 @@ public class WebhookEventService {
             } else if (portOneEventType == PortOneEventType.CANCELLED) {
                 // 환불 완료 처리 또는 취소 상태 반영
                 handleCancelledEvent(providerPayment, payment, order);
-                // TODO Transaction.Failed를 추가할까?
             } else {
                 //지금 처리 대상이 아닌 이벤트는 무시
                 log.info("웹훅 이벤트 무시됨 = {}, eventType={}", webhookId, eventType);
@@ -233,7 +240,7 @@ public class WebhookEventService {
     private String resolveFailureReason(Exception e) {
         String reason;
         if (e instanceof ServiceException se) {
-            reason = se.getErrorCode().getMessage();    // TODO : 여기에 에러가 안난다고..?
+            reason = se.getErrorCode().getMessage();
         } else {
             return "예상치 못한 서버 오류";
         }
@@ -293,7 +300,7 @@ public class WebhookEventService {
                 String version = parts[0].trim();
                 String providedSignature = parts[1].trim();
 
-                // 대칭 서명만 처리 (문서 기준 v1 = HMAC-SHA256) TODO : 여기서 말하는 V1이 포트원 v1 버전인가?
+                // 대칭 서명만 처리 (문서 기준 v1 = HMAC-SHA256)
                 if (!"v1".equals(version)) {
                     continue;
                 }

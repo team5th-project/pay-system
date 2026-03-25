@@ -1,39 +1,35 @@
 package com.bootcamp.paymentdemo.webhook.service;
 
-import com.bootcamp.paymentdemo.common.exception.ErrorCode;
-import com.bootcamp.paymentdemo.common.exception.ServiceException;
 import com.bootcamp.paymentdemo.payment.dto.response.PortOnePaymentDto;
 import com.bootcamp.paymentdemo.payment.entity.Payment;
 import com.bootcamp.paymentdemo.payment.enums.PaymentStatus;
 import com.bootcamp.paymentdemo.payment.enums.PortOnePaymentStatus;
 import com.bootcamp.paymentdemo.payment.service.PaymentService;
 import com.bootcamp.paymentdemo.payment.service.PortOneService;
-import com.bootcamp.paymentdemo.refund.service.RefundService;
 import com.bootcamp.paymentdemo.webhook.dto.PortOneWebhookRequest;
 import com.bootcamp.paymentdemo.webhook.enums.PortOneEventType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentWebhookProcessor {
 
     private final PortOneService portOneService;
     private final PaymentService paymentService;
-    private final RefundService refundService;
 
     @Transactional
-    public void process(PortOneWebhookRequest request) {
-        PortOneEventType eventType = PortOneEventType.from_(request.type())
-                .orElseThrow(() -> new ServiceException(ErrorCode.INVALID_WEBHOOK_EVENT));
+    public void process(PortOneWebhookRequest request, PortOneEventType portOneEventType) {
 
         String paymentUid = request.data().paymentId();
 
         Payment payment = paymentService.getPaymentByUid(paymentUid);
         PortOnePaymentDto portOnePayment = portOneService.getPayment(paymentUid);
 
-        switch (eventType) {
+        switch (portOneEventType) {
             case PAID -> processPaid(payment, portOnePayment);
             case CANCELLED -> processCancelled(payment, portOnePayment);
         }
@@ -42,9 +38,10 @@ public class PaymentWebhookProcessor {
     // 웹훅의 실제 결제가 완료되어 있는 경우
     private void processPaid(Payment payment, PortOnePaymentDto portOnePayment) {
         if (portOnePayment.status() != PortOnePaymentStatus.PAID) {
-            throw new ServiceException(ErrorCode.INVALID_WEBHOOK_STATUS);
+            log.warn("웹훅 상태 불일치 (PAID 아님) - paymentId={}, status={}",
+                    payment.getPaymentUid(), portOnePayment.status());
+            return;
         }
-
         // =============== 결제 쪽 사용 ============
 
         // 결제 성공처리 요청
@@ -60,9 +57,10 @@ public class PaymentWebhookProcessor {
         if (payment.getPaymentStatus() == PaymentStatus.FAILED
         || payment.getPaymentStatus() == PaymentStatus.CANCEL_REQUESTED
         || payment.getPaymentStatus() == PaymentStatus.CANCEL_FAILED) {
-            paymentService.requestCancel(payment, portOnePayment);
+            paymentService.requestCancelFromWebhook(payment, portOnePayment);
             return;
         }
+
 
         if (payment.getPaymentStatus() == PaymentStatus.SUCCESS) {
             return; // 멱등 처리
@@ -78,15 +76,18 @@ public class PaymentWebhookProcessor {
          */
         // ======= 환불 쪽 사용 ================
 
-        throw new ServiceException(ErrorCode.INVALID_WEBHOOK_STATUS);
-
+        log.warn("처리되지 않은 웹훅 상태 - paymentId={}, status={}",
+                payment.getPaymentUid(), payment.getPaymentStatus());
+        return;
     }
 
     // 웹훅의 실제 결제가 cancelled 인 경우
     private void processCancelled(Payment payment, PortOnePaymentDto portOnePayment) {
 
         if (portOnePayment.status() != PortOnePaymentStatus.CANCELLED) {
-            throw new ServiceException(ErrorCode.INVALID_WEBHOOK_STATUS);
+            log.warn("웹훅 상태 불일치 (CANCELLED 아님) - paymentId={}, status={}",
+                    payment.getPaymentUid(), portOnePayment.status());
+            return;
         }
 
         // =============== 결제 쪽 사용 ============

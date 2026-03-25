@@ -285,7 +285,7 @@ public class PaymentService {
     // 1. 실제 결제가 되었는데 네트워크 오류로 payment는 실패 처리 되어있는 경우
     // 2. 서버 내부 오류로 결제 취소 요청을 보냈는데, 취소가 되지 않은 경우
     @Transactional
-    public void requestCancel(Payment payment, PortOnePaymentDto portOnePaymentDto) {
+    public void requestCancelFromWebhook(Payment payment, PortOnePaymentDto portOnePaymentDto) {
             // 이미 취소된 경우 멱등 처리
         if (payment.getPaymentStatus() == PaymentStatus.CANCELLED) {
             return;
@@ -307,26 +307,66 @@ public class PaymentService {
         }
         // 결제 취소 요청 메서드 호출 필요
         try {
-            portOneService.cancelPayment(payment.getPaymentUid(), "-");
-            payment.cancelRequested();
+            portOneService.cancelPayment(payment.getPaymentUid(), "Failed To Process Payment in Server");
+            paymentStatusTxService.markCancelRequested(payment.getPaymentUid());
 
         } catch (RuntimeException e) {
             log.warn("Webhook 검증 후 결제 취소 요청 실패 - paymentId :{} ",payment.getPaymentUid());
-            payment.cancelFailed();
-
+            paymentStatusTxService.markCancelFailed(payment.getPaymentUid());
             throw e;
         }
-        // 취소 결과 조회가 되어야 함.. 웹훅으로 처리
 
     }
 
     @Transactional
-    public void completeCancelFromWebhook(Payment payment, PortOnePaymentDto portOnePayment) {
+    public void completeCancelFromWebhook(Payment payment, PortOnePaymentDto portOnePaymentDto) {
         // TODO - 내일 아침에 하기..
+        // 이미 취소 완료된 건에 대하여는 멱등성 보장
+        if (payment.getPaymentStatus() == PaymentStatus.CANCELLED) {
+            return;
+        }
+        // 2. 상태 검증
+        if (!(payment.getPaymentStatus() == PaymentStatus.CANCEL_REQUESTED
+                || payment.getPaymentStatus() == PaymentStatus.CANCEL_FAILED)) {
+            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
+        }
+
+        // 3. paymentUid 검증
+        if (!payment.getPaymentUid().equals(portOnePaymentDto.paymentId())) {
+            throw new ServiceException(ErrorCode.PAYMENT_AMOUNT_NOT_EQUALS);
+        }
+        // 4. 금액 검증
+        if (!payment.getFinalAmount().equals(portOnePaymentDto.amount())) {
+            throw new ServiceException(ErrorCode.INVALID_PAYMENT_AMOUNT);
+        }
+        payment.cancelled();
+        // 상태 전이 할 것 없음
     }
 
     @Transactional
-    public void failPendingPaymentFromWebhook(Payment payment, PortOnePaymentDto portOnePayment) {
-        // TODO - 내일 아침에 하기
+    public void failPendingPaymentFromWebhook(Payment payment, PortOnePaymentDto portOnePaymentDto) {
+        // 결제 확정 요청이 오지 않아 pending 상태로 남아있던 결제 건들에 대하여 웹훅으로 미결제 확인 후 결제 실패 처리
+        // 이미 결제 실패 처리된 건에 대하여는 멱등성 보장
+        if (payment.getPaymentStatus() == PaymentStatus.FAILED) {
+            return;
+        }
+        // 2. 상태 검증
+        if (payment.getPaymentStatus() != PaymentStatus.PENDING) {
+            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
+        }
+        // 3. paymentUid 검증
+        if (!payment.getPaymentUid().equals(portOnePaymentDto.paymentId())) {
+            throw new ServiceException(ErrorCode.PAYMENT_AMOUNT_NOT_EQUALS);
+        }
+        payment.failed();
+        Order order = payment.getOrder();
+
+        // 가점유 했던 포인트 가점유 해제
+        if (payment.getPointToUse() > 0) {
+            userPointService.cancelUsePoint(order.getUserId(), order.getId(), payment.getPointToUse());
+        }
     }
+
+    // TODO - 주문 금액에 따른 멤버십 등급 자동 업데이트 기능이 있나?
+
 }
