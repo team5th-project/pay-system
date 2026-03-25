@@ -15,7 +15,7 @@ import static com.bootcamp.paymentdemo.common.exception.ErrorCode.INVALID_WEBHOO
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class WebhookEventService2 { // TODO : 이름 변경
+public class WebhookEventService { // TODO : 이름 변경
 
     private final PortOneWebhookVerifier portOneWebhookVerifier;
     private final WebhookEventRecorder webhookEventRecorder;
