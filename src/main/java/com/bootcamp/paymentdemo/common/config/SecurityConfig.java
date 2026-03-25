@@ -79,7 +79,6 @@ public class SecurityConfig {
 
                             // Public API 엔드포인트 허용
                             .requestMatchers("/api/public/**").permitAll()
-                            .requestMatchers("/api/payments/**").permitAll()
                             .requestMatchers("/api/webhooks/portone").permitAll()
 
                             // 나머지 전부 인증 필요
