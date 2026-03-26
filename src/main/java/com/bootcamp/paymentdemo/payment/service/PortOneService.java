@@ -26,6 +26,7 @@ public class PortOneService {
 
     public PortOneCancellationDto cancelPayment(String paymentUid, String reason) {
         try {
+            System.out.println("PortOneService.cancelPayment");
             PortOneCancelRequest request = PortOneCancelRequest.of(reason);
 
             PortOneCancelResponse response = portOneRestClient.post()
