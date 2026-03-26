@@ -13,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,7 +30,6 @@ public class PendingPaymentRecoveryService {
     private final PaymentCancelService paymentCancelService;
     private final PaymentStatusTxService paymentStatusTxService;
 
-    @Transactional(readOnly = true)
     public void recoverExpiredPendingPayments() {
 
         List<Payment> targets = paymentRepository.findByPaymentStatusAndExpiresAtBeforeOrderByExpiresAtAsc(
@@ -47,16 +45,15 @@ public class PendingPaymentRecoveryService {
 
         for (Payment payment : targets) {
             try {
-                recoverOne(payment.getPaymentUid());
+                recoverOne(payment);
             } catch (Exception e) {
                 log.error("[PendingRecovery] failed. paymentUid={}", payment.getPaymentUid(), e);
             }
         }
     }
 
-    public void recoverOne(String paymentUid) {
-        Payment payment = paymentRepository.findByPaymentUid(paymentUid)
-                .orElseThrow(() -> new IllegalArgumentException("payment not found: " + paymentUid));
+    public void recoverOne(Payment payment) {
+        String paymentUid = payment.getPaymentUid();
 
         if (payment.getPaymentStatus() != PaymentStatus.PENDING) {
             log.info("[PendingRecovery] skip - not pending. paymentUid={}, status={}",

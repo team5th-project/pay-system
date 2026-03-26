@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 
 import java.time.LocalDateTime;
@@ -41,7 +40,6 @@ public class PaymentCancelRecoveryService {
     private final PaymentCancelService paymentCancelService;
     private final PaymentStatusTxService paymentStatusTxService;
 
-    @Transactional(readOnly = true)
     public void recoverCancelPayments() {
         List<Payment> targets =
                 paymentRepository.findByPaymentStatusInAndModifiedAtBeforeOrderByIdAsc(
@@ -57,17 +55,15 @@ public class PaymentCancelRecoveryService {
 
         for (Payment payment : targets) {
             try {
-                recoverOne(payment.getPaymentUid());
+                recoverOne(payment);
             } catch (Exception e) {
                 log.error("[CancelRecovery] recover failed. paymentUid={}", payment.getPaymentUid(), e);
             }
         }
     }
 
-    public void recoverOne(String paymentUid) {
-        Payment payment = paymentRepository.findByPaymentUid(paymentUid)
-                .orElseThrow(() -> new IllegalArgumentException("payment not found: " + paymentUid));
-
+    public void recoverOne(Payment payment) {
+        String paymentUid = payment.getPaymentUid();
         if (!isCancelRecoverTarget(payment)) {
             log.info("[CancelRecovery] skip - invalid status. paymentUid={}, status={}",
                     paymentUid, payment.getPaymentStatus());
