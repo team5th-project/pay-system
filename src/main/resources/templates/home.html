@@ -63,45 +63,15 @@
 
             async function loadCurrentUser() {
                 try {
-                    const raw = await makeApiRequest('get-current-user', {});
-                    const data = unwrapCommonResponse(raw);
-                    
-                    if (data && data.content !== undefined) {
-                        currentUser = data.content;
-                    } else {
-                        currentUser = data || {};
-                    }
-
-                    // Attempt to fetch actual point balance from Point API
-                    try {
-                        const token = typeof getToken === 'function' ? getToken() : null;
-                        const headers = { 'Content-Type': 'application/json' };
-                        if (token) {
-                            headers['Authorization'] = `Bearer ${token}`;
-                        }
-                        
-                        const ptRes = await fetch('/api/points/me', {
-                            method: 'GET',
-                            headers: headers,
-                            credentials: 'omit' // use token auth
-                        });
-                        
-                        if (ptRes.ok) {
-                            const ptRaw = await ptRes.json();
-                            const ptData = unwrapCommonResponse(ptRaw);
-                            if (ptData && ptData.currentPoint !== undefined) {
-                                currentUser.points = ptData.currentPoint;
-                            }
-                        }
-                    } catch (e) {
-                         console.log('Failed to fetch point balance from /api/points/me', e);
-                    }
-
-                    if (currentUser && currentUser.points !== undefined) {
-                        document.getElementById('current-points').textContent = currentUser.points.toLocaleString();
+                    const user = await window.authPromise;
+                    if (user) {
+                        currentUser = user;
+                        // availablePoint is String in DTO, ensure it's displayed correctly
+                        const pts = document.getElementById('current-points');
+                        if (pts) pts.textContent = Number(user.availablePoint || 0).toLocaleString();
                     }
                 } catch (error) {
-                    console.error('Failed to load user info:', error);
+                    console.error('Failed to load user info from shared promise:', error);
                     currentUser = null;
                 }
             }

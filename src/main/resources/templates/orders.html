@@ -141,12 +141,7 @@
             // 사용자 정보 로드
             async function loadCurrentUser() {
                 try {
-                    const raw = await makeApiRequest('get-current-user', {});
-                    currentUser = unwrapCommonResponse(raw);
-
-                    if (!validateApiResponse('get-current-user', currentUser)) {
-                        throw new Error('API 응답 형식이 올바르지 않습니다.');
-                    }
+                    currentUser = await window.authPromise;
                 } catch (error) {
                     console.error('Failed to load user info:', error);
                     currentUser = null;

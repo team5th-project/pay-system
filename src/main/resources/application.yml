@@ -12,15 +12,7 @@ server:
   port: 8080
   servlet:
     context-path: /
----
-# 배포 환경 (EC2 서버용)
-spring:
-  config:
-    activate:
-      on-profile: prod
-    import: optional:classpath:prod.yml
 
-# PortOne Configuration
 portone:
   api:
     base-url: https://api.portone.io
@@ -33,9 +25,14 @@ portone:
   webhook:
     secret: ${PORTONE_WEBHOOK_SECRET:your-webhook-secret}
 
-# JWT Configuration
 jwt:
   secret: ${JWT_SECRET:commercehub-secret-key-for-demo-please-change-this-in-production-environment}
   token-validity-in-seconds: ${JWT_VALIDITY:86400}  # 24 hours
-
+---
+# 배포 환경 (EC2 서버용)
+spring:
+  config:
+    activate:
+      on-profile: prod
+    import: optional:classpath:prod.yml
 

@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(~{::title}, ~{::scripts}, ~{::content})}">
+<head>
+    <title>마이페이지 - 오조의마법상점</title>
+    <scripts>
+        <style>
+            /* Mypage Styles */
+            .mypage-header {
+                text-align: center;
+                margin-bottom: var(--spacing-xl);
+            }
+            .mypage-header h1 {
+                font-size: 2.2rem;
+                color: var(--primary);
+                margin-bottom: 0.3rem;
+            }
+            .mypage-header p {
+                color: var(--text-secondary);
+                font-size: 1.05rem;
+            }
+
+            .mypage-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: var(--spacing-lg);
+                margin-bottom: var(--spacing-lg);
+            }
+
+            @media (max-width: 768px) {
+                .mypage-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            .mypage-card {
+                background: var(--bg-primary);
+                border: 1px solid var(--border);
+                border-radius: var(--radius-lg);
+                padding: var(--spacing-lg);
+                box-shadow: 0 4px 15px var(--shadow);
+                transition: transform 0.2s, box-shadow 0.2s;
+            }
+            .mypage-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 8px 25px var(--shadow-lg);
+                border-color: var(--secondary);
+            }
+
+            .mypage-card-title {
+                font-family: 'Jua', sans-serif;
+                font-size: 1.35rem;
+                color: var(--text-primary);
+                margin-bottom: var(--spacing-md);
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                border-bottom: 2px solid var(--border);
+                padding-bottom: 0.5rem;
+            }
+
+            /* Grade Policy Table */
+            .grade-table {
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 0;
+                overflow: hidden;
+                border-radius: var(--radius-md);
+                border: 1px solid var(--border);
+            }
+            .grade-table th,
+            .grade-table td {
+                padding: 0.75rem 1rem;
+                text-align: center;
+                font-size: 0.95rem;
+            }
+            .grade-table thead th {
+                background: linear-gradient(135deg, var(--primary-light), var(--primary));
+                color: white;
+                font-family: 'Jua', sans-serif;
+                font-weight: 600;
+                font-size: 1rem;
+            }
+            .grade-table tbody tr {
+                transition: background 0.15s;
+            }
+            .grade-table tbody tr:nth-child(even) {
+                background: var(--bg-secondary);
+            }
+            .grade-table tbody tr:hover {
+                background: var(--bg-tertiary);
+            }
+            .grade-table tbody td {
+                color: var(--text-primary);
+                font-weight: 500;
+            }
+            .grade-badge {
+                display: inline-block;
+                padding: 0.25rem 0.75rem;
+                border-radius: 20px;
+                font-weight: 700;
+                font-size: 0.85rem;
+            }
+            .grade-NORMAL { background: #e8f5e9; color: #2e7d32; }
+            .grade-VIP { background: #fff3e0; color: #e65100; }
+            .grade-VVIP { background: #fce4ec; color: #c62828; }
+
+            [data-theme="dark"] .grade-NORMAL { background: #1b5e20; color: #a5d6a7; }
+            [data-theme="dark"] .grade-VIP { background: #e65100; color: #ffcc80; }
+            [data-theme="dark"] .grade-VVIP { background: #b71c1c; color: #ef9a9a; }
+
+            /* Progress Bar */
+            .progress-section {
+                margin-top: var(--spacing-sm);
+            }
+            .progress-label {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 0.5rem;
+                font-size: 0.9rem;
+                color: var(--text-secondary);
+            }
+            .progress-bar-track {
+                width: 100%;
+                height: 22px;
+                background: var(--bg-tertiary);
+                border-radius: 12px;
+                overflow: hidden;
+                position: relative;
+                border: 1px solid var(--border);
+            }
+            .progress-bar-fill {
+                height: 100%;
+                background: linear-gradient(90deg, var(--primary-light), var(--primary));
+                border-radius: 12px;
+                transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+                position: relative;
+            }
+            .progress-bar-fill::after {
+                content: '';
+                position: absolute;
+                top: 0; left: 0; right: 0; bottom: 0;
+                background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+                animation: shimmer 2s ease-in-out infinite;
+            }
+            @keyframes shimmer {
+                0% { transform: translateX(-100%); }
+                100% { transform: translateX(100%); }
+            }
+            .progress-amount {
+                text-align: center;
+                margin-top: 0.75rem;
+                font-size: 1.6rem;
+                font-family: 'Jua', sans-serif;
+                color: var(--primary);
+            }
+            .progress-hint {
+                text-align: center;
+                margin-top: 0.4rem;
+                font-size: 0.95rem;
+                color: var(--text-secondary);
+            }
+            .current-grade-display {
+                text-align: center;
+                margin-bottom: var(--spacing-md);
+                font-size: 1.15rem;
+                font-weight: 600;
+                color: var(--text-primary);
+            }
+
+            /* User Info */
+            .info-list {
+                list-style: none;
+                padding: 0;
+            }
+            .info-list li {
+                display: flex;
+                justify-content: space-between;
+                padding: 0.75rem 0;
+                border-bottom: 1px dashed var(--border);
+                font-size: 1rem;
+            }
+            .info-list li:last-child {
+                border-bottom: none;
+            }
+            .info-label {
+                color: var(--text-secondary);
+                font-weight: 600;
+            }
+            .info-value {
+                color: var(--text-primary);
+                font-weight: 700;
+            }
+
+            /* Point History */
+            .point-list {
+                list-style: none;
+                padding: 0;
+                max-height: 380px;
+                overflow-y: auto;
+            }
+            .point-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.75rem 0.5rem;
+                border-bottom: 1px solid var(--border);
+                transition: background 0.15s;
+            }
+            .point-item:hover {
+                background: var(--bg-secondary);
+                border-radius: var(--radius-sm);
+            }
+            .point-item:last-child {
+                border-bottom: none;
+            }
+            .point-type {
+                display: inline-block;
+                padding: 0.2rem 0.6rem;
+                border-radius: 10px;
+                font-size: 0.78rem;
+                font-weight: 700;
+                min-width: 48px;
+                text-align: center;
+            }
+            .point-type-EARN { background: #e8f5e9; color: #2e7d32; }
+            .point-type-USE { background: #fce4ec; color: #c62828; }
+            .point-type-REFUND { background: #e3f2fd; color: #1565c0; }
+            .point-type-EXPIRE { background: #f3e5f5; color: #6a1b9a; }
+            .point-type-GRANT { background: #fff8e1; color: #f57f17; } /* Amber for Grant */
+
+            [data-theme="dark"] .point-type-EARN { background: #1b5e20; color: #a5d6a7; }
+            [data-theme="dark"] .point-type-USE { background: #b71c1c; color: #ef9a9a; }
+            [data-theme="dark"] .point-type-REFUND { background: #0d47a1; color: #90caf9; }
+            [data-theme="dark"] .point-type-EXPIRE { background: #4a148c; color: #ce93d8; }
+            [data-theme="dark"] .point-type-GRANT { background: #ff6f00; color: #ffe082; }
+
+            .point-amount {
+                font-weight: 700;
+                font-size: 1.05rem;
+            }
+            .point-amount.positive { color: var(--success); }
+            .point-amount.negative { color: var(--danger); }
+            .point-date {
+                font-size: 0.82rem;
+                color: var(--text-secondary);
+            }
+            .point-meta {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.25rem;
+            }
+
+            /* Pagination */
+            .pagination {
+                display: flex;
+                justify-content: center;
+                gap: 0.5rem;
+                margin-top: var(--spacing-md);
+                flex-wrap: wrap;
+            }
+            .page-btn {
+                padding: 0.4rem 0.85rem;
+                border: 1px solid var(--border);
+                border-radius: var(--radius-sm);
+                background: var(--bg-primary);
+                color: var(--text-primary);
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 0.9rem;
+                transition: all 0.2s;
+            }
+            .page-btn:hover:not(:disabled) {
+                background: var(--primary);
+                color: white;
+                border-color: var(--primary);
+            }
+            .page-btn.active {
+                background: var(--primary);
+                color: white;
+                border-color: var(--primary);
+            }
+            .page-btn:disabled {
+                opacity: 0.4;
+                cursor: not-allowed;
+            }
+
+            .empty-state {
+                text-align: center;
+                padding: 2rem 1rem;
+                color: var(--text-secondary);
+                font-size: 1.05rem;
+            }
+
+            .loading-spinner {
+                text-align: center;
+                padding: 2rem;
+                color: var(--text-secondary);
+                font-size: 1.1rem;
+            }
+
+            /* Full-width card */
+            .mypage-full {
+                margin-bottom: var(--spacing-lg);
+            }
+        </style>
+    </scripts>
+</head>
+<body>
+<content>
+    <div class="mypage-header">
+        <h1>🐾 마이페이지</h1>
+        <p>나의 활동과 등급 혜택을 한눈에 확인하세요</p>
+    </div>
+
+    <!-- Top row: User Info + Grade Progress -->
+    <div class="mypage-grid">
+        <!-- User Info Card -->
+        <div class="mypage-card" id="user-info-card">
+            <div class="mypage-card-title">👤 회원 정보</div>
+            <div id="user-info-content" class="loading-spinner">⏳ 로딩 중...</div>
+        </div>
+
+        <!-- Grade Progress Card -->
+        <div class="mypage-card" id="grade-progress-card">
+            <div class="mypage-card-title">📊 내 등급 현황</div>
+            <div id="grade-progress-content" class="loading-spinner">⏳ 로딩 중...</div>
+        </div>
+    </div>
+
+    <!-- Bottom row: Grade Policy + Point History -->
+    <div class="mypage-grid">
+        <!-- Grade Policy Card -->
+        <div class="mypage-card" id="grade-policy-card">
+            <div class="mypage-card-title">🏅 등급 정책</div>
+            <div id="grade-policy-content" class="loading-spinner">⏳ 로딩 중...</div>
+        </div>
+
+        <!-- Point History Card -->
+        <div class="mypage-card" id="point-history-card">
+            <div class="mypage-card-title">💎 포인트 내역</div>
+            <div id="point-history-content" class="loading-spinner">⏳ 로딩 중...</div>
+        </div>
+    </div>
+
+    <script>
+        /* ──────────── helpers ──────────── */
+        const gradeEmoji = { NORMAL: '🌱', VIP: '⭐', VVIP: '👑' };
+        const gradeLabel = { NORMAL: 'Normal', VIP: 'VIP', VVIP: 'VVIP' };
+        const typeLabel = { EARN: '적립', USE: '사용', REFUND: '환불', EXPIRE: '만료', GRANT: '증정' };
+
+        function fmt(n) { return Number(n).toLocaleString(); }
+
+        function fmtDate(iso) {
+            if (!iso) return '-';
+            const d = new Date(iso);
+            const pad = v => String(v).padStart(2, '0');
+            return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+
+        async function apiFetch(url) {
+            const token = typeof getToken === 'function' ? getToken() : localStorage.getItem('accessToken');
+            const res = await fetch(url, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + (token || '')
+                }
+            });
+            if (res.status === 401) {
+                window.location.href = '/pages/login';
+                return null;
+            }
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const raw = await res.json();
+            if (raw.data !== undefined) return raw.data;
+            return raw;
+        }
+
+        /* ──────────── data load ──────────── */
+        let userInfo = null;
+        let policies = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                [userInfo, policies] = await Promise.all([
+                    window.authPromise || apiFetch('/api/auth/me'),
+                    apiFetch('/api/points/grades')
+                ]);
+
+                if (userInfo) {
+                    renderUserInfo(userInfo);
+                    renderGradeProgress(userInfo, policies);
+                }
+                renderGradePolicies(policies);
+                loadPointHistory(0);
+            } catch (e) {
+                console.error('Mypage load error', e);
+                document.querySelectorAll('.loading-spinner').forEach(el => {
+                    el.innerHTML = '<div class="empty-state">데이터를 불러올 수 없습니다. 로그인 상태를 확인해주세요.</div>';
+                });
+            }
+        });
+
+        /* ──────────── Box 1: User Info ──────────── */
+        function renderUserInfo(u) {
+            const el = document.getElementById('user-info-content');
+            el.innerHTML = `
+                <ul class="info-list">
+                    <li><span class="info-label">📧 이메일</span><span class="info-value">${u.email || '-'}</span></li>
+                    <li><span class="info-label">👤 이름</span><span class="info-value">${u.name || '-'}</span></li>
+                    <li><span class="info-label">📱 전화번호</span><span class="info-value">${u.phone || '-'}</span></li>
+                    <li><span class="info-label">🏅 현재 등급</span><span class="info-value"><span class="grade-badge grade-${u.rank}">${gradeEmoji[u.rank] || ''} ${gradeLabel[u.rank] || u.rank}</span></span></li>
+                    <li><span class="info-label">💎 사용 가능 포인트</span><span class="info-value" style="color: var(--primary); font-size: 1.15rem;">${fmt(u.availablePoint)}P</span></li>
+                    <li><span class="info-label">💰 누적 구매액</span><span class="info-value">₩${fmt(u.totalAmount)}</span></li>
+                </ul>
+            `;
+        }
+
+        /* ──────────── Box 2: Grade Progress ──────────── */
+        function renderGradeProgress(u, pols) {
+            const el = document.getElementById('grade-progress-content');
+            const totalAmount = Number(u.totalAmount) || 0;
+            const currentRank = u.rank;
+
+            // sort policies by minAmount asc
+            const sorted = [...pols].sort((a, b) => a.minAmount - b.minAmount);
+            const currentIdx = sorted.findIndex(p => String(p.grade) === currentRank);
+            const currentPolicy = sorted[currentIdx];
+            const nextPolicy = currentIdx < sorted.length - 1 ? sorted[currentIdx + 1] : null;
+
+            let pct = 100;
+            let hintText = '🎉 최고 등급에 도달했습니다!';
+            let rangeMin = currentPolicy ? currentPolicy.minAmount : 0;
+            let rangeMax = nextPolicy ? nextPolicy.minAmount : totalAmount;
+
+            if (nextPolicy) {
+                const needed = nextPolicy.minAmount - totalAmount;
+                pct = Math.min(100, Math.max(0, ((totalAmount - rangeMin) / (rangeMax - rangeMin)) * 100));
+                hintText = `다음 등급 <strong>${gradeEmoji[nextPolicy.grade] || ''} ${gradeLabel[nextPolicy.grade] || nextPolicy.grade}</strong>까지 <strong style="color:var(--primary)">₩${fmt(needed)}</strong> 남았습니다`;
+            }
+
+            el.innerHTML = `
+                <div class="current-grade-display">
+                    현재 등급: <span class="grade-badge grade-${currentRank}">${gradeEmoji[currentRank] || ''} ${gradeLabel[currentRank] || currentRank}</span>
+                </div>
+                <div class="progress-section">
+                    <div class="progress-label">
+                        <span>₩${fmt(rangeMin)}</span>
+                        <span>₩${fmt(rangeMax)}</span>
+                    </div>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" style="width: 0%;" id="grade-progress-bar"></div>
+                    </div>
+                    <div class="progress-amount">₩${fmt(totalAmount)}</div>
+                    <div class="progress-hint">${hintText}</div>
+                </div>
+            `;
+
+            // Animate the progress bar
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    document.getElementById('grade-progress-bar').style.width = pct + '%';
+                }, 100);
+            });
+        }
+
+        /* ──────────── Box 3: Grade Policies ──────────── */
+        function renderGradePolicies(pols) {
+            const el = document.getElementById('grade-policy-content');
+            if (!pols || pols.length === 0) {
+                el.innerHTML = '<div class="empty-state">등급 정책 정보가 없습니다.</div>';
+                return;
+            }
+
+            const sorted = [...pols].sort((a, b) => a.minAmount - b.minAmount);
+            let rows = sorted.map(p => {
+                const max = p.maxAmount ? `₩${fmt(p.maxAmount)}` : '∞';
+                return `
+                    <tr>
+                        <td><span class="grade-badge grade-${p.grade}">${gradeEmoji[p.grade] || ''} ${gradeLabel[p.grade] || p.grade}</span></td>
+                        <td>₩${fmt(p.minAmount)} ~ ${max}</td>
+                        <td style="color: var(--primary); font-weight: 700; font-size: 1.1rem;">${p.pointRate}%</td>
+                    </tr>
+                `;
+            }).join('');
+
+            el.innerHTML = `
+                <table class="grade-table">
+                    <thead>
+                        <tr>
+                            <th>등급</th>
+                            <th>누적 구매액 기준</th>
+                            <th>포인트 적립률</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            `;
+        }
+
+        /* ──────────── Box 4: Point History ──────────── */
+        let currentPage = 0;
+        const pageSize = 10;
+
+        async function loadPointHistory(page) {
+            const el = document.getElementById('point-history-content');
+            el.innerHTML = '<div class="loading-spinner">⏳ 로딩 중...</div>';
+
+            try {
+                const data = await apiFetch(`/api/points?page=${page}&size=${pageSize}&sort=createdAt,desc`);
+                currentPage = page;
+
+                const items = data.content || [];
+                if (items.length === 0 && page === 0) {
+                    el.innerHTML = '<div class="empty-state">포인트 내역이 없습니다.</div>';
+                    return;
+                }
+
+                let listHtml = items.map(item => {
+                    const isPositive = item.type === 'EARN' || item.type === 'REFUND' || item.type === 'GRANT';
+                    const sign = isPositive ? '+' : '-';
+                    const amtClass = isPositive ? 'positive' : 'negative';
+                    return `
+                        <li class="point-item">
+                            <div class="point-meta">
+                                <span class="point-type point-type-${item.type}">${typeLabel[item.type] || item.type}</span>
+                                <span class="point-date">${fmtDate(item.createdAt)}</span>
+                            </div>
+                            <span class="point-amount ${amtClass}">${sign}${fmt(Math.abs(item.points))}P</span>
+                        </li>
+                    `;
+                }).join('');
+
+                const totalPages = data.totalPages || 1;
+                let paginationHtml = '';
+                if (totalPages > 1) {
+                    paginationHtml = '<div class="pagination">';
+                    paginationHtml += `<button class="page-btn" onclick="loadPointHistory(${page - 1})" ${page <= 0 ? 'disabled' : ''}>◀ 이전</button>`;
+
+                    // Show page numbers (max 5 around current)
+                    let startP = Math.max(0, page - 2);
+                    let endP = Math.min(totalPages - 1, page + 2);
+                    if (startP > 0) paginationHtml += `<button class="page-btn" onclick="loadPointHistory(0)">1</button>`;
+                    if (startP > 1) paginationHtml += `<span style="align-self:center;color:var(--text-secondary)">…</span>`;
+
+                    for (let i = startP; i <= endP; i++) {
+                        paginationHtml += `<button class="page-btn ${i === page ? 'active' : ''}" onclick="loadPointHistory(${i})">${i + 1}</button>`;
+                    }
+
+                    if (endP < totalPages - 2) paginationHtml += `<span style="align-self:center;color:var(--text-secondary)">…</span>`;
+                    if (endP < totalPages - 1) paginationHtml += `<button class="page-btn" onclick="loadPointHistory(${totalPages - 1})">${totalPages}</button>`;
+
+                    paginationHtml += `<button class="page-btn" onclick="loadPointHistory(${page + 1})" ${page >= totalPages - 1 ? 'disabled' : ''}>다음 ▶</button>`;
+                    paginationHtml += '</div>';
+                }
+
+                el.innerHTML = `
+                    <div style="font-size:0.88rem; color:var(--text-secondary); margin-bottom: 0.5rem;">
+                        총 ${fmt(data.totalElements || 0)}건
+                    </div>
+                    <ul class="point-list">${listHtml}</ul>
+                    ${paginationHtml}
+                `;
+            } catch (e) {
+                console.error('Point history error', e);
+                el.innerHTML = '<div class="empty-state">포인트 내역을 불러올 수 없습니다.</div>';
+            }
+        }
+    </script>
+</content>
+</body>
+</html>

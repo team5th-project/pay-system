@@ -32,7 +32,8 @@
                 <li><a href="/" class="nav-link">홈</a></li>
                 <li><a href="/pages/orders" class="nav-link">주문내역</a></li>
                 <li><a href="/pages/plans" class="nav-link">정기구독</a></li>
-                <li><a href="/pages/subscriptions" class="nav-link">구독관리</a></li>
+<!--                <li><a href="/pages/subscriptions" class="nav-link">구독관리</a></li>-->
+                <li><a href="/pages/mypage" class="nav-link">마이페이지</a></li>
             </ul>
             <div class="navbar-actions" id="user-navbar-section" style="display: flex; align-items: center; gap: 10px;">
                 <span id="nav-user-info" style="font-weight: bold; color: var(--text-primary); font-size: 0.95rem; display: none;"></span>
@@ -426,6 +427,34 @@
         };
     </script>
     <script>
+        window.authPromise = (async () => {
+            let token = typeof getToken === 'function' ? getToken() : localStorage.getItem('accessToken');
+            if (!token) return null;
+            try {
+                // api-handler가 있으면 makeApiRequest 사용, 아니면 fetch 사용
+                if (typeof makeApiRequest === 'function') {
+                    const raw = await makeApiRequest('get-current-user');
+                    let user = raw;
+                    if (raw.data && raw.data.content) user = raw.data.content;
+                    else if (raw.data) user = raw.data;
+                    return user;
+                } else {
+                    const res = await fetch('/api/auth/me', {
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+                    });
+                    if (!res.ok) return null;
+                    const raw = await res.json();
+                    let user = raw;
+                    if (raw.data && raw.data.content) user = raw.data.content;
+                    else if (raw.data) user = raw.data;
+                    return user;
+                }
+            } catch (e) {
+                console.error('Shared auth fetch failed', e);
+                return null;
+            }
+        })();
+
         document.addEventListener('DOMContentLoaded', async () => {
             // Set active navigation menu
             const currentPath = window.location.pathname;
@@ -442,38 +471,13 @@
             const navLoginBtn = document.getElementById('nav-login-btn');
             const navLogoutBtn = document.getElementById('nav-logout-btn');
 
-            let token = null;
-            if (typeof getToken === 'function') {
-                token = getToken();
-            } else {
-                token = localStorage.getItem('accessToken');
-            }
-
-            if (token) {
-                try {
-                    const res = await fetch('/api/auth/me', {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': 'Bearer ' + token
-                        }
-                    });
-                    if (res.ok) {
-                        const raw = await res.json();
-                        let user = raw;
-                        if (raw.data && raw.data.content) user = raw.data.content;
-                        else if (raw.data) user = raw.data;
-
-                        let displayName = user.nickname || user.email || '고객';
-                        navUserInfo.textContent = `반갑습니다, ${displayName}님! 🐈`;
-                        navUserInfo.style.display = 'inline-block';
-                        navLogoutBtn.style.display = 'inline-block';
-                    } else {
-                        throw new Error('Not logged in or token expired');
-                    }
-                } catch (e) {
-                    navLoginBtn.style.display = 'inline-block';
-                }
-            } else {
+            const user = await window.authPromise;
+            if (user) {
+                let displayName = user.name || user.email || '고객';
+                navUserInfo.innerHTML = `<a href="/pages/mypage" style="color: inherit; text-decoration: none; cursor: pointer;">반갑습니다, ${displayName}님! 🐈</a>`;
+                navUserInfo.style.display = 'inline-block';
+                navLogoutBtn.style.display = 'inline-block';
+            } else if (navLoginBtn) {
                 navLoginBtn.style.display = 'inline-block';
             }
         });
