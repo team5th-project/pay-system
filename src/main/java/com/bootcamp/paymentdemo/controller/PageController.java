@@ -38,6 +38,11 @@ public class PageController {
         return "subscriptions";
     }
 
+    @GetMapping("/mypage")
+    public String mypage() {
+        return "mypage";
+    }
+
     @GetMapping("/login")
     public String login() {
         return "login";

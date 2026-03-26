@@ -7,6 +7,47 @@
     <div class="content-area">
         <h1 style="font-size: 2rem; margin-bottom: 2rem;">📦 주문 관리</h1>
 
+        <style>
+            @keyframes order-list-cell-in {
+                from {
+                    opacity: 0;
+                    transform: translateY(8px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            #order-list-body tr.order-list-row td {
+                opacity: 0;
+                animation: order-list-cell-in 0.58s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+                animation-delay: var(--order-row-delay, 0s);
+            }
+            @media (prefers-reduced-motion: reduce) {
+                #order-list-body tr.order-list-row td {
+                    animation: none;
+                    opacity: 1;
+                    transform: none;
+                }
+            }
+
+            /* 본문(.page-transition)의 transform/filter 때문에 fixed가 컬럼에만 잡히는 문제 방지 → JS로 body로 이동 + 전체 덮기 */
+            .order-detail-modal-root {
+                position: fixed;
+                inset: 0;
+                width: 100vw;
+                min-height: 100vh;
+                min-height: 100dvh;
+                z-index: 9997; /* 네비·장바구니 모달(1000) 위, 전역 API 로더(9998) 아래 */
+                background: rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(2px);
+                -webkit-backdrop-filter: blur(2px);
+                justify-content: center;
+                align-items: center;
+                box-sizing: border-box;
+                margin: 0;
+            }
+        </style>
 
         <!-- 주문 목록 -->
         <div class="card">
@@ -20,7 +61,7 @@
                         <thead>
                         <tr style="border-bottom: 2px solid var(--border); text-align: left;">
                             <th style="padding: 0.75rem;">주문 번호</th>
-                            <th style="padding: 0.75rem;">주문 ID</th>
+                            <th style="padding: 0.75rem; display: none;">주문 ID</th>
                             <th style="padding: 0.75rem;">금액</th>
                             <th style="padding: 0.75rem;">포인트</th>
                             <th style="padding: 0.75rem;">상태</th>
@@ -40,7 +81,7 @@
         </div>
 
         <!-- 주문 상세 모달 -->
-        <div id="order-detail-modal" onclick="if(event.target === this) closeOrderDetailModal()" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div id="order-detail-modal" class="order-detail-modal-root" onclick="if(event.target === this) closeOrderDetailModal()" style="display: none;">
             <div class="card" style="background: white; padding: 2rem; border-radius: 8px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                     <h2 style="margin: 0;">주문 상세 정보</h2>
@@ -60,6 +101,12 @@
             let selectedOrderUid = null;
         // 세션 동안 주문별 결제 식별자 캐시 (결제 직후 취소 버튼 연계를 위해 사용)
         let orderPaymentUidMap = {};
+        const ORDERS_LIST_MIN_LOADING_MS = 450;
+        const ORDERS_STAGGER_START_DELAY_MS = 180;
+
+            function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
 
             function getSelectedOrderUidFromQuery() {
                 try {
@@ -129,6 +176,11 @@
 
             // 페이지 로드 시 초기화
             document.addEventListener('DOMContentLoaded', async () => {
+                const orderModal = document.getElementById('order-detail-modal');
+                if (orderModal && orderModal.parentNode !== document.body) {
+                    document.body.appendChild(orderModal);
+                }
+
                 // API 목록 동적 생성 (비동기)
                 populateApiList();
 
@@ -141,12 +193,7 @@
             // 사용자 정보 로드
             async function loadCurrentUser() {
                 try {
-                    const raw = await makeApiRequest('get-current-user', {});
-                    currentUser = unwrapCommonResponse(raw);
-
-                    if (!validateApiResponse('get-current-user', currentUser)) {
-                        throw new Error('API 응답 형식이 올바르지 않습니다.');
-                    }
+                    currentUser = await window.authPromise;
                 } catch (error) {
                     console.error('Failed to load user info:', error);
                     currentUser = null;
@@ -160,6 +207,7 @@
                 const emptyEl = document.getElementById('order-list-empty');
 
                 try {
+                    const startedAt = Date.now();
                     const raw = await makeApiRequest('list-orders', {});
                     const result = unwrapCommonResponse(raw);
 
@@ -180,6 +228,11 @@
                     }
 
                     orders = orderList;
+
+                    // 로딩 텍스트가 너무 순간적으로 깜빡이는 걸 방지 (UX) + 스태거가 보이게 약간 여유
+                    const baseRemaining = ORDERS_LIST_MIN_LOADING_MS - (Date.now() - startedAt);
+                    if (baseRemaining > 0) await sleep(baseRemaining);
+
                     loadingEl.style.display = 'none';
 
                     if (selectedOrderUid) {
@@ -195,6 +248,7 @@
                         emptyEl.style.display = 'block';
                     } else {
                         containerEl.style.display = 'block';
+                        if (ORDERS_STAGGER_START_DELAY_MS > 0) await sleep(ORDERS_STAGGER_START_DELAY_MS);
                         renderOrderList();
                     }
                 } catch (error) {
@@ -210,8 +264,10 @@
 
                 if (!Array.isArray(orders)) return;
 
-                orders.forEach(order => {
+                orders.forEach((order, rowIndex) => {
                     const tr = document.createElement('tr');
+                    tr.classList.add('order-list-row');
+                    tr.style.setProperty('--order-row-delay', `${rowIndex * 150}ms`);
                     tr.style.borderBottom = '1px solid var(--border)';
 
                     if (selectedOrderUid && order.orderUid === selectedOrderUid) {
@@ -239,7 +295,7 @@
                                 ${order.orderNumber}
                             </a>
                         </td>
-                        <td style="padding: 0.75rem; font-family: monospace; font-size: 0.875rem; color: var(--text-secondary);">${order.orderUid}</td>
+                        <td style="padding: 0.75rem; font-family: monospace; font-size: 0.875rem; color: var(--text-secondary); display: none;">${order.orderUid}</td>
                         <td style="padding: 0.75rem;">
                             <div style="font-weight: 600;">${totalAmountNum.toLocaleString()}원</div>
                             ${usedPoint > 0 ? `<div style="font-size: 0.75rem; color: var(--text-secondary);">실결제: ${finalAmountNum.toLocaleString()}원</div>` : ''}
@@ -301,7 +357,7 @@
                     throw new Error('결제 결과에 paymentId가 없습니다.');
                 }
 
-                
+
 
                 // 결제창 성공 직후 서버 결제 검증 호출
                 const confirmRaw = await makeApiRequest('confirm-payment', {
@@ -499,11 +555,11 @@
                 try {
                     const raw = await makeApiRequest('get-order-detail', { pathParams: orderUid });
                     const data = unwrapCommonResponse(raw);
-                    
+
                     if (!data) throw new Error('조회된 데이터가 없습니다.');
-                    
+
                     const contentEl = document.getElementById('order-detail-content');
-                    
+
                     // 주문 상품 목록 렌더링
                     let itemsHtml = '';
                     if (data.items && data.items.length > 0) {
@@ -530,16 +586,18 @@
                         });
                         itemsHtml += `</tbody></table>`;
                     }
-                    
+
                     const paymentInfo = data.paymentUid ? `<strong>결제 UID:</strong> ${data.paymentUid}<br>` : '';
-                    
+
                     let actionHtml = '';
-                    if (!data.paymentUid) {
+                    // 결제 완료(PAID) 이후에는 미결제 주문 취소(주문취소)를 노출하지 않음 — PENDING·미결제일 때만
+                    const canShowOrderCancel = data.status === 'PENDING' && !data.paymentUid;
+                    if (canShowOrderCancel) {
                         actionHtml = `<div style="text-align: right; margin-top: 1rem;"><button class="btn btn-warning" onclick="cancelOrderFromModal('${data.orderUid}')">주문취소</button></div>`;
                     } else if (data.paymentUid) {
                         actionHtml = `<div style="text-align: right; margin-top: 1rem;"><button class="btn btn-danger" onclick="cancelPaymentFromModal('${data.paymentUid}')">결제취소</button></div>`;
                     }
-                    
+
                     contentEl.innerHTML = `
                         <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 4px; margin-bottom: 1rem; line-height: 1.6;">
                             <strong>주문 번호:</strong> ${data.orderNumber}<br>
@@ -554,16 +612,16 @@
                         </div>
                         ${actionHtml}
                     `;
-                    
+
                     document.getElementById('order-detail-loading').style.display = 'none';
                     contentEl.style.display = 'block';
-                    
+
                 } catch (error) {
                     console.error('Failed to load order details:', error);
                     document.getElementById('order-detail-loading').innerHTML = '<span style="color: var(--danger);">주문 상세 정보를 불러오는데 실패했습니다.</span>';
                 }
             }
-            
+
             // 주문 상세 모달 닫기
             function closeOrderDetailModal() {
                 document.getElementById('order-detail-modal').style.display = 'none';
@@ -582,7 +640,7 @@
                     showNotification('주문 취소 실패', 'error');
                 }
             }
-            
+
             // 모달 내 결제 취소
             async function cancelPaymentFromModal(paymentUid) {
                 if (!confirm('정말 이 결제를 취소하시겠습니까?')) return;

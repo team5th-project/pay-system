@@ -50,6 +50,11 @@
             let currentPage = 1;
             let totalPages = 1;
             const pageSize = 6;
+            const HOME_SKELETON_MIN_MS = 650;
+
+            function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
             
             function unwrapCommonResponse(response) {
                 if (!response || typeof response !== 'object' || Array.isArray(response)) return response;
@@ -63,58 +68,49 @@
 
             async function loadCurrentUser() {
                 try {
-                    const raw = await makeApiRequest('get-current-user', {});
-                    const data = unwrapCommonResponse(raw);
-                    
-                    if (data && data.content !== undefined) {
-                        currentUser = data.content;
-                    } else {
-                        currentUser = data || {};
-                    }
-
-                    // Attempt to fetch actual point balance from Point API
-                    try {
-                        const token = typeof getToken === 'function' ? getToken() : null;
-                        const headers = { 'Content-Type': 'application/json' };
-                        if (token) {
-                            headers['Authorization'] = `Bearer ${token}`;
-                        }
-                        
-                        const ptRes = await fetch('/api/points/me', {
-                            method: 'GET',
-                            headers: headers,
-                            credentials: 'omit' // use token auth
-                        });
-                        
-                        if (ptRes.ok) {
-                            const ptRaw = await ptRes.json();
-                            const ptData = unwrapCommonResponse(ptRaw);
-                            if (ptData && ptData.currentPoint !== undefined) {
-                                currentUser.points = ptData.currentPoint;
-                            }
-                        }
-                    } catch (e) {
-                         console.log('Failed to fetch point balance from /api/points/me', e);
-                    }
-
-                    if (currentUser && currentUser.points !== undefined) {
-                        document.getElementById('current-points').textContent = currentUser.points.toLocaleString();
+                    const user = await window.authPromise;
+                    if (user) {
+                        currentUser = user;
+                        // availablePoint is String in DTO, ensure it's displayed correctly
+                        const pts = document.getElementById('current-points');
+                        if (pts) pts.textContent = Number(user.availablePoint || 0).toLocaleString();
                     }
                 } catch (error) {
-                    console.error('Failed to load user info:', error);
+                    console.error('Failed to load user info from shared promise:', error);
                     currentUser = null;
                 }
             }
 
+            function renderSkeletonProducts() {
+                const productList = document.getElementById('product-list');
+                productList.innerHTML = Array(pageSize).fill(0).map(() => `
+                    <div class="product-card" style="background: var(--bg-primary); padding: 1.25rem; border-radius: var(--radius-lg); border: 2px solid var(--border); box-shadow: 0 4px 10px var(--shadow); display: flex; flex-direction: column; overflow: hidden; height: 100%;">
+                        <div class="skeleton-img skeleton"></div>
+                        <div class="skeleton skeleton-text" style="width: 40%;"></div>
+                        <div class="skeleton skeleton-text" style="width: 80%; height: 1.5rem; margin-top: 0.5rem;"></div>
+                        <div class="skeleton skeleton-text" style="width: 50%; height: 1.5rem; margin-top: 0.5rem; flex-grow: 1;"></div>
+                        <div class="skeleton skeleton-text" style="width: 100%; height: 40px; margin-top: auto;"></div>
+                    </div>
+                `).join('');
+            }
+
             async function loadProductsFromApi(page = 1) {
                 try {
+                    const skeletonShownAt = Date.now();
+                    renderSkeletonProducts();
+                    
                     // Spring Data JPA는 기본적으로 0-indexed page를 사용하므로 클라이언트의 1-indexed를 변환하여 요청
                     const raw = await makeApiRequest('list-products', {
-                        params: { page: page - 1, size: pageSize }
+                        params: { page: page - 1, size: pageSize },
+                        hideGlobalLoader: true
                     });
                     
                     const result = unwrapCommonResponse(raw);
                     if (!result) return false;
+
+                    // 스켈레톤이 너무 빨리 사라지면 어색해서 최소 노출 시간을 보장
+                    const remaining = HOME_SKELETON_MIN_MS - (Date.now() - skeletonShownAt);
+                    if (remaining > 0) await sleep(remaining);
 
                     if (result.content && Array.isArray(result.content)) {
                         products = result.content;
@@ -168,7 +164,7 @@
                     return;
                 }
 
-                productList.innerHTML = products.map(product => {
+                productList.innerHTML = products.map((product, index) => {
                     const stockStatus = product.stock > 0
                         ? `<span style="color: var(--success); font-weight: 600;">재고: ${product.stock}개</span>`
                         : `<span style="color: var(--danger); font-weight: 600;">품절</span>`;
@@ -176,9 +172,10 @@
                     const defaultPic = 'https://via.placeholder.com/400x300?text=No+Image';
                     const picUrl = product.picture || defaultPic;
                     const currentQty = window.globalCart && window.globalCart[product.id] ? window.globalCart[product.id].quantity : 0;
+                    const delay = index * 0.1; // Staggered delay for magic entrance
 
                     return `
-                        <div class="product-card" style="background: var(--bg-primary); padding: 1.25rem; border-radius: var(--radius-lg); border: 2px solid var(--border); box-shadow: 0 4px 10px var(--shadow); transition: all 0.2s; display: flex; flex-direction: column; overflow: hidden; height: 100%;">
+                        <div class="product-card magic-item" style="animation-delay: ${delay}s; background: var(--bg-primary); padding: 1.25rem; border-radius: var(--radius-lg); border: 2px solid var(--border); box-shadow: 0 4px 10px var(--shadow); transition: all 0.2s; display: flex; flex-direction: column; overflow: hidden; height: 100%;">
                             <div class="product-image" style="background: #fff; height: 180px; padding: 0; margin: -1.25rem -1.25rem 1rem -1.25rem; border-bottom: 1px solid var(--border);">
                                 <img src="${picUrl}" alt="${product.name}" style="width: 100%; height: 100%; object-fit: contain; border-radius: var(--radius-lg) var(--radius-lg) 0 0;">
                             </div>
