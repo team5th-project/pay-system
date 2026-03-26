@@ -23,6 +23,21 @@ spring:
       mode: always
       data-locations: classpath:data-xxx.sql
 
+
+# PortOne Configuration
+portone:
+  api:
+    base-url: https://api.portone.io
+    secret: ${PORTONE_API_SECRET:your-api-secret}
+  store:
+    id: ${PORTONE_STORE_ID:your-store-id}
+  channel:
+    kg-inicis: ${PORTONE_CHANNEL_KG:your-kg-inicis-channel-key}
+    toss: ${PORTONE_CHANNEL_TOSS:your-toss-channel-key}
+  webhook:
+    secret: ${PORTONE_WEBHOOK_SECRET:your-webhook-secret}
+
+
 logging:
   level:
     com.example.paymentsystem: DEBUG
