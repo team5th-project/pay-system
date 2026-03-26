@@ -186,7 +186,8 @@ public class RefundService {
         }
         // 포인트 복구
         if (order.getUsedPoint() > 0) {
-            userPointService.releasePoint(order.getUserId(), order.getId(), order.getUsedPoint());
+//            userPointService.releasePoint(order.getUserId(), order.getId(), order.getUsedPoint());
+            userPointService.cancelUsePoint(order.getUserId(), Math.toIntExact(order.getUsedPoint()));
         }
         // 재고 복구
         productService.restoreStockByOrder(order);
@@ -231,14 +232,18 @@ public class RefundService {
                 order.getStatus() == OrderStatus.REFUNDED) {
             return;
         }
-        // 포인트 복구
-        userPointService.releasePoint(order.getUserId(), order.getId(), payment.getPointToUse());
+
         // 재고 복구
         productService.restoreStockByOrder(order);
         // 상태전이
         refund.markCompleted();
         payment.refund();
         order.refund();
+
+        // 포인트 가점유 해제
+        userPointService.cancelUsePoint(order.getUserId(), Math.toIntExact(order.getUsedPoint()));
+        //userPointService.releasePoint(order.getUserId(), order.getId(), payment.getPointToUse());
+
         log.info("포인트 전액 결제 환불 성공 userId={}, orderId={}, refundId={}, restoredPoint={}",
                 order.getUserId(),
                 order.getId(),
