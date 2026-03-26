@@ -61,7 +61,7 @@
                         <thead>
                         <tr style="border-bottom: 2px solid var(--border); text-align: left;">
                             <th style="padding: 0.75rem;">주문 번호</th>
-                            <th style="padding: 0.75rem;">주문 ID</th>
+                            <th style="padding: 0.75rem; display: none;">주문 ID</th>
                             <th style="padding: 0.75rem;">금액</th>
                             <th style="padding: 0.75rem;">포인트</th>
                             <th style="padding: 0.75rem;">상태</th>
@@ -295,7 +295,7 @@
                                 ${order.orderNumber}
                             </a>
                         </td>
-                        <td style="padding: 0.75rem; font-family: monospace; font-size: 0.875rem; color: var(--text-secondary);">${order.orderUid}</td>
+                        <td style="padding: 0.75rem; font-family: monospace; font-size: 0.875rem; color: var(--text-secondary); display: none;">${order.orderUid}</td>
                         <td style="padding: 0.75rem;">
                             <div style="font-weight: 600;">${totalAmountNum.toLocaleString()}원</div>
                             ${usedPoint > 0 ? `<div style="font-size: 0.75rem; color: var(--text-secondary);">실결제: ${finalAmountNum.toLocaleString()}원</div>` : ''}
@@ -357,7 +357,7 @@
                     throw new Error('결제 결과에 paymentId가 없습니다.');
                 }
 
-                
+
 
                 // 결제창 성공 직후 서버 결제 검증 호출
                 const confirmRaw = await makeApiRequest('confirm-payment', {
@@ -555,11 +555,11 @@
                 try {
                     const raw = await makeApiRequest('get-order-detail', { pathParams: orderUid });
                     const data = unwrapCommonResponse(raw);
-                    
+
                     if (!data) throw new Error('조회된 데이터가 없습니다.');
-                    
+
                     const contentEl = document.getElementById('order-detail-content');
-                    
+
                     // 주문 상품 목록 렌더링
                     let itemsHtml = '';
                     if (data.items && data.items.length > 0) {
@@ -586,9 +586,9 @@
                         });
                         itemsHtml += `</tbody></table>`;
                     }
-                    
+
                     const paymentInfo = data.paymentUid ? `<strong>결제 UID:</strong> ${data.paymentUid}<br>` : '';
-                    
+
                     let actionHtml = '';
                     // 결제 완료(PAID) 이후에는 미결제 주문 취소(주문취소)를 노출하지 않음 — PENDING·미결제일 때만
                     const canShowOrderCancel = data.status === 'PENDING' && !data.paymentUid;
@@ -597,7 +597,7 @@
                     } else if (data.paymentUid) {
                         actionHtml = `<div style="text-align: right; margin-top: 1rem;"><button class="btn btn-danger" onclick="cancelPaymentFromModal('${data.paymentUid}')">결제취소</button></div>`;
                     }
-                    
+
                     contentEl.innerHTML = `
                         <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 4px; margin-bottom: 1rem; line-height: 1.6;">
                             <strong>주문 번호:</strong> ${data.orderNumber}<br>
@@ -612,16 +612,16 @@
                         </div>
                         ${actionHtml}
                     `;
-                    
+
                     document.getElementById('order-detail-loading').style.display = 'none';
                     contentEl.style.display = 'block';
-                    
+
                 } catch (error) {
                     console.error('Failed to load order details:', error);
                     document.getElementById('order-detail-loading').innerHTML = '<span style="color: var(--danger);">주문 상세 정보를 불러오는데 실패했습니다.</span>';
                 }
             }
-            
+
             // 주문 상세 모달 닫기
             function closeOrderDetailModal() {
                 document.getElementById('order-detail-modal').style.display = 'none';
@@ -640,7 +640,7 @@
                     showNotification('주문 취소 실패', 'error');
                 }
             }
-            
+
             // 모달 내 결제 취소
             async function cancelPaymentFromModal(paymentUid) {
                 if (!confirm('정말 이 결제를 취소하시겠습니까?')) return;
