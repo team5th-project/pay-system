@@ -45,7 +45,7 @@
         </div>
     </nav>
 
-    <div class="main-container">
+    <div class="main-container page-transition">
         <!-- Content Area ONLY -->
         <div class="content-area" th:replace="${content}">
             <!-- Page Specific Content -->
@@ -487,6 +487,23 @@
             localStorage.removeItem('accessToken');
             window.location.href = '/pages/login';
         }
+
+        // Global API Loading Event Listeners
+        window.addEventListener('api-load-start', function(e) {
+            if (e.detail && e.detail.hideGlobalLoader) return;
+            const loader = document.getElementById('global-api-loader');
+            if (loader) loader.classList.add('active');
+        });
+        window.addEventListener('api-load-end', function() {
+            const loader = document.getElementById('global-api-loader');
+            if (loader) loader.classList.remove('active');
+        });
     </script>
+    
+    <!-- Global API Loader Overlay -->
+    <div id="global-api-loader">
+        <div class="magic-spinner">🐈✨</div>
+        <div class="magic-loading-text">마법을 부리는 중...</div>
+    </div>
 </body>
 </html>

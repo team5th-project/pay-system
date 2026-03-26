@@ -15,10 +15,13 @@ async function makeApiRequest(endpointKey, options = {}) {
         body = null,
         params = {},
         pathParams = {},
-        returnHeaders = false
+        returnHeaders = false,
+        hideGlobalLoader = false
     } = options;
 
     try {
+        window.dispatchEvent(new CustomEvent('api-load-start', { detail: { hideGlobalLoader } }));
+
         // 설정에서 엔드포인트 계약 가져오기
         const config = await getConfig();
         const endpointContract = config.api.endpoints[endpointKey];
@@ -67,7 +70,11 @@ async function makeApiRequest(endpointKey, options = {}) {
             fetchOptions.body = JSON.stringify(body);
         }
 
-        const response = await fetch(url, fetchOptions);
+        // Apply artificial 0.5s delay for magic loading effects
+        const [response] = await Promise.all([
+            fetch(url, fetchOptions),
+            new Promise(res => setTimeout(res, 500))
+        ]);
 
         // 401 Unauthorized 응답 시 로그인 페이지로 이동 (쿠키 삭제)
         if (response.status === 401) {
@@ -121,6 +128,8 @@ async function makeApiRequest(endpointKey, options = {}) {
             stack: error.stack
         });
         throw error;
+    } finally {
+        window.dispatchEvent(new Event('api-load-end'));
     }
 }
 
