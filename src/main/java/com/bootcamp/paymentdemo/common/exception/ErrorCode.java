@@ -51,6 +51,7 @@ public enum ErrorCode {
     UNKNOWN_PORTONE_STATUS(HttpStatus.NOT_FOUND, "PAY012", "존재하지 않는 포트원 상태입니다."),
     PAYMENT_FAILED(HttpStatus.BAD_REQUEST, "PAY013", "결제에 실패하였습니다."),
     PAYMENT_CHECK_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PAY014", "포트원 결제 조회에 실패했습니다."),
+    PAYMENT_CANCEL_FAILED(HttpStatus.BAD_REQUEST, "PAY015", "결제 취소에 실패하였습니다."),
 
     // 포트원 에러
     INVALID_PAYMENT_VALIDATION_REQUEST(HttpStatus.BAD_REQUEST, "PAY005", "잘못된 결제 검증 요청입니다."),
@@ -76,6 +77,10 @@ public enum ErrorCode {
     INVALID_WEBHOOK_TIMESTAMP(HttpStatus.BAD_REQUEST, "W003", "웹훅 요청시간이 유효하지 않습니다."),
     INVALID_WEBHOOK_PAYLOAD(HttpStatus.BAD_REQUEST, "W004", "웹훅 데이터 형식이 올바르지 않습니다."),
     INVALID_WEBHOOK_WEBHOOKID(HttpStatus.BAD_REQUEST, "W005", "웹훅 아이디가 존재하지 않거나 유효하지 않습니다."),
+    INVALID_WEBHOOK_EVENT(HttpStatus.BAD_REQUEST, "W006", "지원하지 않는 웹훅 이벤트입니다."),
+    DUPLICATE_WEBHOOK(HttpStatus.BAD_REQUEST,"W007","중복된 웹훅입니다."),
+    INVALID_WEBHOOK_HEADER(HttpStatus.BAD_REQUEST, "W008", "웹훅 헤더가 유효하지 않습니다."),
+    WEBHOOK_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST, "W009", "웹훅 검증에 실패했습니다"),
 
     //포인트
     INSUFFICIENT_POINT(HttpStatus.BAD_REQUEST, "PT001", "포인트 잔액이 부족합니다."),
@@ -85,7 +90,11 @@ public enum ErrorCode {
     MEMBERSHIP_POLICY_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "MS001", "멤버십 등급 정책을 찾을 수 없습니다."),
     INVALID_MEMBERSHIP_GRADE(HttpStatus.BAD_REQUEST, "MS002", "유효하지 않은 멤버십 등급입니다."),
     MEMBERSHIP_UPDATE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "MS003", "멤버십 등급 갱신에 실패했습니다.")
-;
+
+
+
+
+    ;
     private final HttpStatus status;
     private final String code;
     private final String message;
