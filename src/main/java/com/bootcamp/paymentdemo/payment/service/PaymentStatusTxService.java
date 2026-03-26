@@ -37,7 +37,7 @@ public class PaymentStatusTxService {
                     .orElseThrow(() -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND));
             payment.cancelRequested();
         } catch (CannotAcquireLockException e) {
-            log.warn("락 획득 실패 - 이미 처리 중. paymentUid={}", paymentUid);
+            log.warn("PaymentStatusTxService.markCancelRequested() - 락 획득 실패 - 이미 처리 중. paymentUid={}", paymentUid);
             return;
         }
 
@@ -51,7 +51,7 @@ public class PaymentStatusTxService {
                     .orElseThrow(() -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND));
             payment.cancelled();
         } catch (CannotAcquireLockException e) {
-            log.warn("락 획득 실패 - 이미 처리 중. paymentUid={}", paymentUid);
+            log.warn("PaymentStatusTxService.markCancelled() - 락 획득 실패 - 이미 처리 중. paymentUid={}", paymentUid);
             return;
         }
 
@@ -65,17 +65,16 @@ public class PaymentStatusTxService {
                     .orElseThrow(() -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND));
             payment.cancelFailed();
         } catch (CannotAcquireLockException e) {
-            log.warn("락 획득 실패 - 이미 처리 중. paymentUid={}", paymentUid);
+            log.warn("PaymentStatusTxService.markCancelFailed() - 락 획득 실패 - 이미 처리 중. paymentUid={}", paymentUid);
             return;
         }
 
     }
 
     // 결제 확정 성공 상태 전이
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void markSuccess(String paymentUid) {
-    //이미 다른 결제가 처리된 상태면 아무 상태도 섣불리 확정하지 않고 종료
-    //로그만 남김
+    //이미 다른 결제가 처리된 상태면 아무 상태도 섣불리 확정하지 않고 로그만 남기고 종료
         try {
             Payment payment = paymentRepository.findByPaymentUidForUpdate(paymentUid)
                     .orElseThrow(() -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND));
@@ -111,7 +110,7 @@ public class PaymentStatusTxService {
             if (payment.getPaymentStatus() != PaymentStatus.PENDING) {
                 log.warn("markSuccess failed - invalid payment status. orderId={}, paymentUid={}, paymentStatus={}",
                         order.getId(), paymentUid, payment.getPaymentStatus());
-                throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS_FOR_REFUND);
+                throw new ServiceException(ErrorCode.PAYMENT_STATUS_NOT_PENDING);
             }
 
             // 4. 주문도 성공 가능한 상태인지 검증
@@ -131,14 +130,14 @@ public class PaymentStatusTxService {
 
             log.info("markSuccess completed. orderId={}, paymentUid={}", order.getId(), paymentUid);
         } catch (CannotAcquireLockException e) {
-            log.warn("락 획득 실패 - 이미 처리 중. paymentUid={}", paymentUid);
+            log.warn("PaymentStatusTxService.markSuccess() - 락 획득 실패 - 이미 처리 중. paymentUid={}", paymentUid);
             return;
         }
 
     }
 
     // 결제 확정 실패 상태 전이
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void markFailed(String paymentUid){
         try {
             Payment payment = paymentRepository.findByPaymentUidForUpdate(paymentUid)
@@ -154,7 +153,7 @@ public class PaymentStatusTxService {
 //                userPointService.cancelUsePoint(order.getUserId(), payment.getPointToUse());
 //            }
         } catch (CannotAcquireLockException e) {
-            log.warn("락 획득 실패 - 이미 처리 중. paymentUid={}", paymentUid);
+            log.warn("PaymentStatusTxService.markFailed() - 락 획득 실패 - 이미 처리 중. paymentUid={}", paymentUid);
             return;
         }
 

@@ -57,7 +57,7 @@ public class UserPoint extends BaseEntity {
 
     // 주문이 취소되거나, 환불 -> 가점유를 해제
     public void release(int amount) {
-        if (amount <= 0 || this.heldPoint < amount) {
+        if (amount < 0 || this.heldPoint < amount) {
             throw new ServiceException(ErrorCode.INVALID_POINT_AMOUNT);
         }
         this.heldPoint -= amount;

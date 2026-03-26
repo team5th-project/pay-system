@@ -39,8 +39,7 @@ public class UserPointService {
     /**
      * 1
      * 포인트를 사용하려고 할 때 가점유 걸기
-     * 결제 생성 시 PaymentService 에서 호출
-     * 잔액 부족 시 INSUFFICIENT_POINT 에러 발생 후 결제 중단
+     * 주문 생성 시 호출
      */
     @Transactional
     public void holdPoint(Long userId, Long orderId, int points) {
@@ -54,8 +53,7 @@ public class UserPointService {
     /**
      * 2
      * 실제로 포인트가 사용됨
-     * 주문 확정 시 PaymentService 에서 호출
-     * 잔액 부족 시 INSUFFICIENT_POINT 에러 발생 후 결제 중단
+     * 주문 확정 시 호출
      */
     @Transactional
     public void usePoint(Long userId, Long orderId, int points) {
@@ -69,8 +67,7 @@ public class UserPointService {
 
     /**
      * 3
-     * 결제가 취소되어 가점유 상태가 해제
-     * 결제 실패 또는 취소 시 PaymentService 에서 호출
+     * 주문이 취소되어 가점유 상태가 해제
      */
     @Transactional
     public void cancelUsePoint(Long userId, int points){
@@ -105,39 +102,6 @@ public class UserPointService {
         //포인트 거래내역 저장
         saveTransaction(PointTransaction.earn(userId, orderId, earnedPoints, LocalDateTime.now().plusDays(30)));
     }
-
-    /**
-     * 5
-     * 포인트 환불
-     * 환불 완료 이벤트(RefundCompletedEvent) 수신 시 PointEventHandler 에서 호출
-     * 해당 주문에서 사용한 포인트를 복구하고 등급 롤백
-     */
-    @Transactional
-    public void releasePoint(Long userId, Long orderId, long refundAmount) {
-        UserPoint userPoint = pointRepository.findByUserIdForUpdate(userId);
-        User user = userService.getUser(userId);
-        List<PointTransaction> usedTransactions = pointTransactionRepository.findByOrderIdAndType(orderId, PointType.USE);
-        //사용한 포인트 있는 경우만 복구
-        int refundPoints = 0;
-        if (!usedTransactions.isEmpty()) {
-            // USE 거래 points 음수로 저장되어 있기때문에 절대값으로 복구
-            refundPoints = usedTransactions.stream()
-                    .mapToInt(tx -> Math.abs(tx.getPoints()))
-                    .sum();
-
-            userPoint.restoreUsedPoint(refundPoints);
-            // Refund 타입으로 거래내역 저장
-            saveTransaction(PointTransaction.refund(userId, orderId, refundPoints));
-        }
-        // 누적 주문금액 차감 -> 등급 롤백 기준
-        // user domain 에서 totalOrderAmount 값이 주문 확정 이후의 금액으로 수정되었습니다.
-//        user.deductTotalOrderAmount(refundAmount);
-
-        // 등급 롤백
-        // 이제 등급이 주문 확정 이후 변경되기 때문에 주석처리 하겠습니당
-//        updateMembershipGrade(userId);
-    }
-
 
     /**
      * 멤버십 등급 갱신
