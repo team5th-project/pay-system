@@ -12,15 +12,7 @@ server:
   port: 8080
   servlet:
     context-path: /
----
-# 배포 환경 (EC2 서버용)
-spring:
-  config:
-    activate:
-      on-profile: prod
-    import: optional:classpath:prod.yml
-
-# PortOne Configuration
+  # PortOne Configuration
 portone:
   api:
     base-url: https://api.portone.io
@@ -32,6 +24,15 @@ portone:
     toss: ${PORTONE_CHANNEL_TOSS:your-toss-channel-key}
   webhook:
     secret: ${PORTONE_WEBHOOK_SECRET:your-webhook-secret}
+---
+# 배포 환경 (EC2 서버용)
+spring:
+  config:
+    activate:
+      on-profile: prod
+    import: optional:classpath:prod.yml
+
+
 
 # JWT Configuration
 jwt:

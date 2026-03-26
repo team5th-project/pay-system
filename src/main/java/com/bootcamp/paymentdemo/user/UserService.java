@@ -90,11 +90,10 @@ public class UserService {
 //        membershipService.createMembership(user.getId());
 
 
-        UserPoint userPoint = UserPoint.builder()
-                .user(user)
-                .build();
-        user.setUserPoint(userPoint);
+        UserPoint userPoint = UserPoint.builder().user(user).build();
+//        user.setUserPoint(userPoint);
         userRepository.save(user);
+        userPointRepository.save(userPoint);
 
         return SignupResponse.of(user);
     }
