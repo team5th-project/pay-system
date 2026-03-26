@@ -150,9 +150,9 @@ public class PaymentStatusTxService {
             payment.failed();
             // 주문 상태는 유지. 호출할 것 없음
             // 포인트 가점유 해제
-            if (payment.getPointToUse() > 0) {
-                userPointService.cancelUsePoint(order.getUserId(), payment.getPointToUse());
-            }
+//            if (payment.getPointToUse() > 0) {
+//                userPointService.cancelUsePoint(order.getUserId(), payment.getPointToUse());
+//            }
         } catch (CannotAcquireLockException e) {
             log.warn("락 획득 실패 - 이미 처리 중. paymentUid={}", paymentUid);
             return;
