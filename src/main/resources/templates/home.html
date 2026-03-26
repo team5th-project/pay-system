@@ -50,6 +50,11 @@
             let currentPage = 1;
             let totalPages = 1;
             const pageSize = 6;
+            const HOME_SKELETON_MIN_MS = 650;
+
+            function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
             
             function unwrapCommonResponse(response) {
                 if (!response || typeof response !== 'object' || Array.isArray(response)) return response;
@@ -91,6 +96,7 @@
 
             async function loadProductsFromApi(page = 1) {
                 try {
+                    const skeletonShownAt = Date.now();
                     renderSkeletonProducts();
                     
                     // Spring Data JPA는 기본적으로 0-indexed page를 사용하므로 클라이언트의 1-indexed를 변환하여 요청
@@ -101,6 +107,10 @@
                     
                     const result = unwrapCommonResponse(raw);
                     if (!result) return false;
+
+                    // 스켈레톤이 너무 빨리 사라지면 어색해서 최소 노출 시간을 보장
+                    const remaining = HOME_SKELETON_MIN_MS - (Date.now() - skeletonShownAt);
+                    if (remaining > 0) await sleep(remaining);
 
                     if (result.content && Array.isArray(result.content)) {
                         products = result.content;

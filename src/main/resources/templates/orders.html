@@ -30,6 +30,23 @@
                     transform: none;
                 }
             }
+
+            /* 본문(.page-transition)의 transform/filter 때문에 fixed가 컬럼에만 잡히는 문제 방지 → JS로 body로 이동 + 전체 덮기 */
+            .order-detail-modal-root {
+                position: fixed;
+                inset: 0;
+                width: 100vw;
+                min-height: 100vh;
+                min-height: 100dvh;
+                z-index: 9997; /* 네비·장바구니 모달(1000) 위, 전역 API 로더(9998) 아래 */
+                background: rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(2px);
+                -webkit-backdrop-filter: blur(2px);
+                justify-content: center;
+                align-items: center;
+                box-sizing: border-box;
+                margin: 0;
+            }
         </style>
 
         <!-- 주문 목록 -->
@@ -64,7 +81,7 @@
         </div>
 
         <!-- 주문 상세 모달 -->
-        <div id="order-detail-modal" onclick="if(event.target === this) closeOrderDetailModal()" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div id="order-detail-modal" class="order-detail-modal-root" onclick="if(event.target === this) closeOrderDetailModal()" style="display: none;">
             <div class="card" style="background: white; padding: 2rem; border-radius: 8px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                     <h2 style="margin: 0;">주문 상세 정보</h2>
@@ -84,6 +101,12 @@
             let selectedOrderUid = null;
         // 세션 동안 주문별 결제 식별자 캐시 (결제 직후 취소 버튼 연계를 위해 사용)
         let orderPaymentUidMap = {};
+        const ORDERS_LIST_MIN_LOADING_MS = 450;
+        const ORDERS_STAGGER_START_DELAY_MS = 180;
+
+            function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
 
             function getSelectedOrderUidFromQuery() {
                 try {
@@ -153,6 +176,11 @@
 
             // 페이지 로드 시 초기화
             document.addEventListener('DOMContentLoaded', async () => {
+                const orderModal = document.getElementById('order-detail-modal');
+                if (orderModal && orderModal.parentNode !== document.body) {
+                    document.body.appendChild(orderModal);
+                }
+
                 // API 목록 동적 생성 (비동기)
                 populateApiList();
 
@@ -179,6 +207,7 @@
                 const emptyEl = document.getElementById('order-list-empty');
 
                 try {
+                    const startedAt = Date.now();
                     const raw = await makeApiRequest('list-orders', {});
                     const result = unwrapCommonResponse(raw);
 
@@ -199,6 +228,11 @@
                     }
 
                     orders = orderList;
+
+                    // 로딩 텍스트가 너무 순간적으로 깜빡이는 걸 방지 (UX) + 스태거가 보이게 약간 여유
+                    const baseRemaining = ORDERS_LIST_MIN_LOADING_MS - (Date.now() - startedAt);
+                    if (baseRemaining > 0) await sleep(baseRemaining);
+
                     loadingEl.style.display = 'none';
 
                     if (selectedOrderUid) {
@@ -214,6 +248,7 @@
                         emptyEl.style.display = 'block';
                     } else {
                         containerEl.style.display = 'block';
+                        if (ORDERS_STAGGER_START_DELAY_MS > 0) await sleep(ORDERS_STAGGER_START_DELAY_MS);
                         renderOrderList();
                     }
                 } catch (error) {
@@ -555,7 +590,9 @@
                     const paymentInfo = data.paymentUid ? `<strong>결제 UID:</strong> ${data.paymentUid}<br>` : '';
                     
                     let actionHtml = '';
-                    if (!data.paymentUid) {
+                    // 결제 완료(PAID) 이후에는 미결제 주문 취소(주문취소)를 노출하지 않음 — PENDING·미결제일 때만
+                    const canShowOrderCancel = data.status === 'PENDING' && !data.paymentUid;
+                    if (canShowOrderCancel) {
                         actionHtml = `<div style="text-align: right; margin-top: 1rem;"><button class="btn btn-warning" onclick="cancelOrderFromModal('${data.orderUid}')">주문취소</button></div>`;
                     } else if (data.paymentUid) {
                         actionHtml = `<div style="text-align: right; margin-top: 1rem;"><button class="btn btn-danger" onclick="cancelPaymentFromModal('${data.paymentUid}')">결제취소</button></div>`;

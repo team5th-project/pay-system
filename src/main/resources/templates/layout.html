@@ -497,16 +497,39 @@
             window.location.href = '/pages/login';
         }
 
-        // Global API Loading Event Listeners
-        window.addEventListener('api-load-start', function(e) {
-            if (e.detail && e.detail.hideGlobalLoader) return;
-            const loader = document.getElementById('global-api-loader');
-            if (loader) loader.classList.add('active');
-        });
-        window.addEventListener('api-load-end', function() {
-            const loader = document.getElementById('global-api-loader');
-            if (loader) loader.classList.remove('active');
-        });
+        // Global API Loading: 짧은 요청에는 오버레이를 띄우지 않고, 동시 요청 수만 추적
+        (function () {
+            var LOADER_SHOW_DELAY_MS = 320;
+            var inFlightGlobalLoader = 0;
+            var showLoaderTimer = null;
+
+            function setLoaderActive(on) {
+                var loader = document.getElementById('global-api-loader');
+                if (loader) loader.classList.toggle('active', !!on);
+            }
+
+            window.addEventListener('api-load-start', function (e) {
+                if (e.detail && e.detail.hideGlobalLoader) return;
+                inFlightGlobalLoader++;
+                if (inFlightGlobalLoader === 1) {
+                    showLoaderTimer = setTimeout(function () {
+                        showLoaderTimer = null;
+                        if (inFlightGlobalLoader > 0) setLoaderActive(true);
+                    }, LOADER_SHOW_DELAY_MS);
+                }
+            });
+            window.addEventListener('api-load-end', function (e) {
+                if (e.detail && e.detail.hideGlobalLoader) return;
+                inFlightGlobalLoader = Math.max(0, inFlightGlobalLoader - 1);
+                if (inFlightGlobalLoader === 0) {
+                    if (showLoaderTimer) {
+                        clearTimeout(showLoaderTimer);
+                        showLoaderTimer = null;
+                    }
+                    setLoaderActive(false);
+                }
+            });
+        })();
     </script>
     
     <!-- Global API Loader Overlay -->

@@ -70,11 +70,7 @@ async function makeApiRequest(endpointKey, options = {}) {
             fetchOptions.body = JSON.stringify(body);
         }
 
-        // Apply artificial 0.5s delay for magic loading effects
-        const [response] = await Promise.all([
-            fetch(url, fetchOptions),
-            new Promise(res => setTimeout(res, 500))
-        ]);
+        const response = await fetch(url, fetchOptions);
 
         // 401 Unauthorized 응답 시 로그인 페이지로 이동 (쿠키 삭제)
         if (response.status === 401) {
@@ -129,7 +125,7 @@ async function makeApiRequest(endpointKey, options = {}) {
         });
         throw error;
     } finally {
-        window.dispatchEvent(new Event('api-load-end'));
+        window.dispatchEvent(new CustomEvent('api-load-end', { detail: { hideGlobalLoader } }));
     }
 }
 
