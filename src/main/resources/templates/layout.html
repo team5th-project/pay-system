@@ -28,7 +28,10 @@
 <body>
     <nav class="navbar">
         <div class="navbar-container">
-            <a href="/" class="navbar-brand">🐾 오조의마법상점</a>
+            <a href="/" class="navbar-brand">
+                <img class="landing-logo" th:src="@{/images/logos/landing-logo.png}" alt="" width="36" height="36" />
+                오조의마법상점
+            </a>
             <ul class="navbar-nav">
                 <li><a href="/" class="nav-link">홈</a></li>
                 <li><a href="/pages/orders" class="nav-link">주문내역</a></li>
@@ -531,7 +534,7 @@
             });
         })();
     </script>
-    
+
     <!-- Global API Loader Overlay -->
     <div id="global-api-loader">
         <div class="magic-spinner">🐈✨</div>

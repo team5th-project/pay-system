@@ -110,6 +110,15 @@ h1, h2, h3, h4, h5, h6, .navbar-brand, .form-title, .card-header {
     transform: scale(1.05);
 }
 
+.navbar-brand .landing-logo {
+    width: 2.25rem;
+    height: 2.25rem;
+    object-fit: contain;
+    flex-shrink: 0;
+    border-radius: 50%;
+    vertical-align: middle;
+}
+
 .navbar-nav {
     display: flex;
     gap: 1rem;
