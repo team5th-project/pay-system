@@ -73,7 +73,7 @@ public class PaymentStatusTxService {
 
     // 결제 확정 성공 상태 전이
     @Transactional
-    public void markSuccess(String payㄷmentUid) {
+    public void markSuccess(String paymentUid) {
     //이미 다른 결제가 처리된 상태면 아무 상태도 섣불리 확정하지 않고 종료
     //로그만 남김
         try {
