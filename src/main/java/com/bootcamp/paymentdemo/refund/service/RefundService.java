@@ -44,7 +44,7 @@ public class RefundService {
     private void validateRefundable(Payment payment, Order order) {
         // 결제 상태 검증
         if (payment.getPaymentStatus() != PaymentStatus.SUCCESS) {
-            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
+            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS_FOR_REFUND);
         }
         // 민교가 수정함
         // 주문 상태 검증
