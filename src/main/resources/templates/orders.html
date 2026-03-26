@@ -7,6 +7,30 @@
     <div class="content-area">
         <h1 style="font-size: 2rem; margin-bottom: 2rem;">📦 주문 관리</h1>
 
+        <style>
+            @keyframes order-list-cell-in {
+                from {
+                    opacity: 0;
+                    transform: translateY(8px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            #order-list-body tr.order-list-row td {
+                opacity: 0;
+                animation: order-list-cell-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+                animation-delay: var(--order-row-delay, 0s);
+            }
+            @media (prefers-reduced-motion: reduce) {
+                #order-list-body tr.order-list-row td {
+                    animation: none;
+                    opacity: 1;
+                    transform: none;
+                }
+            }
+        </style>
 
         <!-- 주문 목록 -->
         <div class="card">
@@ -205,8 +229,10 @@
 
                 if (!Array.isArray(orders)) return;
 
-                orders.forEach(order => {
+                orders.forEach((order, rowIndex) => {
                     const tr = document.createElement('tr');
+                    tr.classList.add('order-list-row');
+                    tr.style.setProperty('--order-row-delay', `${rowIndex * 60}ms`);
                     tr.style.borderBottom = '1px solid var(--border)';
 
                     if (selectedOrderUid && order.orderUid === selectedOrderUid) {
