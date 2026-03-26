@@ -15,7 +15,6 @@ import com.bootcamp.paymentdemo.payment.enums.PaymentResult;
 import com.bootcamp.paymentdemo.payment.enums.PaymentStatus;
 import com.bootcamp.paymentdemo.payment.respository.PaymentRepository;
 import com.bootcamp.paymentdemo.point.service.UserPointService;
-import com.bootcamp.paymentdemo.product.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,13 +27,12 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+//@Transactional(readOnly = true)
 public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final OrderService orderService;
     private final PortOneService portOneService;
     private final UserPointService userPointService;
-    private final ProductService productService;
     private final PaymentVerificationService paymentVerificationService;
     private final PaymentStatusTxService paymentStatusTxService;
     private final PaymentCancelService paymentCancelService;
@@ -101,7 +99,6 @@ public class PaymentService {
     }
 
     // 결제 확정 요청
-    @Transactional
     public ConfirmPaymentResponse confirmPayment(String paymentUid) {
 
         // paymentId 존재 여부 검증
@@ -109,7 +106,7 @@ public class PaymentService {
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_UID);
         }
         // DB에서 Payment 객체 조회. 없으면 생성되지 않은 결제 요청
-        Payment payment = paymentRepository.findByPaymentUidForUpdate(paymentUid).orElseThrow(
+        Payment payment = paymentRepository.findByPaymentUid(paymentUid).orElseThrow(
                 () -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND)
         );
 
@@ -128,7 +125,7 @@ public class PaymentService {
         // 결제 금액과 포인트 사용 검증
         if (payment.getFinalAmount() == 0 ) {
             // 포인트로 전액 결제해서 실 결제 금액이 0원이라면 포트원 검증 안하고, DB에 재고 반영만 하고 결제 성공 처리
-            markPaymentSuccess(payment);
+            paymentStatusTxService.markSuccess(payment.getPaymentUid());
             return ConfirmPaymentResponse.of(payment.getOrder().getOrderUid(), PaymentStatus.SUCCESS);
         }
 
@@ -154,54 +151,91 @@ public class PaymentService {
     // SUCCESS 처리
     private ConfirmPaymentResponse handleSuccess(Payment payment) {
 
+        System.out.println("PaymentService.handleSuccess");
+
         try {// 결제 성공
-            markPaymentSuccess(payment);
+            paymentStatusTxService.markSuccess(payment.getPaymentUid());
             return ConfirmPaymentResponse.of(payment.getOrder().getOrderUid(), PaymentStatus.SUCCESS);
         } catch (ServiceException e) {
+            System.out.println("e.getMessage() = " + e.getMessage());
             // 결제는 성공했지만 내부 사정으로 취소해야 하는경우. 결제 확정 실패 처리
             PaymentStatus status = requestCancelAfterInternalFailure(payment);
             return ConfirmPaymentResponse.of(payment.getOrder().getOrderUid(), status);
         }
     }
 
-    // 결제 확정 성공 상태 전이
-    private void markPaymentSuccess(Payment payment){
-        Order order = payment.getOrder();
+//    // 결제 확정 성공 상태 전이
+//    private void markPaymentSuccess(Payment payment){
+//        Order order = payment.getOrder();
+//
+//        // 결제 상태 성공으로 변경
+//        payment.success();
+//
+//        // 주문 상태 결제 성공으로 변경
+//        order.markAsPaid();
+//
+//        // 재고 차감
+//        productService.decreaseStockByOrder(order);
+//
+//        // 포인트 차감
+//        if (payment.getPointToUse() > 0) {
+//            userPointService.usePoint(order.getUserId(), order.getId(), payment.getPointToUse());
+//        }
+//
+//    }
 
-        // 결제 상태 성공으로 변경
-        payment.success();
+    /*
+    private void markPaymentSuccess(Payment payment) {
+    Order order = payment.getOrder();
 
-        // 주문 상태 결제 성공으로 변경
-        order.markAsPaid();
-
-        // 재고 차감
-        productService.decreaseStockByOrder(order);
-
-        // 포인트 차감
-        if (payment.getPointToUse() > 0) {
-            userPointService.usePoint(order.getUserId(), order.getId(), payment.getPointToUse());
-        }
-
+    // 이미 둘 다 성공 처리된 경우 -> 멱등 처리
+    if (payment.getPaymentStatus() == PaymentStatus.SUCCESS
+            && order.getStatus() == OrderStatus.PAID) {
+        log.info("이미 성공 처리된 결제입니다. paymentId={}, orderId={}",
+                payment.getId(), order.getId());
+        return;
     }
+
+    // 결제가 아직 성공 전이면 성공 처리
+    if (payment.getPaymentStatus() == PaymentStatus.PENDING) {
+        payment.success();
+    }
+
+    // 주문이 아직 결제완료 전이면 상태 변경
+    if (order.getStatus() == OrderStatus.PENDING) {
+        order.markAsPaid();
+    }
+
+    // 여기 아래는 "최초 성공 흐름에서만" 타야 더 안전하지만
+    // 현재 구조 최소 수정 기준으로는 우선 유지
+    productService.decreaseStockByOrder(order);
+
+    if (payment.getPointToUse() > 0) {
+        userPointService.usePoint(order.getUserId(), order.getId(), payment.getPointToUse());
+    }
+
+    log.info("결제 성공 처리 완료. paymentId={}, orderId={}", payment.getId(), order.getId());
+}
+     */
 
 
     // FAIL 처리
     private ConfirmPaymentResponse handleFail(Payment payment) {
-        markPaymentFailed(payment);
+        paymentStatusTxService.markFailed(payment.getPaymentUid());
         return ConfirmPaymentResponse.of(payment.getOrder().getOrderUid(), PaymentStatus.FAILED);
     }
 
-    // 결제 확정 실패 상태 전이
-    private void markPaymentFailed(Payment payment){
-        Order order = payment.getOrder();
-        // 결제 상태 실패로 변경
-        payment.failed();
-        // 주문 상태는 PENDING으로 유지. 호출할 것 없음
-        // 포인트 가점유 해제
-        if (payment.getPointToUse() > 0) {
-            userPointService.cancelUsePoint(order.getUserId(), order.getId(), payment.getPointToUse());
-        }
-    }
+//    // 결제 확정 실패 상태 전이
+//    private void markPaymentFailed(Payment payment){
+//        Order order = payment.getOrder();
+//        // 결제 상태 실패로 변경
+//        payment.failed();
+//        // 주문 상태는 PENDING으로 유지. 호출할 것 없음
+//        // 포인트 가점유 해제
+//        if (payment.getPointToUse() > 0) {
+//            userPointService.cancelUsePoint(order.getUserId(), order.getId(), payment.getPointToUse());
+//        }
+//    }
 
 
     private ConfirmPaymentResponse handleAmountMismatch(Payment payment) {
@@ -211,7 +245,9 @@ public class PaymentService {
 
     // 결제 성공했는데 내부 사정(결제 금액 불일치, 재고 부족 등) 결제 취소 요청 보내야 하는 경우
     private PaymentStatus requestCancelAfterInternalFailure(Payment payment) {
+        System.out.println("PaymentService.requestCancelAfterInternalFailure");
         paymentStatusTxService.markCancelRequested(payment.getPaymentUid());
+//        payment.cancelRequested();
         // 포트원 결제 취소 요청
         String reason = "Failed to process Payment Confirm in Server";
         PaymentCancelResult paymentCancelResult = paymentCancelService.processPaymentCancel(payment, reason);
@@ -278,7 +314,7 @@ public class PaymentService {
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_AMOUNT);
         }
 
-        markPaymentSuccess(payment);
+        paymentStatusTxService.markSuccess(payment.getPaymentUid());
     }
 
     /*

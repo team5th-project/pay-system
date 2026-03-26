@@ -19,6 +19,7 @@ public class PaymentCancelService {
     private final PortOneService portOneService;
 
     public PaymentCancelResult processPaymentCancel(Payment payment,String reason) {
+        System.out.println("PaymentCancelService.processPaymentCancel");
         String paymentUid = payment.getPaymentUid();
         try{
             PortOneCancellationDto cancellationDto = tryPaymentCancelWithRetry(paymentUid, reason);
@@ -43,7 +44,7 @@ public class PaymentCancelService {
 
     public PortOneCancellationDto tryPaymentCancelWithRetry(String paymentUid,String reason) throws InterruptedException{
         int retry = 0;
-
+        System.out.println("PaymentCancelService.tryPaymentCancelWithRetry");
         while (retry < 3) { // 조회 총 3번 시도
             try {
                 PortOneCancellationDto portOneCancellationDto = portOneService.cancelPayment(paymentUid,reason);
