@@ -177,7 +177,7 @@ public class OrderService {
         // 지원 추가
         // 주문 확정 이벤트가 발생해서 포인트를 적립하는 로직과 함께 총 주문금액이 출력됩니다.
         user.addTotalOrderAmount(Math.toIntExact(order.getTotalAmount()));
-
+        userPointService.updateMembershipGrade(userId);
         return OrderConfirmResponse.from(order);
     }
 

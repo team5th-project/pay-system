@@ -133,7 +133,8 @@ public class UserPointService {
 //        user.deductTotalOrderAmount(refundAmount);
 
         // 등급 롤백
-        updateMembershipGrade(userId);
+        // 이제 등급이 주문 확정 이후 변경되기 때문에 주석처리 하겠습니당
+//        updateMembershipGrade(userId);
     }
 
 
