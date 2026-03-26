@@ -72,4 +72,12 @@ public class ProductService {
             product.decreaseStock(orderItem.getQuantity());
         }
     }
+    // 현민 추가
+    @Transactional
+    public void restoreStockByOrder(Order order) {
+        for(OrderItem orderItem : order.getOrderItems()) {
+            Product product = productRepository.findByIdForUpdate(orderItem.getProduct().getId());
+            product.increaseStock(orderItem.getQuantity());
+        }
+     }
 }

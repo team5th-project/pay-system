@@ -113,7 +113,7 @@ public class UserPointService {
      * 해당 주문에서 사용한 포인트를 복구하고 등급 롤백
      */
     @Transactional
-    public void refundPoint(Long userId, Long orderId, long refundAmount) {
+    public void releasePoint(Long userId, Long orderId, long refundAmount) {
         UserPoint userPoint = pointRepository.findByUserIdForUpdate(userId);
         User user = userService.getUser(userId);
         List<PointTransaction> usedTransactions = pointTransactionRepository.findByOrderIdAndType(orderId, PointType.USE);
