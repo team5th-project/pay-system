@@ -121,14 +121,9 @@ public class PaymentStatusTxService {
                 throw new ServiceException(ErrorCode.INVALID_ORDER_STATUS);
             }
 
-
             // 5. 재고 차감
             productService.decreaseStockByOrder(order);
-
-            // 6. 포인트 차감
-            if (payment.getPointToUse() > 0) {
-                userPointService.usePoint(order.getUserId(), order.getId(), payment.getPointToUse());
-            }
+            // 6. 포인트 가점유 해제 부분은 order 확정으로 옮김
 
             // 7. 상태 전이
             payment.success();
@@ -155,9 +150,9 @@ public class PaymentStatusTxService {
             payment.failed();
             // 주문 상태는 유지. 호출할 것 없음
             // 포인트 가점유 해제
-            if (payment.getPointToUse() > 0) {
-                userPointService.cancelUsePoint(order.getUserId(), order.getId(), payment.getPointToUse());
-            }
+//            if (payment.getPointToUse() > 0) {
+//                userPointService.cancelUsePoint(order.getUserId(), payment.getPointToUse());
+//            }
         } catch (CannotAcquireLockException e) {
             log.warn("락 획득 실패 - 이미 처리 중. paymentUid={}", paymentUid);
             return;

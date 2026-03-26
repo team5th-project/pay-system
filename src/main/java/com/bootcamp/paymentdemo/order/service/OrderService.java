@@ -16,6 +16,8 @@ import com.bootcamp.paymentdemo.order.repository.OrderRepository;
 import com.bootcamp.paymentdemo.payment.entity.Payment;
 import com.bootcamp.paymentdemo.payment.enums.PaymentStatus;
 import com.bootcamp.paymentdemo.payment.respository.PaymentRepository;
+import com.bootcamp.paymentdemo.point.entity.UserPoint;
+import com.bootcamp.paymentdemo.point.repository.UserPointRepository;
 import com.bootcamp.paymentdemo.point.service.UserPointService;
 import com.bootcamp.paymentdemo.product.Product;
 import com.bootcamp.paymentdemo.product.ProductService;
@@ -45,15 +47,16 @@ public class OrderService {
     private final PaymentRepository paymentRepository;
     private final UserPointService userPointService;   //  주문 확정 시 포인트 적립용
     private final UserService userService;
+    private final UserPointRepository userPointRepository;
 
     // 주문 생성
     @Transactional
     public OrderCreateResponse createOrder(Long userId,
                                            OrderCreateRequest request) {
-        // 1. 총 금액 계산 (product와 협의 후 수정예정)
-//        Long totalAmount = request.getItems().stream()
-//                .mapToLong(item -> item.getQuantity())
-//                .sum();   // product팀 api 연동 후 실제 가격으로 변경
+        UserPoint userPoint = userPointRepository.findUserPointByUserId(userId).
+                orElseThrow(()-> new ServiceException(ErrorCode.USERPOINT_NOT_FOUND));
+
+        // 1. 총 금액 계산
         Long totalAmount = request.getItems().stream()
             .mapToLong(item -> {
                 Product product = productService.getProductById(Long.parseLong(item.getProductId()));
@@ -64,10 +67,22 @@ public class OrderService {
         Long usedPoint = request.getUsedPoint() != null
                 ? request.getUsedPoint() : 0L;
 
+        // 만약 사용하려는 포인트가 가진 포인트 보다 많다면 에러 처리
+        if (usedPoint > userPoint.getAvailablePoint()){
+            throw new ServiceException(ErrorCode.INSUFFICIENT_POINT);
+        }
+
 
         // 2. 주문 생성
         Order order = Order.create(userId, totalAmount, usedPoint);
         orderRepository.save(order);
+
+        // 사용하려는 포인트가 있을때에만 포인트 락 걸기
+        if (usedPoint > 0) {
+            // 포인트 가점유. 포인트 쪽에서 포인트 사용 가능 여부 확인
+            // userId, orderId, point
+            userPointService.holdPoint(order.getUserId(), order.getId(), Math.toIntExact(usedPoint));
+        }
 
         // 3. 주문 상품 생성
         request.getItems().forEach(orderItemRequest -> {
@@ -170,12 +185,16 @@ public class OrderService {
         // 적립 기준: 실제 PG 결제 금액 (포인트 차감 후 finalAmount)
         // 전액 포인트 결제 시 finalAmount = 0 → earnPoint() 내부에서 적립 없음 처리
         // PaymentService 대신 PaymentRepository 직접 사용 (OrderService ↔ PaymentService 순환 참조 방지)
-        Payment payment = paymentRepository.findByOrderId(order.getId())
-                .orElseThrow(() -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND));
-        userPointService.earnPoint(userId, order.getId(), payment.getFinalAmount());
+//        Payment payment = paymentRepository.findByOrderId(order.getId())
+//                .orElseThrow(() -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND));
+        userPointService.earnPoint(userId, order.getId(), order.getFinalAmount());
 
         // 지원 추가
         // 주문 확정 이벤트가 발생해서 포인트를 적립하는 로직과 함께 총 주문금액이 출력됩니다.
+
+        // 주문이 확정되면 진짜 포인트 차감
+        userPointService.usePoint(order.getUserId(), order.getId(), Math.toIntExact(order.getUsedPoint()));
+
         user.addTotalOrderAmount(Math.toIntExact(order.getTotalAmount()));
         userPointService.updateMembershipGrade(userId);
         return OrderConfirmResponse.from(order);
@@ -202,6 +221,9 @@ public class OrderService {
         if (!order.getUserId().equals(userId)) {
             throw new ServiceException(ErrorCode.ORDER_NOT_OWNED);
         }
+
+        // 포인트 가점유 해제
+        userPointService.cancelUsePoint(userId, Math.toIntExact(order.getUsedPoint()));
 
         // 상태 전이 (PENDING → CANCELLED), 다른 상태면 예외 발생
         order.cancel();

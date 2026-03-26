@@ -86,13 +86,6 @@ public class PaymentService {
                 .expiresAt(LocalDateTime.now().plusMinutes(5))  // 스케쥴러에서 5분동안 결제가 안되면 failed 처리하기
                 .build();
 
-        // 사용하려는 포인트가 있을때에만 포인트 락 걸기
-        if (pointsToUse > 0) {
-
-            // 포인트 가점유. 포인트 쪽에서 포인트 사용 가능 여부 확인
-            // userId, orderId, point
-            userPointService.holdPoint(order.getUserId(), order.getId(), pointsToUse);
-        }
         paymentRepository.save(payment);
 
         return CreatePaymentResponse.from(payment);
@@ -409,9 +402,9 @@ public class PaymentService {
         Order order = payment.getOrder();
 
         // 가점유 했던 포인트 가점유 해제
-        if (payment.getPointToUse() > 0) {
-            userPointService.cancelUsePoint(order.getUserId(), order.getId(), payment.getPointToUse());
-        }
+//        if (payment.getPointToUse() > 0) {
+//            userPointService.cancelUsePoint(order.getUserId(), payment.getPointToUse());
+//        }
     }
 
     // TODO - 주문 금액에 따른 멤버십 등급 자동 업데이트 기능이 있나?
