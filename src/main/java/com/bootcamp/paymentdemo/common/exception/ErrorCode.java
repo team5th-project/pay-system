@@ -52,6 +52,7 @@ public enum ErrorCode {
     PAYMENT_FAILED(HttpStatus.BAD_REQUEST, "PAY013", "결제에 실패하였습니다."),
     PAYMENT_CHECK_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PAY014", "포트원 결제 조회에 실패했습니다."),
     PAYMENT_CANCEL_FAILED(HttpStatus.BAD_REQUEST, "PAY015", "결제 취소에 실패하였습니다."),
+    INVALID_PAYMENT_STATUS(HttpStatus.BAD_REQUEST, "ROO2", "결제 상태가 유효하지 않습니다."),
 
     // 포트원 에러
     INVALID_PAYMENT_VALIDATION_REQUEST(HttpStatus.BAD_REQUEST, "PAY005", "잘못된 결제 검증 요청입니다."),
@@ -65,7 +66,7 @@ public enum ErrorCode {
 
     //환불
     INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, "R001", "현재 환불 상태에서는 요청한 작업을 수행할 수 없습니다."),
-    INVALID_PAYMENT_STATUS(HttpStatus.BAD_REQUEST, "ROO2", "환불은 결제 완료 상태에서만 가능합니다."),
+    INVALID_PAYMENT_STATUS_FOR_REFUND(HttpStatus.BAD_REQUEST, "ROO2", "환불은 결제 완료 상태에서만 가능합니다."),
     REFUND_FAILED(HttpStatus.BAD_REQUEST,"R003", "환불 처리 중 오류가 발생했습니다."),
     REFUND_NOT_FOUND(HttpStatus.NOT_FOUND, "R004", "환불내역을 찾을 수 없습니다."),
     REFUND_PERIOD_EXPIRED(HttpStatus.BAD_REQUEST, "R005", "환불 가능 기간이 지났습니다."),
@@ -85,6 +86,7 @@ public enum ErrorCode {
     //포인트
     INSUFFICIENT_POINT(HttpStatus.BAD_REQUEST, "PT001", "포인트 잔액이 부족합니다."),
     INVALID_POINT_AMOUNT(HttpStatus.BAD_REQUEST, "PT002", "포인트는 양수여야 합니다."),
+    USERPOINT_NOT_FOUND(HttpStatus.NOT_FOUND, "PT003", "유저 포인트 정보를 찾을 수 없습니다."),
 
     // 멤버십
     MEMBERSHIP_POLICY_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "MS001", "멤버십 등급 정책을 찾을 수 없습니다."),

@@ -12,7 +12,8 @@ public record MembershipPolicyResponse(
         return new MembershipPolicyResponse(
                 policy.getGrade(),
                 policy.getMinAmount(),
-                policy.getMaxAmount(),
+                // maxAmount: 49999 → 50000, 99999 → 100000, null 유지
+                policy.getMaxAmount() != null ? policy.getMaxAmount() + 1 : null,
                 policy.getPointRate()
         );
     }

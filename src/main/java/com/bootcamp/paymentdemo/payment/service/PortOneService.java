@@ -129,7 +129,7 @@ public class PortOneService {
 
         if (status == 409) {
             if ("PAYMENT_NOT_PAID".equalsIgnoreCase(type)) {
-                return new PortOneException(ErrorCode.INVALID_PAYMENT_STATUS);
+                return new PortOneException(ErrorCode.INVALID_PAYMENT_STATUS_FOR_REFUND);
             }
             if ("PAYMENT_ALREADY_CANCELLED".equalsIgnoreCase(type)) {
                 return new PortOneException(ErrorCode.INVALID_REFUND_STATUS);

@@ -73,7 +73,7 @@ public class UserPointService {
      * 결제 실패 또는 취소 시 PaymentService 에서 호출
      */
     @Transactional
-    public void cancelUsePoint(Long userId, Long orderId, int points){
+    public void cancelUsePoint(Long userId, int points){
         // 사용자 조회
         UserPoint userPoint = pointRepository.findByUserIdForUpdate(userId);
         userPoint.release(points);
@@ -113,7 +113,7 @@ public class UserPointService {
      * 해당 주문에서 사용한 포인트를 복구하고 등급 롤백
      */
     @Transactional
-    public void refundPoint(Long userId, Long orderId, long refundAmount) {
+    public void releasePoint(Long userId, Long orderId, long refundAmount) {
         UserPoint userPoint = pointRepository.findByUserIdForUpdate(userId);
         User user = userService.getUser(userId);
         List<PointTransaction> usedTransactions = pointTransactionRepository.findByOrderIdAndType(orderId, PointType.USE);
@@ -130,9 +130,12 @@ public class UserPointService {
             saveTransaction(PointTransaction.refund(userId, orderId, refundPoints));
         }
         // 누적 주문금액 차감 -> 등급 롤백 기준
-        user.deductTotalOrderAmount(refundAmount);
+        // user domain 에서 totalOrderAmount 값이 주문 확정 이후의 금액으로 수정되었습니다.
+//        user.deductTotalOrderAmount(refundAmount);
+
         // 등급 롤백
-        updateMembershipGrade(userId);
+        // 이제 등급이 주문 확정 이후 변경되기 때문에 주석처리 하겠습니당
+//        updateMembershipGrade(userId);
     }
 
 
