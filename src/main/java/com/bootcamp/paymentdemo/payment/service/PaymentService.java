@@ -341,7 +341,7 @@ public class PaymentService {
         if (!(payment.getPaymentStatus() == PaymentStatus.FAILED
                 || payment.getPaymentStatus() == PaymentStatus.CANCEL_REQUESTED
                 || payment.getPaymentStatus() == PaymentStatus.CANCEL_FAILED)) {
-            throw new ServiceException(ErrorCode.PAYMENT_STATUS_NOT_PENDING);
+            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
         }
 
         // 3. paymentUid 검증
@@ -375,7 +375,7 @@ public class PaymentService {
         // 2. 상태 검증
         if (!(payment.getPaymentStatus() == PaymentStatus.CANCEL_REQUESTED
                 || payment.getPaymentStatus() == PaymentStatus.CANCEL_FAILED)) {
-            throw new ServiceException(ErrorCode.PAYMENT_STATUS_NOT_PENDING);
+            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
         }
 
         // 3. paymentUid 검증
