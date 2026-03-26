@@ -11,7 +11,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: update # 나중에 validate로 변경 추천
       # update = 테이블 자동 생성/수정 (없으면 만들고, 있으면 유지)
     properties:
       hibernate:
@@ -21,3 +21,16 @@ spring:
     init:
       # MySQL에서는 H2 초기화 스크립트 실행 안 함
       mode: never
+
+# PortOne Configuration
+portone:
+  api:
+    base-url: https://api.portone.io
+    secret: ${PORTONE_API_SECRET}
+  store:
+    id: ${PORTONE_STORE_ID}
+  channel:
+    kg-inicis: ${PORTONE_CHANNEL_KG}
+    toss: ${PORTONE_CHANNEL_TOSS}
+  webhook:
+    secret: ${PORTONE_WEBHOOK_SECRET}
