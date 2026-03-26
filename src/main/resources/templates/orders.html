@@ -20,7 +20,7 @@
             }
             #order-list-body tr.order-list-row td {
                 opacity: 0;
-                animation: order-list-cell-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+                animation: order-list-cell-in 0.58s cubic-bezier(0.22, 1, 0.36, 1) forwards;
                 animation-delay: var(--order-row-delay, 0s);
             }
             @media (prefers-reduced-motion: reduce) {
@@ -232,7 +232,7 @@
                 orders.forEach((order, rowIndex) => {
                     const tr = document.createElement('tr');
                     tr.classList.add('order-list-row');
-                    tr.style.setProperty('--order-row-delay', `${rowIndex * 60}ms`);
+                    tr.style.setProperty('--order-row-delay', `${rowIndex * 150}ms`);
                     tr.style.borderBottom = '1px solid var(--border)';
 
                     if (selectedOrderUid && order.orderUid === selectedOrderUid) {

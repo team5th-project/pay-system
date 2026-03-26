@@ -20,6 +20,7 @@
     <script th:src="@{/js/theme.js}"></script>
     <script th:src="@{/js/portone-sdk.js}"></script>
     <script th:src="@{/js/auth-check.js}"></script>
+    <script th:src="@{/js/page-transition.js}"></script>
 
     <!-- Page Specific Scripts -->
     <th:block th:replace="${scripts}"></th:block>
@@ -44,6 +45,8 @@
             </div>
         </div>
     </nav>
+
+    <div id="page-transition-overlay" aria-hidden="true"></div>
 
     <div class="main-container page-transition">
         <!-- Content Area ONLY -->
@@ -401,7 +404,13 @@
                     updateCartSummary();
                     toggleCartModal();
 
-                    setTimeout(() => { window.location.href = `/pages/orders`; }, 1000);
+                    setTimeout(() => {
+                        if (typeof window.navigateWithMagicTransition === 'function') {
+                            window.navigateWithMagicTransition('/pages/orders');
+                        } else {
+                            window.location.href = '/pages/orders';
+                        }
+                    }, 1000);
                 } else {
                     throw new Error('주문 생성 실패 응답');
                 }

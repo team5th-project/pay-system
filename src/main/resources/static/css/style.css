@@ -423,14 +423,115 @@ h1, h2, h3, h4, h5, h6, .navbar-brand, .form-title, .card-header {
    Magic Animations & Overlays
 ========================================= */
 
-/* Magic Page Transition (No forwards to prevent stacking context bug) */
+/* Magic Page Transition — 몽환적 입장 */
 .page-transition {
-    animation: page-fade-in 0.6s ease-out;
+    animation: page-enter-magic 0.95s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-@keyframes page-fade-in {
-    0% { opacity: 0; transform: translateY(15px) scale(0.98); }
-    100% { opacity: 1; transform: none; }
+@keyframes page-enter-magic {
+    0% {
+        opacity: 0;
+        transform: translateY(32px) scale(0.96);
+        filter: blur(12px) brightness(1.08);
+    }
+    55% {
+        filter: blur(2px) brightness(1.02);
+    }
+    100% {
+        opacity: 1;
+        transform: none;
+        filter: none;
+    }
+}
+
+/* 퇴장 시 본문이 안개 속으로 사라짐 */
+@keyframes page-exit-magic {
+    0% {
+        opacity: 1;
+        transform: none;
+        filter: none;
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.97);
+        filter: blur(10px) brightness(1.12);
+    }
+}
+
+body.page-transition-exiting .page-transition {
+    animation: page-exit-magic 0.58s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* 라벤더·핑크 안개 커튼 (전환 중) */
+#page-transition-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9990;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease, backdrop-filter 0.55s ease;
+    background:
+        radial-gradient(ellipse 80% 60% at 50% 40%, rgba(255, 182, 193, 0.45) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 50% at 80% 80%, rgba(230, 230, 250, 0.5) 0%, transparent 50%),
+        radial-gradient(ellipse 50% 40% at 15% 75%, rgba(255, 182, 193, 0.25) 0%, transparent 45%),
+        linear-gradient(160deg, rgba(255, 250, 252, 0.92) 0%, rgba(230, 230, 250, 0.85) 45%, rgba(255, 228, 240, 0.9) 100%);
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+}
+
+#page-transition-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        radial-gradient(1.5px 1.5px at 20% 30%, rgba(255, 255, 255, 0.9) 50%, transparent 50%),
+        radial-gradient(1px 1px at 60% 70%, rgba(255, 255, 255, 0.7) 50%, transparent 50%),
+        radial-gradient(1.5px 1.5px at 85% 25%, rgba(255, 240, 250, 0.95) 50%, transparent 50%),
+        radial-gradient(1px 1px at 40% 85%, rgba(255, 255, 255, 0.65) 50%, transparent 50%);
+    background-size: 100% 100%;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    animation: page-overlay-sparkle 4.5s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes page-overlay-sparkle {
+    0%, 100% { opacity: 0.35; transform: translateY(0); }
+    50% { opacity: 0.65; transform: translateY(-6px); }
+}
+
+#page-transition-overlay.is-active {
+    opacity: 1;
+    pointer-events: all;
+    backdrop-filter: blur(16px) saturate(1.15);
+    -webkit-backdrop-filter: blur(16px) saturate(1.15);
+}
+
+#page-transition-overlay.is-active::before {
+    opacity: 1;
+}
+
+[data-theme="dark"] #page-transition-overlay {
+    background:
+        radial-gradient(ellipse 80% 60% at 50% 40%, rgba(180, 120, 160, 0.35) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 50% at 80% 80%, rgba(100, 80, 70, 0.45) 0%, transparent 50%),
+        linear-gradient(160deg, rgba(35, 30, 28, 0.94) 0%, rgba(50, 42, 38, 0.9) 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .page-transition {
+        animation: none;
+        opacity: 1;
+        filter: none;
+        transform: none;
+    }
+    body.page-transition-exiting .page-transition {
+        animation: none;
+        opacity: 1;
+    }
+    #page-transition-overlay {
+        display: none !important;
+    }
 }
 
 /* Shimmer Skeleton */
