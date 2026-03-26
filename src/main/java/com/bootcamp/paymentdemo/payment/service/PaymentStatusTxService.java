@@ -55,41 +55,67 @@ public class PaymentStatusTxService {
 
     // 결제 확정 성공 상태 전이
     @Transactional
-    public void markSuccess(String paymentUid){
+    public void markSuccess(String paymentUid) {
+    //이미 다른 결제가 처리된 상태면 아무 상태도 섣불리 확정하지 않고 종료
+    //로그만 남김
+
         Payment payment = paymentRepository.findByPaymentUidForUpdate(paymentUid)
                 .orElseThrow(() -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND));
-        Order order = orderRepository.findByIdForUpdate(payment.getOrder().getId()).orElseThrow(
-                () -> new ServiceException(ErrorCode.ORDER_NOT_FOUND)
-        );
-        log.info("order id={}", order.getId());
-        log.info("order status={}", order.getStatus());
-        log.info("order userId={}", order.getUserId());
 
+        Order order = orderRepository.findByIdForUpdate(payment.getOrder().getId())
+                .orElseThrow(() -> new ServiceException(ErrorCode.ORDER_NOT_FOUND));
 
-        if (payment.getPaymentStatus() == PaymentStatus.SUCCESS
-                || order.getStatus() == OrderStatus.PAID) {
-            return; // 이미 처리된 Paid 웹훅
+        log.info("markSuccess start. orderId={}, paymentUid={}, paymentStatus={}, orderStatus={}, userId={}",
+                order.getId(),
+                paymentUid,
+                payment.getPaymentStatus(),
+                order.getStatus(),
+                order.getUserId());
+
+        // 1. 같은 payment가 이미 성공 처리된 경우: 멱등 처리
+        if (payment.getPaymentStatus() == PaymentStatus.SUCCESS) {
+            log.info("markSuccess skipped - payment already SUCCESS. orderId={}, paymentUid={}",
+                    order.getId(), paymentUid);
+            return;
         }
 
+        // 2. 이미 다른 결제로 주문이 결제 완료된 경우
+        // 현재 payment를 성공 처리하면 안 됨
+        if (order.getStatus() == OrderStatus.PAID) {
+            log.warn("markSuccess skipped - order already PAID by another payment. orderId={}, paymentUid={}, paymentStatus={}",
+                    order.getId(), paymentUid, payment.getPaymentStatus());
+
+            return;
+        }
+
+        // 3. 현재 payment는 성공 가능한 상태인지 검증
         if (payment.getPaymentStatus() != PaymentStatus.PENDING) {
+            log.warn("markSuccess failed - invalid payment status. orderId={}, paymentUid={}, paymentStatus={}",
+                    order.getId(), paymentUid, payment.getPaymentStatus());
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
         }
 
+        // 4. 주문도 성공 가능한 상태인지 검증
         if (order.getStatus() != OrderStatus.PENDING) {
+            log.warn("markSuccess failed - invalid order status. orderId={}, paymentUid={}, orderStatus={}",
+                    order.getId(), paymentUid, order.getStatus());
             throw new ServiceException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
-        // 재고 차감
+
+        // 5. 재고 차감
         productService.decreaseStockByOrder(order);
 
-        // 포인트 차감
+        // 6. 포인트 차감
         if (payment.getPointToUse() > 0) {
             userPointService.usePoint(order.getUserId(), order.getId(), payment.getPointToUse());
         }
-        // 결제 상태 성공으로 변경
+
+        // 7. 상태 전이
         payment.success();
-        // 주문 상태 결제 성공으로 변경
         order.markAsPaid();
+
+        log.info("markSuccess completed. orderId={}, paymentUid={}", order.getId(), paymentUid);
     }
 
     // 결제 확정 실패 상태 전이
@@ -102,7 +128,7 @@ public class PaymentStatusTxService {
         );
         // 결제 상태 실패로 변경
         payment.failed();
-        // 주문 상태는 PENDING으로 유지. 호출할 것 없음
+        // 주문 상태는 유지. 호출할 것 없음
         // 포인트 가점유 해제
         if (payment.getPointToUse() > 0) {
             userPointService.cancelUsePoint(order.getUserId(), order.getId(), payment.getPointToUse());
