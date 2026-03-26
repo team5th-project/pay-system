@@ -131,10 +131,17 @@
             }
             .progress-bar-fill {
                 height: 100%;
+                width: 0%;
                 background: linear-gradient(90deg, var(--primary-light), var(--primary));
                 border-radius: 12px;
-                transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+                transition: width 1.15s cubic-bezier(0.22, 1, 0.36, 1);
                 position: relative;
+                will-change: width;
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .progress-bar-fill {
+                    transition-duration: 0.01ms;
+                }
             }
             .progress-bar-fill::after {
                 content: '';
@@ -153,6 +160,10 @@
                 font-size: 1.6rem;
                 font-family: 'Jua', sans-serif;
                 color: var(--primary);
+                font-variant-numeric: tabular-nums;
+            }
+            .animated-number {
+                font-variant-numeric: tabular-nums;
             }
             .progress-hint {
                 text-align: center;
@@ -352,6 +363,35 @@
 
         function fmt(n) { return Number(n).toLocaleString(); }
 
+        function prefersReducedMotion() {
+            return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        }
+
+        /** 숫자가 목표값까지 올라가는 애니메이션 (easeOutCubic) */
+        function animateNumberTo(el, endValue, options = {}) {
+            if (!el) return;
+            const duration = options.durationMs ?? 1100;
+            const prefix = options.prefix ?? '';
+            const suffix = options.suffix ?? '';
+            const end = Math.max(0, Number(endValue) || 0);
+            if (prefersReducedMotion()) {
+                el.textContent = prefix + fmt(end) + suffix;
+                return;
+            }
+            const start = options.start ?? 0;
+            const t0 = performance.now();
+            function tick(now) {
+                const t = Math.min(1, (now - t0) / duration);
+                const eased = 1 - Math.pow(1 - t, 3);
+                const cur = Math.round(start + (end - start) * eased);
+                el.textContent = prefix + fmt(cur) + suffix;
+                if (t < 1) requestAnimationFrame(tick);
+                else el.textContent = prefix + fmt(end) + suffix;
+            }
+            el.textContent = prefix + fmt(start) + suffix;
+            requestAnimationFrame(tick);
+        }
+
         function fmtDate(iso) {
             if (!iso) return '-';
             const d = new Date(iso);
@@ -411,10 +451,12 @@
                     <li><span class="info-label">👤 이름</span><span class="info-value">${u.name || '-'}</span></li>
                     <li><span class="info-label">📱 전화번호</span><span class="info-value">${u.phone || '-'}</span></li>
                     <li><span class="info-label">🏅 현재 등급</span><span class="info-value"><span class="grade-badge grade-${u.rank}">${gradeEmoji[u.rank] || ''} ${gradeLabel[u.rank] || u.rank}</span></span></li>
-                    <li><span class="info-label">💎 사용 가능 포인트</span><span class="info-value" style="color: var(--primary); font-size: 1.15rem;">${fmt(u.availablePoint)}P</span></li>
+                    <li><span class="info-label">💎 사용 가능 포인트</span><span class="info-value animated-number" style="color: var(--primary); font-size: 1.15rem;"><span id="user-available-point">0</span>P</span></li>
                     <li><span class="info-label">💰 누적 구매액</span><span class="info-value">₩${fmt(u.totalAmount)}</span></li>
                 </ul>
             `;
+            const ptEl = document.getElementById('user-available-point');
+            animateNumberTo(ptEl, u.availablePoint, { durationMs: 1200 });
         }
 
         /* ──────────── Box 2: Grade Progress ──────────── */
@@ -452,16 +494,19 @@
                     <div class="progress-bar-track">
                         <div class="progress-bar-fill" style="width: 0%;" id="grade-progress-bar"></div>
                     </div>
-                    <div class="progress-amount">₩${fmt(totalAmount)}</div>
+                    <div class="progress-amount">₩<span id="grade-progress-total">0</span></div>
                     <div class="progress-hint">${hintText}</div>
                 </div>
             `;
 
-            // Animate the progress bar
+            const barEl = document.getElementById('grade-progress-bar');
+            const totalEl = document.getElementById('grade-progress-total');
+            // 프로그레스바·누적 금액 동시에 채워지는 느낌
             requestAnimationFrame(() => {
-                setTimeout(() => {
-                    document.getElementById('grade-progress-bar').style.width = pct + '%';
-                }, 100);
+                requestAnimationFrame(() => {
+                    if (barEl) barEl.style.width = pct + '%';
+                    animateNumberTo(totalEl, totalAmount, { durationMs: 1150, prefix: '', suffix: '' });
+                });
             });
         }
 

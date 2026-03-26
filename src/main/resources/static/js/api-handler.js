@@ -268,21 +268,46 @@ function formatCurrency(amount, currency = 'KRW') {
 }
 
 /**
- * 헬퍼: 알림 표시
+ * 헬퍼: 알림 표시 (여러 개일 때 세로로 쌓여 겹치지 않음)
  */
 function showNotification(message, type = 'info') {
+    const STACK_ID = 'notification-stack';
+    let stack = document.getElementById(STACK_ID);
+    if (!stack) {
+        stack = document.createElement('div');
+        stack.id = STACK_ID;
+        stack.setAttribute('aria-live', 'polite');
+        Object.assign(stack.style, {
+            position: 'fixed',
+            top: '100px',
+            right: '20px',
+            zIndex: '9999',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+            alignItems: 'flex-end',
+            maxWidth: 'min(420px, calc(100vw - 40px))',
+            pointerEvents: 'none',
+            boxSizing: 'border-box'
+        });
+        document.body.appendChild(stack);
+    }
+
     const notification = document.createElement('div');
     notification.className = `alert alert-${type}`;
     notification.textContent = message;
-    notification.style.position = 'fixed';
-    notification.style.top = '100px';
-    notification.style.right = '20px';
-    notification.style.zIndex = '9999';
     notification.style.minWidth = '300px';
+    notification.style.marginBottom = '0';
+    notification.style.pointerEvents = 'auto';
 
-    document.body.appendChild(notification);
+    stack.appendChild(notification);
 
     setTimeout(() => {
         notification.remove();
+        if (stack && stack.childElementCount === 0) {
+            stack.remove();
+        }
     }, 3000);
 }
+
+window.showNotification = showNotification;
