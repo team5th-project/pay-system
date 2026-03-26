@@ -14,6 +14,7 @@ import com.bootcamp.paymentdemo.order.enums.OrderStatus;
 import com.bootcamp.paymentdemo.order.repository.OrderItemRepository;
 import com.bootcamp.paymentdemo.order.repository.OrderRepository;
 import com.bootcamp.paymentdemo.payment.entity.Payment;
+import com.bootcamp.paymentdemo.payment.enums.PaymentStatus;
 import com.bootcamp.paymentdemo.payment.respository.PaymentRepository;
 import com.bootcamp.paymentdemo.point.service.UserPointService;
 import com.bootcamp.paymentdemo.product.Product;
@@ -27,7 +28,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 
 @Service
@@ -139,7 +139,7 @@ public class OrderService {
         // -> 다른 상태에서는 불필요하므로 null 반환
         String paymentUid = null;
         if (order.getStatus() == OrderStatus.PAID) {
-            paymentUid = paymentRepository.findByOrderId(order.getId())
+            paymentUid = paymentRepository.findByOrderIdAndPaymentStatus(order.getId(), PaymentStatus.SUCCESS)
                     .map(Payment::getPaymentUid)
                     .orElse(null);
         }

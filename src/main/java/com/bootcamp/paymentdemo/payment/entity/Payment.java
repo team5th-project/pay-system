@@ -73,7 +73,7 @@ public class Payment extends BaseEntity {
     // 결제상태 환불완료로 전환메서드
     public void refund() {
         if (this.paymentStatus != PaymentStatus.SUCCESS) {
-            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
+            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS_FOR_REFUND);
         }
         this.paymentStatus = PaymentStatus.REFUNDED;
     }
@@ -91,7 +91,7 @@ public class Payment extends BaseEntity {
         // 포트원 결제 성공 후 재고 차감 문제로 취소 요청이 보내진 경우 트랜잭션 롤백으로 paymentStatus는 다시 PENDING 상태가 되어버림.
         // 상태를 좀 더 세분화하면 좋을 것 같기도..
         if (this.paymentStatus != PaymentStatus.PENDING) {
-            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
+            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS_FOR_REFUND);
         }
         this.paymentStatus = PaymentStatus.CANCEL_REQUESTED;
     }
@@ -99,14 +99,14 @@ public class Payment extends BaseEntity {
     // 결제 취소 성공이랑 환불 상태 나눠야겠네요..
     public void cancelled(){
         if (this.paymentStatus != PaymentStatus.CANCEL_REQUESTED && this.paymentStatus !=PaymentStatus.CANCEL_FAILED) {
-            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
+            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS_FOR_REFUND);
         }
         this.paymentStatus = PaymentStatus.CANCELLED;
     }
 
     public void cancelFailed() {
         if (this.paymentStatus != PaymentStatus.CANCEL_REQUESTED) {
-            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
+            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS_FOR_REFUND);
         }
         this.paymentStatus = PaymentStatus.CANCEL_FAILED;
     }

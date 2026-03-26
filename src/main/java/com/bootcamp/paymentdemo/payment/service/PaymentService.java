@@ -301,7 +301,7 @@ public class PaymentService {
 
         // 2. PENDING 상태인 결제가 맞는지 상태 검증
         if (payment.getPaymentStatus() != PaymentStatus.PENDING) {
-            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
+            throw new ServiceException(ErrorCode.PAYMENT_STATUS_NOT_PENDING);
         }
 
         // 3. paymentUid 검증
@@ -399,7 +399,7 @@ public class PaymentService {
         }
         // 2. 상태 검증
         if (payment.getPaymentStatus() != PaymentStatus.PENDING) {
-            throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS);
+            throw new ServiceException(ErrorCode.PAYMENT_STATUS_NOT_PENDING);
         }
         // 3. paymentUid 검증
         if (!payment.getPaymentUid().equals(portOnePaymentDto.paymentId())) {
