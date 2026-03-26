@@ -93,6 +93,7 @@ public class UserPointService {
         // 사용자 조회
         UserPoint userPoint = pointRepository.findByUserIdForUpdate(userId);
         User user = userService.getUser(userId);
+        
         // 멤버십 등급 조회
         MembershipPolicy policy = membershipPolicyRepository.findByGrade(user.getMembershipGrade());
         // 적립 포인트 계산
