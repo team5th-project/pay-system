@@ -6,12 +6,13 @@ import com.bootcamp.paymentdemo.point.repository.MembershipPolicyRepository;
 import com.bootcamp.paymentdemo.point.service.UserPointService;
 import com.bootcamp.paymentdemo.user.UserRepository;
 import com.bootcamp.paymentdemo.user.UserService;
-
 import com.bootcamp.paymentdemo.user.dto.SignupRequest;
+import com.bootcamp.paymentdemo.user.dto.SignupResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -24,49 +25,47 @@ import java.util.List;
 public class DataInitializer implements ApplicationRunner {
 
     private final UserService userService;
-
     private final UserPointService userPointService;
-
-    // 민교가 수정함
-    // 이메일 중복 여부 확인을 위해 UserRepository 직접 주입
-    // → UserService에 existsByEmail 메서드가 없어 Repository에서 findByEmail로 체크
     private final UserRepository userRepository;
-
     private final MembershipPolicyRepository membershipPolicyRepository;
 
     @Override
+    @Transactional // 유저 생성 + 포인트 지급 로직을 하나의 트랜잭션으로 관리
     public void run(ApplicationArguments args) {
-        // 프론트 로그인 페이지에 표시된 테스트 계정
-        String name = "권지원";
-        String email = "admin@test.com";
-        String password = "admin";
+        // 1. 테스트용 계정 생성
+        createTestUser("admin", "admin@test.com", "01012341234", "admin", 500000);
+        createTestUser("볼드모트", "voldemort@test.com", "01042741234", "voldemort", 500000);
+        createTestUser("간달프", "gandalf@test.com", "01080870903", "gandalf", 500000);
+        createTestUser("도비", "dobby@test.com", "01006708024", "dobby", 500000);
 
-        // 민교가 수정함
-        // 기존: 앱 시작 시 무조건 INSERT → DB에 이미 존재하면 unique 제약 위반으로 앱 실행 실패
-        // 변경: 이미 존재하는 이메일이면 삽입 건너뜀 (멱등성 보장)
-        // → 최초 실행 시에만 테스트 계정 생성, 이후 재시작 시에도 정상 동작
-        if (userRepository.findByEmail(email).isEmpty()) {
-            userService.signup(SignupRequest.builder()
-                            .name(name)
-                            .email(email)
-                            .phone("01012341234")
-                            .password(password)
-                    .build());
-        }
-
-        // 사용할 수 있는 포인트를 시작할 때 지급하는 로직을 추가했습니다.
-        userPointService.grantPoint(1L, 50000);
-
-
-        // MembershipPolicy 초기 데이터 삽입
-        // 없으면 등급 갱신, 포인트 적립, 등급 정책 조회 API 동작 안 함
-        // NORMAL(1%), VIP(5%), VVIP(10%)
+        // 2. MembershipPolicy 초기 데이터 삽입
+        // 데이터가 없을 때만 실행하여 중복 방지
         if (membershipPolicyRepository.count() == 0) {
             membershipPolicyRepository.saveAll(List.of(
                     MembershipPolicy.create(MembershipGrade.NORMAL, 0L, 49999L, 1),
                     MembershipPolicy.create(MembershipGrade.VIP, 50000L, 99999L, 5),
                     MembershipPolicy.create(MembershipGrade.VVIP, 100000L, null, 10)
             ));
+        }
+    }
+
+    /**
+     * 유저 중복 여부를 확인하고, 새 유저 생성 시 포인트까지 지급하는 헬퍼 메서드
+     */
+    private void createTestUser(String name, String email, String phone, String password, int pointAmount) {
+        // UserRepository를 사용하여 해당 이메일의 유저가 있는지 확인
+        if (userRepository.findByEmail(email).isEmpty()) {
+
+            // 회원가입 후 생성된 유저 정보(ID 포함)를 결과로 받아옴
+            SignupResponse response = userService.signup(SignupRequest.builder()
+                    .name(name)
+                    .email(email)
+                    .phone(phone)
+                    .password(password)
+                    .build());
+
+            // 반환받은 실제 DB ID(response.id())를 사용하여 정확하게 포인트 지급
+            userPointService.grantPoint(response.id(), pointAmount);
         }
     }
 }
