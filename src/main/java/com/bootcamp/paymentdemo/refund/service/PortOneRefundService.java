@@ -64,7 +64,6 @@ public class PortOneRefundService {
         PortOneErrorResponse error = parseErrorBody(e.getResponseBodyAsString());
         String type = error != null ? error.type() : null;
 
-
         if (e.getStatusCode().value() == 401) {
             return new ServiceException(ErrorCode.UNAUTHORIZED_PAYMENT_VALIDATION_REQUEST);
         }
