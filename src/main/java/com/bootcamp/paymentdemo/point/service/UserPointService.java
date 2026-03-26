@@ -130,9 +130,12 @@ public class UserPointService {
             saveTransaction(PointTransaction.refund(userId, orderId, refundPoints));
         }
         // 누적 주문금액 차감 -> 등급 롤백 기준
-        user.deductTotalOrderAmount(refundAmount);
+        // user domain 에서 totalOrderAmount 값이 주문 확정 이후의 금액으로 수정되었습니다.
+//        user.deductTotalOrderAmount(refundAmount);
+
         // 등급 롤백
-        updateMembershipGrade(userId);
+        // 이제 등급이 주문 확정 이후 변경되기 때문에 주석처리 하겠습니당
+//        updateMembershipGrade(userId);
     }
 
 

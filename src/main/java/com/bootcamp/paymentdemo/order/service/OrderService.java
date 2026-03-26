@@ -19,6 +19,8 @@ import com.bootcamp.paymentdemo.payment.respository.PaymentRepository;
 import com.bootcamp.paymentdemo.point.service.UserPointService;
 import com.bootcamp.paymentdemo.product.Product;
 import com.bootcamp.paymentdemo.product.ProductService;
+import com.bootcamp.paymentdemo.user.UserService;
+import com.bootcamp.paymentdemo.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +44,7 @@ public class OrderService {
     // -> confirmOrder() 에서 finalAmount 조회 시에만 사용
     private final PaymentRepository paymentRepository;
     private final UserPointService userPointService;   //  주문 확정 시 포인트 적립용
+    private final UserService userService;
 
     // 주문 생성
     @Transactional
@@ -158,6 +161,8 @@ public class OrderService {
 
         }
 
+        User user = userService.getUser(userId);
+
         order.confirm(); // 상태 전이 (PAID → CONFIRMED)
 
 
@@ -169,6 +174,10 @@ public class OrderService {
                 .orElseThrow(() -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND));
         userPointService.earnPoint(userId, order.getId(), payment.getFinalAmount());
 
+        // 지원 추가
+        // 주문 확정 이벤트가 발생해서 포인트를 적립하는 로직과 함께 총 주문금액이 출력됩니다.
+        user.addTotalOrderAmount(Math.toIntExact(order.getTotalAmount()));
+        userPointService.updateMembershipGrade(userId);
         return OrderConfirmResponse.from(order);
     }
 

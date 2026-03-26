@@ -63,9 +63,9 @@ public class DataInitializer implements ApplicationRunner {
         // NORMAL(1%), VIP(5%), VVIP(10%)
         if (membershipPolicyRepository.count() == 0) {
             membershipPolicyRepository.saveAll(List.of(
-                    MembershipPolicy.create(MembershipGrade.NORMAL, 0L, 50000L, 1),
-                    MembershipPolicy.create(MembershipGrade.VIP, 50001L, 100000L, 5),
-                    MembershipPolicy.create(MembershipGrade.VVIP, 100001L, null, 10)
+                    MembershipPolicy.create(MembershipGrade.NORMAL, 0L, 49999L, 1),
+                    MembershipPolicy.create(MembershipGrade.VIP, 50000L, 99999L, 5),
+                    MembershipPolicy.create(MembershipGrade.VVIP, 100000L, null, 10)
             ));
         }
     }
