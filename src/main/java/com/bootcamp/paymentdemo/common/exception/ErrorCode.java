@@ -86,6 +86,7 @@ public enum ErrorCode {
     //포인트
     INSUFFICIENT_POINT(HttpStatus.BAD_REQUEST, "PT001", "포인트 잔액이 부족합니다."),
     INVALID_POINT_AMOUNT(HttpStatus.BAD_REQUEST, "PT002", "포인트는 양수여야 합니다."),
+    USERPOINT_NOT_FOUND(HttpStatus.NOT_FOUND, "PT003", "유저 포인트 정보를 찾을 수 없습니다."),
 
     // 멤버십
     MEMBERSHIP_POLICY_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "MS001", "멤버십 등급 정책을 찾을 수 없습니다."),

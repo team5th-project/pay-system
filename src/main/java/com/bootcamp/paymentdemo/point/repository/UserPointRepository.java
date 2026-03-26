@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
+
 public interface UserPointRepository extends JpaRepository<UserPoint, Long> {
 
 //    @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -19,4 +21,6 @@ public interface UserPointRepository extends JpaRepository<UserPoint, Long> {
 
     @Query("select p from UserPoint p where p.user.id = :userId")
     UserPoint findByUserId(@Param("userId") Long userId);
+
+    Optional<UserPoint> findUserPointByUserId(Long userId);
 }

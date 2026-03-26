@@ -73,7 +73,7 @@ public class UserPointService {
      * 결제 실패 또는 취소 시 PaymentService 에서 호출
      */
     @Transactional
-    public void cancelUsePoint(Long userId, Long orderId, int points){
+    public void cancelUsePoint(Long userId, int points){
         // 사용자 조회
         UserPoint userPoint = pointRepository.findByUserIdForUpdate(userId);
         userPoint.release(points);
