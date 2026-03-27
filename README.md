@@ -274,7 +274,7 @@ ___
 API 명세서
 
 보다 자세한 API 명세서는
-[📎프로젝트 노션](https://www.notion.so/teamsparta/2-2ff2dc3ef514805aa074fd80c0ad353d) 에서 확인할 수 있습니다.
+[📎프로젝트 노션](https://www.notion.so/teamsparta/31e2dc3ef5148129be19ddb0beb092fa?v=31e2dc3ef514811bb6a0000c031ab166&source=copy_link) 에서 확인할 수 있습니다.
 
 ---
 
