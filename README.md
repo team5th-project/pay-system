@@ -280,7 +280,8 @@ API 명세서
 
 ## 🗄 ER Diagram
 
-ERD
+<img width="2190" height="1322" alt="oz_maigical_shop_payment_service_erd" src="https://github.com/user-attachments/assets/b0284af5-9107-4f33-9d66-e8c7cee68ee3" />
+
 
 ---
 
