@@ -6,6 +6,7 @@ import com.bootcamp.paymentdemo.payment.enums.PaymentStatus;
 import com.bootcamp.paymentdemo.payment.enums.PortOnePaymentStatus;
 import com.bootcamp.paymentdemo.payment.service.PaymentService;
 import com.bootcamp.paymentdemo.payment.service.PortOneService;
+import com.bootcamp.paymentdemo.refund.service.RefundService;
 import com.bootcamp.paymentdemo.webhook.dto.PortOneWebhookRequest;
 import com.bootcamp.paymentdemo.webhook.enums.PortOneEventType;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ public class PaymentWebhookProcessor {
 
     private final PortOneService portOneService;
     private final PaymentService paymentService;
+    private final RefundService refundService;
 
     @Transactional
     public void process(PortOneWebhookRequest request, PortOneEventType portOneEventType) {
@@ -55,8 +57,8 @@ public class PaymentWebhookProcessor {
         // 1. 실제 결제가 되었는데 네트워크 오류로 payment는 실패 처리 되어있는 경우
         // 2. 서버 내부 오류로 결제 취소 요청을 보냈는데, 취소가 되지 않은 경우
         if (payment.getPaymentStatus() == PaymentStatus.FAILED
-        || payment.getPaymentStatus() == PaymentStatus.CANCEL_REQUESTED
-        || payment.getPaymentStatus() == PaymentStatus.CANCEL_FAILED) {
+                || payment.getPaymentStatus() == PaymentStatus.CANCEL_REQUESTED
+                || payment.getPaymentStatus() == PaymentStatus.CANCEL_FAILED) {
             paymentService.requestCancelFromWebhook(payment, portOnePayment);
             return;
         }
@@ -69,11 +71,6 @@ public class PaymentWebhookProcessor {
         if (payment.getPaymentStatus() == PaymentStatus.CANCELLED) {
             return;
         }
-
-        // ====================================
-        /*
-        TODO : 현민님 여기 밑에 환불쪽에서 필요한 부분 추가해서 사용하면 됩니다.
-         */
         // ======= 환불 쪽 사용 ================
 
         log.warn("처리되지 않은 웹훅 상태 - paymentId={}, status={}",
@@ -107,17 +104,19 @@ public class PaymentWebhookProcessor {
             return;
         }
 
-        if (payment.getPaymentStatus() == PaymentStatus.SUCCESS) {
-            return; // TODO 아마 현민님 여기다가 코드 추가해야 할 일이 있을 것 같습니다.
-            // 로직 검증해보고 수정해주세욥. 쓸 일 없으시면 그대로 두면 됩니다.
+        if (payment.getPaymentStatus() == PaymentStatus.SUCCESS
+                || payment.getPaymentStatus() == PaymentStatus.REFUNDED) {
+            log.info("환불 웹훅 처리 분기 진입 - paymentUid={}, paymentId={}, paymentStatus={}",
+                    payment.getPaymentUid(), payment.getId(), payment.getPaymentStatus());
+            refundService.processRefundWebhook(payment.getId());
+            return;
         }
-        // ====================================
-        /*
-        TODO : 현민님 여기 밑에 환불쪽에서 필요한 부분 추가해서 사용하면 됩니다.
-         */
-        // ======= 환불 쪽 사용 ================
-
-
-        return;
+        // 4. 이미 취소 완료된 건이면 멱등 처리
+        if (payment.getPaymentStatus() == PaymentStatus.CANCELLED) {
+            log.info("이미 취소 완료된 payment 멱등 처리 - paymentId={}", payment.getPaymentUid());
+            return;
+        }
+        log.warn("처리되지 않은 CANCELLED 웹훅 상태 - paymentId={}, status={}",
+                payment.getPaymentUid(), payment.getPaymentStatus());
     }
 }

@@ -5,14 +5,12 @@ import com.bootcamp.paymentdemo.common.exception.ServiceException;
 import com.bootcamp.paymentdemo.security.token.BlacklistRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import io.jsonwebtoken.security.SecurityException;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
@@ -50,8 +48,7 @@ public class JwtTokenProvider {
 
     /**
      * JWT 토큰 생성
-     *
-     * TODO: 개선 사항
+     * <p>
      * - 사용자 역할(Role) 정보 추가
      * - 추가 Claims 정보 (이름, 이메일 등)
      * - Refresh Token 발급 로직
@@ -61,13 +58,13 @@ public class JwtTokenProvider {
         Date validity = new Date(now.getTime() + tokenValidityInMilliseconds);
 
         return Jwts.builder()
-            .subject(String.valueOf(id))
-            .claim("email", email)
-            .claim("role", role)
-            .issuedAt(now)
-            .expiration(validity)
-            .signWith(secretKey)
-            .compact();
+                .subject(String.valueOf(id))
+                .claim("email", email)
+                .claim("role", role)
+                .issuedAt(now)
+                .expiration(validity)
+                .signWith(secretKey)
+                .compact();
     }
 
     public String createRefreshToken(Long id) {
@@ -91,16 +88,16 @@ public class JwtTokenProvider {
         return new UsernamePasswordAuthenticationToken(
                 new CustomUserDetails(userId, email, role),
                 null,
-                List.of(new SimpleGrantedAuthority("ROLE_"+role))
+                List.of(new SimpleGrantedAuthority("ROLE_" + role))
         );
     }
 
     public String getId(String token) {
         Claims claims = Jwts.parser()
-            .verifyWith(secretKey)
-            .build()
-            .parseSignedClaims(token)
-            .getPayload();
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
 
         return claims.getSubject();
     }
@@ -130,8 +127,7 @@ public class JwtTokenProvider {
 
     /**
      * JWT 토큰 유효성 검증
-     *
-     * TODO: 개선 사항
+     * <p>
      * - 토큰 블랙리스트 체크 (로그아웃된 토큰)
      * - 토큰 갱신 로직
      * - 상세한 예외 처리
@@ -150,19 +146,15 @@ public class JwtTokenProvider {
             return true;
 
         } catch (ExpiredJwtException e) {
-//            log.info("Expired Jwt Exception");
             throw new ServiceException(ErrorCode.JWT_EXPIRED);
         } catch (MalformedJwtException | IllegalArgumentException e) {
-//            log.info("토큰 형식 오류 (Malformed Jwt Exception)");
             throw new ServiceException(ErrorCode.JWT_INVALID);
             // 토큰이 애초에 형식이 이상하거나 비어있을때
         } catch (UnsupportedJwtException e) {
-//            log.info("Unsupported Jwt Exception");
             throw new ServiceException(ErrorCode.JWT_INVALID);
         } catch (SignatureException e) {
             log.error("위조된 토큰!!! 조 심 해 ");
             throw new ServiceException(ErrorCode.JWT_INVALID);
-            // 토큰이 위조의 위험이 있습니다요 조심해!!!
         }
     }
 

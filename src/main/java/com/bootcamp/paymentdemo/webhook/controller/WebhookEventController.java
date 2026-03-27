@@ -22,11 +22,7 @@ public class WebhookEventController {
             @RequestBody String rawPayload) {
 
         log.info("PortOne 웹훅 수신 - webhookId={}, timestamp = {}", webhookId, timestamp);
-        // 실제 운영 시에 rawPayload랑 timestamp는 없애기
-//        log.info("PortOne 웹훅 수신 - 데이터 : {}", rawPayload);
-
         webhookEventService.handleWebhook(webhookId, signature, timestamp, rawPayload);
-
         return ResponseEntity.ok().build();
     }
 }

@@ -7,7 +7,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -15,13 +14,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
 
 /**
  * JWT 토큰 인증 필터
  * 모든 요청에서 JWT 토큰을 검증하고 SecurityContext에 인증 정보 설정
  *
- * TODO: 개선 사항
+ *
  * - 역할(Role) 정보를 토큰에서 추출
  * - 예외 처리 개선
  */

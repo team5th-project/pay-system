@@ -29,10 +29,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     );
     Optional<Order> findByOrderUid(String orderUid);
 
-//    // 소영 추가
-//    @Lock(LockModeType.PESSIMISTIC_WRITE)
-//    @Query("select o from Order o where o.id = :orderId")
-//    Order findByIdForUpdate(@Param("orderId") Long orderId);
     /**
      * 내 주문 목록 페이징 + 상태 필터 조회
      *

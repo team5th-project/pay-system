@@ -11,7 +11,6 @@ import com.bootcamp.paymentdemo.security.token.RefreshToken;
 import com.bootcamp.paymentdemo.security.token.RefreshTokenRepository;
 import com.bootcamp.paymentdemo.user.dto.*;
 import com.bootcamp.paymentdemo.user.entity.User;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -30,20 +29,16 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final BlacklistRepository blacklistRepository;
     private final UserPointRepository userPointRepository;
-//    private final MembershipService membershipService;
 
     // 1. login
     @Transactional
     public InternalLoginResponse login(LoginRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail()).orElseThrow(
-                ()-> new ServiceException(ErrorCode.USER_NOT_FOUND)
+                () -> new ServiceException(ErrorCode.USER_NOT_FOUND)
         );
-//        if(!request.getPassword().equals(user.getPassword())){
-//            throw new ServiceException(ErrorCode.WRONG_PASSWORD);
-//        }
 
-        if(!passwordEncoder.matches(request.getPassword(), user.getPassword())){
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new ServiceException(ErrorCode.WRONG_PASSWORD);
         }
 
@@ -59,15 +54,15 @@ public class UserService {
         // repository 에 있는지 확인
         RefreshToken token = refreshTokenRepository.findByUserId(user.getId()).orElse(null);
 
-        if (token != null){
+        if (token != null) {
             token.updateToken(refreshToken); // 있으면 update (dirty checking)
-        } else{
+        } else {
             refreshTokenRepository.save(
                     RefreshToken.builder()
-                        .userId(user.getId())
-                        .token(refreshToken)
-                        .build()
-                    ); // 없으면 새로 생성
+                            .userId(user.getId())
+                            .token(refreshToken)
+                            .build()
+            ); // 없으면 새로 생성
         }
 
         return InternalLoginResponse.of(user, accessToken);
@@ -81,17 +76,14 @@ public class UserService {
         String encodedPassword = passwordEncoder.encode(request.getPassword());
 
         User user = User.builder()
-                        .name(request.getName())
-                        .email(request.getEmail())
-                        .password(encodedPassword)
-                        .phone(request.getPhone())
-                        .build();
-
-//        membershipService.createMembership(user.getId());
+                .name(request.getName())
+                .email(request.getEmail())
+                .password(encodedPassword)
+                .phone(request.getPhone())
+                .build();
 
 
         UserPoint userPoint = UserPoint.builder().user(user).build();
-//        user.setUserPoint(userPoint);
         userRepository.save(user);
         userPointRepository.save(userPoint);
 
@@ -131,7 +123,7 @@ public class UserService {
     //refresh token 재발급 로직
     @Transactional
     public String reissue(String refreshToken) {
-        if (!jwtTokenProvider.validateToken(refreshToken)){
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
             throw new ServiceException(ErrorCode.JWT_INVALID);
         }
 
@@ -139,9 +131,9 @@ public class UserService {
         User user = getUser(userId);
 
         RefreshToken savedToken = refreshTokenRepository.findById(userId).orElseThrow(
-                ()-> new ServiceException(ErrorCode.JWT_NOT_FOUND));
+                () -> new ServiceException(ErrorCode.JWT_NOT_FOUND));
 
-        if(!savedToken.getToken().equals(refreshToken)){
+        if (!savedToken.getToken().equals(refreshToken)) {
             throw new ServiceException(ErrorCode.JWT_INVALID);
         }
 
