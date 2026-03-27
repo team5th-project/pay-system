@@ -3,11 +3,7 @@ package com.bootcamp.paymentdemo.common.exception;
 import com.bootcamp.paymentdemo.common.global.CommonResponse;
 import com.bootcamp.paymentdemo.common.global.CommonResponseHandler;
 import jakarta.servlet.http.HttpServletRequest;
-
-import com.bootcamp.paymentdemo.common.exception.ErrorResponse;
-import com.bootcamp.paymentdemo.common.exception.ServiceException;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;

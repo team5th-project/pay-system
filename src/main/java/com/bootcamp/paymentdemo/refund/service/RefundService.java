@@ -148,11 +148,8 @@ public class RefundService {
         if (payment.getPaymentStatus() != PaymentStatus.SUCCESS) {
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_STATUS_FOR_REFUND);
         }
-        // 민교가 수정함
         // 주문 상태 검증
-        // - 기존: CONFIRMED 상태일 때만 환불 가능 → 주문 확정 이후에도 환불 가능해지는 잘못된 흐름
-        // - 변경: PAID 상태일 때만 환불 가능
-        //   → 결제 완료(PAID) 후 7일 이내에만 환불 가능, CONFIRMED 이후에는 환불 불가
+        // 결제 완료(PAID) 후 7일 이내에만 환불 가능, CONFIRMED 이후에는 환불 불가
         if (order.getStatus() != OrderStatus.PAID) {
             throw new ServiceException(ErrorCode.INVALID_ORDER_STATUS);
         }
@@ -186,7 +183,6 @@ public class RefundService {
         }
         // 포인트 복구
         if (order.getUsedPoint() > 0) {
-//            userPointService.releasePoint(order.getUserId(), order.getId(), order.getUsedPoint());
             userPointService.cancelUsePoint(order.getUserId(), Math.toIntExact(order.getUsedPoint()));
         }
         // 재고 복구
@@ -242,7 +238,6 @@ public class RefundService {
 
         // 포인트 가점유 해제
         userPointService.cancelUsePoint(order.getUserId(), Math.toIntExact(order.getUsedPoint()));
-        //userPointService.releasePoint(order.getUserId(), order.getId(), payment.getPointToUse());
 
         log.info("포인트 전액 결제 환불 성공 userId={}, orderId={}, refundId={}, restoredPoint={}",
                 order.getUserId(),
@@ -251,7 +246,6 @@ public class RefundService {
                 payment.getPointToUse());
     }
 
-    //
     public void processRefundCallback(Long refundId, PortOneRefundStatus status) {
         Refund refund = refundRepository.findById(refundId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.REFUND_NOT_FOUND));
@@ -405,5 +399,32 @@ public class RefundService {
                     refund.getRefundStatus()
             );
         }
+    }
+
+    @Transactional
+    public void processRefundWebhook(Long paymentId) {
+        Refund refund = refundRepository.findByPaymentId(paymentId)
+                .orElse(null);
+
+        if (refund == null) {
+            log.warn("환불 엔티티 없이 CANCELLED 웹훅 수신 - paymentId={}", paymentId);
+            return;
+        }
+
+        if (refund.getRefundStatus() == RefundStatus.COMPLETED) {
+            log.info("이미 완료된 환불 웹훅 멱등 처리 - refundId={}, paymentId={}",
+                    refund.getId(), paymentId);
+            return;
+        }
+
+        log.info("환불 웹훅 처리 시작 - refundId={}, paymentId={}",
+                refund.getId(), paymentId);
+
+        // 현재 PortOnePaymentDto에는 cancellation.status가 없으므로
+        // CANCELLED 웹훅 = 환불 완료로 보고 공통 로직 호출
+        processRefundCallback(refund.getId(), PortOneRefundStatus.SUCCEEDED);
+
+        log.info("환불 웹훅 처리 완료 - refundId={}, paymentId={}",
+                refund.getId(), paymentId);
     }
 }

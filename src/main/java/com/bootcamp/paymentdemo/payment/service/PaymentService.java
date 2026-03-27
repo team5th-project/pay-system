@@ -36,6 +36,7 @@ public class PaymentService {
     private final PaymentVerificationService paymentVerificationService;
     private final PaymentStatusTxService paymentStatusTxService;
     private final PaymentCancelService paymentCancelService;
+
     @Transactional
     public CreatePaymentResponse createPayment(String orderUid, CreatePaymentRequest request) {
         Order order = orderService.getOrderByOrderUid(orderUid);
@@ -45,7 +46,7 @@ public class PaymentService {
         int pointsToUse = request.getPointToUse() == null ? 0 : request.getPointToUse();
 
         // 주문 상태 검증
-        if(order.getStatus()!= OrderStatus.PENDING){
+        if (order.getStatus() != OrderStatus.PENDING) {
             throw new ServiceException(ErrorCode.ORDER_STATUS_NOT_PENDING);
         }
 
@@ -53,7 +54,7 @@ public class PaymentService {
         // 같은 주문에 대해서 결제 요청 후 대기중(PENDING) 상태인 결제가 있어도 결제 생성 가능
         // success 된 결제가 있으면 막기
         boolean existence = paymentRepository.existsByOrderAndPaymentStatus(order, PaymentStatus.SUCCESS);
-        if(existence){
+        if (existence) {
             throw new ServiceException(ErrorCode.ALREADY_PROCESSED_PAYMENT);
         }
 
@@ -73,7 +74,7 @@ public class PaymentService {
         }
         // 실 결제 금액이 0원 초과 1000원 미만이면 에러. 0원이면 전액 포인트 결제로 간주하고 결제 생성 가능
         long finalAmount = totalAmount - pointsToUse;
-        if (0< finalAmount && finalAmount < 1000) {
+        if (0 < finalAmount && finalAmount < 1000) {
             throw new ServiceException(ErrorCode.INVALID_PAYMENT_AMOUNT);
         }
         // 결제 생성
@@ -111,12 +112,12 @@ public class PaymentService {
         // Order 상태 검증.
         // 결제 생성할때는 주문 상태가 pending 이었다가 결제 확정 요청 시에는 이미 다른 결제 시도/스케쥴러/웹훅에서 처리되어서 주문 성공 상태일 수 있으니 검증
         Order order = payment.getOrder();
-        if(OrderStatus.PENDING != order.getStatus()){
+        if (OrderStatus.PENDING != order.getStatus()) {
             throw new ServiceException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
         // 결제 금액과 포인트 사용 검증
-        if (payment.getFinalAmount() == 0 ) {
+        if (payment.getFinalAmount() == 0) {
             // 포인트로 전액 결제해서 실 결제 금액이 0원이라면 포트원 검증 안하고, DB에 재고 반영만 하고 결제 성공 처리
             paymentStatusTxService.markSuccess(payment.getPaymentUid());
             return ConfirmPaymentResponse.of(payment.getOrder().getOrderUid(), PaymentStatus.SUCCESS);
@@ -157,79 +158,11 @@ public class PaymentService {
         }
     }
 
-//    // 결제 확정 성공 상태 전이
-//    private void markPaymentSuccess(Payment payment){
-//        Order order = payment.getOrder();
-//
-//        // 결제 상태 성공으로 변경
-//        payment.success();
-//
-//        // 주문 상태 결제 성공으로 변경
-//        order.markAsPaid();
-//
-//        // 재고 차감
-//        productService.decreaseStockByOrder(order);
-//
-//        // 포인트 차감
-//        if (payment.getPointToUse() > 0) {
-//            userPointService.usePoint(order.getUserId(), order.getId(), payment.getPointToUse());
-//        }
-//
-//    }
-
-    /*
-    private void markPaymentSuccess(Payment payment) {
-    Order order = payment.getOrder();
-
-    // 이미 둘 다 성공 처리된 경우 -> 멱등 처리
-    if (payment.getPaymentStatus() == PaymentStatus.SUCCESS
-            && order.getStatus() == OrderStatus.PAID) {
-        log.info("이미 성공 처리된 결제입니다. paymentId={}, orderId={}",
-                payment.getId(), order.getId());
-        return;
-    }
-
-    // 결제가 아직 성공 전이면 성공 처리
-    if (payment.getPaymentStatus() == PaymentStatus.PENDING) {
-        payment.success();
-    }
-
-    // 주문이 아직 결제완료 전이면 상태 변경
-    if (order.getStatus() == OrderStatus.PENDING) {
-        order.markAsPaid();
-    }
-
-    // 여기 아래는 "최초 성공 흐름에서만" 타야 더 안전하지만
-    // 현재 구조 최소 수정 기준으로는 우선 유지
-    productService.decreaseStockByOrder(order);
-
-    if (payment.getPointToUse() > 0) {
-        userPointService.usePoint(order.getUserId(), order.getId(), payment.getPointToUse());
-    }
-
-    log.info("결제 성공 처리 완료. paymentId={}, orderId={}", payment.getId(), order.getId());
-}
-     */
-
-
     // FAIL 처리
     private ConfirmPaymentResponse handleFail(Payment payment) {
         paymentStatusTxService.markFailed(payment.getPaymentUid());
         return ConfirmPaymentResponse.of(payment.getOrder().getOrderUid(), PaymentStatus.FAILED);
     }
-
-//    // 결제 확정 실패 상태 전이
-//    private void markPaymentFailed(Payment payment){
-//        Order order = payment.getOrder();
-//        // 결제 상태 실패로 변경
-//        payment.failed();
-//        // 주문 상태는 PENDING으로 유지. 호출할 것 없음
-//        // 포인트 가점유 해제
-//        if (payment.getPointToUse() > 0) {
-//            userPointService.cancelUsePoint(order.getUserId(), order.getId(), payment.getPointToUse());
-//        }
-//    }
-
 
     private ConfirmPaymentResponse handleAmountMismatch(Payment payment) {
         PaymentStatus status = requestCancelAfterInternalFailure(payment);
@@ -240,7 +173,6 @@ public class PaymentService {
     private PaymentStatus requestCancelAfterInternalFailure(Payment payment) {
         System.out.println("PaymentService.requestCancelAfterInternalFailure");
         paymentStatusTxService.markCancelRequested(payment.getPaymentUid());
-//        payment.cancelRequested();
         // 포트원 결제 취소 요청
         String reason = "Failed to process Payment Confirm in Server";
         PaymentCancelResult paymentCancelResult = paymentCancelService.processPaymentCancel(payment, reason);
@@ -269,14 +201,14 @@ public class PaymentService {
                 .orElseThrow(() -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND));
     }
 
-        /* 민교님 추가
-           orderId로 결제 정보 조회
-          - 주문 확정 시 포인트 적립을 위해 finalAmount(실제 PG 결제 금액) 가져올 때 사용
-          - confirmOrder() 및 OrderScheduler에서 호출
-          @param orderId 조회할 주문 ID
-          @return 해당 주문의 Payment 객체
-         */
-        public Payment getPaymentByOrderId(Long orderId) {
+    /*
+       orderId로 결제 정보 조회
+      - 주문 확정 시 포인트 적립을 위해 finalAmount(실제 PG 결제 금액) 가져올 때 사용
+      - confirmOrder() 및 OrderScheduler에서 호출
+      @param orderId 조회할 주문 ID
+      @return 해당 주문의 Payment 객체
+     */
+    public Payment getPaymentByOrderId(Long orderId) {
         return paymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new ServiceException(ErrorCode.PAYMENT_NOT_FOUND));
     }
@@ -326,7 +258,7 @@ public class PaymentService {
      */
     @Transactional
     public void requestCancelFromWebhook(Payment payment, PortOnePaymentDto portOnePaymentDto) {
-            // 이미 취소된 경우 멱등 처리
+        // 이미 취소된 경우 멱등 처리
         if (payment.getPaymentStatus() == PaymentStatus.CANCELLED) {
             return;
         }
@@ -351,7 +283,7 @@ public class PaymentService {
             paymentStatusTxService.markCancelRequested(payment.getPaymentUid());
 
         } catch (RuntimeException e) {
-            log.warn("Webhook 검증 후 결제 취소 요청 실패 - paymentId :{} ",payment.getPaymentUid());
+            log.warn("Webhook 검증 후 결제 취소 요청 실패 - paymentId :{} ", payment.getPaymentUid());
             paymentStatusTxService.markCancelFailed(payment.getPaymentUid());
             throw e;
         }
@@ -400,13 +332,5 @@ public class PaymentService {
         }
         payment.failed();
         Order order = payment.getOrder();
-
-        // 가점유 했던 포인트 가점유 해제
-//        if (payment.getPointToUse() > 0) {
-//            userPointService.cancelUsePoint(order.getUserId(), payment.getPointToUse());
-//        }
     }
-
-    // TODO - 주문 금액에 따른 멤버십 등급 자동 업데이트 기능이 있나?
-
 }

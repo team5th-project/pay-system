@@ -35,7 +35,6 @@ public enum ErrorCode {
     ORDER_NOT_OWNED(HttpStatus.FORBIDDEN, "O003", "본인의 주문이 아닙니다."),
 
 
-
     // 결제
     INVALID_PAYMENT_AMOUNT(HttpStatus.BAD_REQUEST, "PAY001", "유효하지 않은 결제 금액입니다."),
     INVALID_ORDER_UID(HttpStatus.BAD_REQUEST, "PAY002", "유효하지 않은 주문 아이디입니다."),
@@ -67,7 +66,7 @@ public enum ErrorCode {
     //환불
     INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, "R001", "현재 환불 상태에서는 요청한 작업을 수행할 수 없습니다."),
     INVALID_PAYMENT_STATUS_FOR_REFUND(HttpStatus.BAD_REQUEST, "ROO2", "환불은 결제 완료 상태에서만 가능합니다."),
-    REFUND_FAILED(HttpStatus.BAD_REQUEST,"R003", "환불 처리 중 오류가 발생했습니다."),
+    REFUND_FAILED(HttpStatus.BAD_REQUEST, "R003", "환불 처리 중 오류가 발생했습니다."),
     REFUND_NOT_FOUND(HttpStatus.NOT_FOUND, "R004", "환불내역을 찾을 수 없습니다."),
     REFUND_PERIOD_EXPIRED(HttpStatus.BAD_REQUEST, "R005", "환불 가능 기간이 지났습니다."),
     INVALID_REFUND_AMOUNT(HttpStatus.BAD_REQUEST, "R006", "환불금액이 올바르지 않습니다."),
@@ -79,7 +78,7 @@ public enum ErrorCode {
     INVALID_WEBHOOK_PAYLOAD(HttpStatus.BAD_REQUEST, "W004", "웹훅 데이터 형식이 올바르지 않습니다."),
     INVALID_WEBHOOK_WEBHOOKID(HttpStatus.BAD_REQUEST, "W005", "웹훅 아이디가 존재하지 않거나 유효하지 않습니다."),
     INVALID_WEBHOOK_EVENT(HttpStatus.BAD_REQUEST, "W006", "지원하지 않는 웹훅 이벤트입니다."),
-    DUPLICATE_WEBHOOK(HttpStatus.BAD_REQUEST,"W007","중복된 웹훅입니다."),
+    DUPLICATE_WEBHOOK(HttpStatus.BAD_REQUEST, "W007", "중복된 웹훅입니다."),
     INVALID_WEBHOOK_HEADER(HttpStatus.BAD_REQUEST, "W008", "웹훅 헤더가 유효하지 않습니다."),
     WEBHOOK_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST, "W009", "웹훅 검증에 실패했습니다"),
 
@@ -91,12 +90,7 @@ public enum ErrorCode {
     // 멤버십
     MEMBERSHIP_POLICY_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "MS001", "멤버십 등급 정책을 찾을 수 없습니다."),
     INVALID_MEMBERSHIP_GRADE(HttpStatus.BAD_REQUEST, "MS002", "유효하지 않은 멤버십 등급입니다."),
-    MEMBERSHIP_UPDATE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "MS003", "멤버십 등급 갱신에 실패했습니다.")
-
-
-
-
-    ;
+    MEMBERSHIP_UPDATE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "MS003", "멤버십 등급 갱신에 실패했습니다.");
     private final HttpStatus status;
     private final String code;
     private final String message;

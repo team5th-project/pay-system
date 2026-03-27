@@ -134,8 +134,8 @@ public class UserPointService {
      * 현재 방식: 기간 기반 소멸
      * 소멸 포인트 = 만료될 EARN - 적립~만료일 사이 USE 포인트
      *
-     * TODO: 한계점 - 두 EARN의 기간 겹치는 구간 use 있으면 같은 use가 두 EARN 계산에 중복 포함될 수 있음
-     *       FIFO같은 방식 개선 필요
+     *
+     *
      */
     @Transactional
     public void expirePoint() {
